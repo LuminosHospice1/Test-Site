@@ -192,6 +192,113 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 .panel-search-clear:hover{color:var(--navy)}
 .search-highlight{background:#fff3cd;border-radius:2px;padding:0 1px}
 .search-no-results{text-align:center;padding:24px;color:var(--text-lt);font-size:.9rem;background:#fff;border:1px solid var(--border);border-radius:6px}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Tablet & Mobile
+   ══════════════════════════════════════════════════ */
+
+/* Tablet (≤900px) */
+@media(max-width:900px){
+  .container{padding:14px 16px}
+  .tab-btn{padding:10px 14px;font-size:.78rem}
+  .card-num{width:28px;height:28px;font-size:.8rem}
+  .dtable{font-size:.83rem}
+  .dtable th,.dtable td{padding:7px 9px}
+  /* Checker 3-col category grid → 1 col */
+  [style*="grid-template-columns:1fr 1fr 1fr"]{display:block!important}
+  [style*="grid-template-columns:1fr 1fr 1fr"] > div{margin-bottom:10px}
+  /* Checker 2-col grids → 1 col */
+  [style*="grid-template-columns:1fr 1fr"]{display:block!important}
+  [style*="grid-template-columns:1fr 1fr"] > div{margin-bottom:10px}
+}
+
+/* Mobile (≤640px) */
+@media(max-width:640px){
+  /* Header */
+  .header-content{flex-direction:column;gap:6px;text-align:center}
+  .logo-wrap img{height:36px}
+  h1{font-size:1.05rem}
+  .header-sub{font-size:.72rem}
+
+  /* Tab bar — horizontal scroll */
+  .tab-inner{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
+  .tab-inner::-webkit-scrollbar{display:none}
+  .tab-btn{white-space:nowrap;padding:10px 13px;font-size:.75rem;flex-shrink:0}
+
+  /* Container */
+  .container{padding:12px}
+
+  /* Cards */
+  .card-hdr{padding:12px 14px}
+  .card-bar h2{font-size:.92rem}
+  .card-body{padding:12px 14px}
+
+  /* Intro strip */
+  .intro-strip{font-size:.82rem;padding:10px 12px}
+
+  /* Tables — horizontal scroll */
+  .dtable-wrap,.dtable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
+  table.dtable{min-width:500px}
+  .dtable th,.dtable td{padding:6px 8px;font-size:.8rem;white-space:normal}
+
+  /* Checklist items */
+  .chk-item,.standalone-chk{padding:8px 10px;font-size:.85rem}
+  .tag{font-size:.65rem;padding:2px 5px}
+
+  /* Checker fields */
+  .checker-body{padding:14px}
+  .checker-field input,.checker-field textarea{font-size:.88rem}
+  .checker-btn{padding:11px 18px;font-size:.84rem;width:100%}
+  .checker-clear-btn{width:100%;margin-left:0;margin-top:8px;justify-content:center}
+  [style*="margin-top:16px"]:has(.checker-btn){display:flex;flex-direction:column;gap:0}
+  .example-chips{gap:4px}
+  .example-chip{font-size:.75rem;padding:3px 8px}
+
+  /* Result cards */
+  .result-verdict{padding:12px 14px}
+  .verdict-icon{font-size:1.3rem}
+  .verdict-label{font-size:.88rem}
+  .result-body{padding:12px 14px;font-size:.85rem}
+
+  /* ICD-10 reference search */
+  .ref-search-wrap input{font-size:.88rem}
+
+  /* Observations rows */
+  .obs-row{font-size:.85rem}
+
+  /* Alerts */
+  .alert{padding:10px 12px;font-size:.84rem}
+
+  /* Print button — hide on mobile */
+  .print-btn{display:none}
+
+  /* PPS table */
+  .pps-table{font-size:.78rem}
+  .pps-table th,.pps-table td{padding:5px 6px}
+
+  /* Narr boxes */
+  .narr{padding:10px 12px}
+  .narr-lbl{font-size:.72rem}
+
+  /* Depression guide path boxes */
+  [style*="display:grid"]{display:block!important}
+  [style*="display:grid"] > div{margin-bottom:8px}
+
+  /* Bereavement/HOPE score tables */
+  .score-table{font-size:.8rem}
+
+  /* Sub headings */
+  .sub-gold,.sub-navy{font-size:.82rem}
+}
+
+/* Very small (≤380px) */
+@media(max-width:380px){
+  .tab-btn{padding:9px 10px;font-size:.72rem}
+  h1{font-size:.95rem}
+  .card-bar h2{font-size:.86rem}
+  .checker-field label{font-size:.76rem}
+}
 </style>
 </head>
 <body>
