@@ -5525,14 +5525,6 @@ async function runMedCheck() {
   const searchText = [medName, indication, context].join(' ');
   const btn = document.getElementById('med-btn');
 
-  // PHI scan
-  clearPHIAlert('med-name'); clearPHIAlert('med-context');
-  const medViolations = scanForPHI(searchText);
-  if (medViolations.length > 0) {
-    showPHIBlock('med-context', medViolations);
-    return;
-  }
-
   // ── Step 1: Run rule engine immediately ───────────────────────
   let ruleCategory = null;
   let match = findMatch(searchText, MED_CAT3);
@@ -5702,14 +5694,6 @@ async function runDxCheck() {
   if (!dxName) { alert('Please enter a diagnosis to evaluate.'); return; }
   const searchText = [dxName, context].join(' ');
   const btn = document.getElementById('dx-btn');
-
-  // PHI scan
-  clearPHIAlert('dx-name'); clearPHIAlert('dx-context');
-  const dxViolations = scanForPHI(searchText);
-  if (dxViolations.length > 0) {
-    showPHIBlock('dx-context', dxViolations);
-    return;
-  }
 
   // ── Step 1: Run rule engine immediately ───────────────────────
   let ruleCategory = null;
@@ -5985,54 +5969,6 @@ function renderCarePlan(text) {
   return out.join('');
 }
 
-// ── NARRATIVE RENDERER ─────────────────────────────────────────────
-function renderNarrative(text) {
-  // Strip any leaked delimiters or title lines Claude might include
-  let clean = text
-    .replace(/===STRENGTHENED NARRATIVE===/g, '')
-    .replace(/===ELEMENT CHECKLIST===/g, '')
-    .replace(/^#+\s+.+$/gm, '')      // strip any # heading lines
-    .replace(/^HOSPICE ADMISSION.+$/gm, '')
-    .replace(/^REWRITE.+$/gm, '')
-    .trim();
-  let html = clean.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  html = html.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-  // Split into paragraphs on double newlines
-  const paras = html.split(/\n\n+/);
-  const rendered = paras
-    .map(p => p.replace(/\n/g,' ').trim())
-    .filter(p => p.length > 0)
-    .map(p => '<p style="margin:0 0 12px 0;font-size:.9rem;color:var(--text);line-height:1.8">' + p + '</p>')
-    .join('');
-  return rendered || '<p style="color:var(--text-lt)">No narrative content returned.</p>';
-}
-
-// ── CHECKLIST RENDERER ─────────────────────────────────────────────
-function renderChecklist(text) {
-  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const lines = html.split('\n');
-  const out = [];
-  for (let i = 0; i < lines.length; i++) {
-    let l = lines[i].trim();
-    if (!l) { out.push('<div style="margin-top:4px"></div>'); continue; }
-    if (l.startsWith('✅')) {
-      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--green-bg);border-radius:5px"><span style="color:var(--green);flex-shrink:0;font-size:1rem">✅</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.startsWith('⚠')) {
-      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--amber-bg);border-radius:5px"><span style="color:var(--gold);flex-shrink:0;font-size:1rem">⚠️</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.startsWith('❌')) {
-      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--red-bg);border-radius:5px"><span style="color:var(--red);flex-shrink:0;font-size:1rem">❌</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.startsWith('MISSING ELEMENTS SUMMARY')) {
-      out.push('<div style="font-size:.75rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--border)">Missing Elements Summary</div>');
-    } else {
-      let ln = l.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-      out.push('<p style="margin:3px 0;font-size:.87rem;color:var(--text-mid)">' + ln + '</p>');
-    }
-  }
-  return out.join('');
-}
 
 // ── CARE PLAN BUILDER ──────────────────────────────────────────────
 async function runCarePlanBuilder() {
@@ -6047,15 +5983,6 @@ async function runCarePlanBuilder() {
   const errorEl = document.getElementById('cp-error');
   const outputWrap = document.getElementById('cp-output-wrap');
   const outputEl = document.getElementById('cp-output');
-
-  // PHI scan
-  clearPHIAlert('cp-problem'); clearPHIAlert('cp-details');
-  const cpScanText = [problem, details].join(' ');
-  const cpViolations = scanForPHI(cpScanText);
-  if (cpViolations.length > 0) {
-    showPHIBlock(details ? 'cp-details' : 'cp-problem', cpViolations);
-    return;
-  }
 
   btn.classList.add('loading');
   btn.disabled = true;
@@ -6145,242 +6072,69 @@ function clearCarePlan() {
 }
 
 // ── NARRATIVE STRENGTHENER ─────────────────────────────────────────
-async function runNarrativeStrengthener() {
+// ── NARRATIVE PROMPT BUILDER (Copilot) ────────────────────────────
+function buildNarrativePrompt() {
   const draft = document.getElementById('narr-input').value.trim();
   const dx = document.getElementById('narr-dx').value.trim();
 
-  if (!draft) { alert('Please paste your draft narrative first.'); return; }
-  if (draft.length < 50) { alert('The narrative appears too short. Please paste your full draft.'); return; }
+  if (!draft) { alert('Please enter your draft narrative or notes first.'); return; }
 
-  const btn = document.getElementById('narr-btn');
-  const errorEl = document.getElementById('narr-error');
-  const outputWrap = document.getElementById('narr-output-wrap');
-  const strengthenedEl = document.getElementById('narr-output-strengthened');
-  const checklistEl = document.getElementById('narr-output-checklist');
+  const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and NHPCO guidelines.
 
-  // PHI scan
-  clearPHIAlert('narr-input');
-  const narrViolations = scanForPHI(draft);
-  if (narrViolations.length > 0) {
-    showPHIBlock('narr-input', narrViolations);
-    return;
-  }
+A hospice admission nurse needs help strengthening a clinical nursing narrative. Please:
+1. Rewrite it with stronger clinical language in first-person nursing voice, past tense, professional clinical tone, paragraph form — no bullet points
+2. Ensure ALL of the following required hospice admission elements are present and clearly documented:
+   - Patient and caregiver identification and relationship
+   - Primary diagnosis and related conditions with symptom burden
+   - LCD criteria documentation (functional decline, clinical indicators supporting 6-month prognosis)
+   - Pain assessment findings (scale, location, character, current management)
+   - Symptom assessment (dyspnea, nausea, anxiety, agitation, constipation as applicable)
+   - Medication review (hospice-covered medications, supplies, and DME reviewed with patient/family/legal representative)
+   - Depression screening documented
+   - Verbal certification status (obtained, or transfer patient exception noted)
+   - IDG coordination statement
+   - Goals of care and patient/family understanding of hospice philosophy
+3. Return a checklist showing each element as PRESENT, PARTIAL, or MISSING with a brief note
 
-  btn.classList.add('loading');
-  btn.disabled = true;
-  errorEl.classList.remove('show');
-  outputWrap.classList.remove('show');
+PRIMARY HOSPICE DIAGNOSIS: ${dx || 'Not specified — infer from narrative'}
 
-  const prompt = `You are an expert hospice clinical documentation specialist and compliance auditor with deep knowledge of CMS hospice benefit requirements, LCD criteria, MAC audit standards, NHPCO guidelines, and 42 CFR §418.
-
-A hospice admission nurse has written a draft nursing narrative. Your job is to:
-1. Rewrite it with stronger clinical language while keeping first-person nursing voice and past tense
-2. Ensure all required hospice admission narrative elements are present
-3. Return a checklist showing what was present vs missing
-
-PRIMARY HOSPICE DIAGNOSIS: ${dx || 'Not specified — infer from narrative if possible'}
-
-DRAFT NARRATIVE:
+DRAFT NARRATIVE / NOTES:
 ${draft}
 
-REQUIRED ELEMENTS TO CHECK AND INCLUDE:
-- Patient and caregiver identification (name/age/relationship)
-- Primary diagnosis and related conditions with symptom burden description
-- LCD criteria documentation (functional decline indicators, clinical findings supporting 6-month prognosis)
-- Pain assessment findings (scale, location, character, current management)
-- Symptom assessment (dyspnea, nausea, anxiety, agitation, constipation — as applicable)
-- Medication review (hospice-covered medications, supplies, and DME reviewed with patient/family/legal representative)
-- Depression screening documented (PHQ-2 or clinical assessment)
-- Verbal certification status (obtained, or transfer patient exception noted)
-- IDG coordination statement
-- Goals of care and patient/family understanding of hospice philosophy
+FORMAT YOUR RESPONSE EXACTLY AS:
 
-OUTPUT FORMAT — Use EXACTLY this structure with NO title, NO preamble, NO intro sentence before the delimiter:
+STRENGTHENED NARRATIVE:
+[Full rewritten narrative — paragraphs only, no headers, no bullets, first-person past tense]
 
-===STRENGTHENED NARRATIVE===
-[Full rewritten narrative ONLY — first-person nursing voice, past tense, professional clinical tone, paragraph form. No bullet points. No title. No headers. Just the narrative paragraphs.]
+---
 
-===ELEMENT CHECKLIST===
-✅ PRESENT: [element name] — [brief note on what was documented]
-⚠ PARTIAL: [element name] — [what was there and what is still needed]
-❌ MISSING: [element name] — [what needs to be added]
-[Continue for ALL required elements listed above]
+ELEMENT CHECKLIST:
+✅ PRESENT: [element] — [brief note]
+⚠️ PARTIAL: [element] — [what was there and what is still needed]
+❌ MISSING: [element] — [what needs to be added]
 
-MISSING ELEMENTS SUMMARY:
-[If any elements are missing, list them with a one-sentence note. If all present, write "All required elements are present."]`;
+SUMMARY: [One sentence — either "All required elements are present" or list what still needs to be added before entry into Firenote]`;
 
-  try {
-    const resp = await fetch('/.netlify/functions/claude', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, max_tokens: 1800})
-    });
-    if (!resp.ok) throw new Error('Server error: ' + resp.status);
-    const data = await resp.json();
-    const fullText = data.content && data.content[0] && data.content[0].text
-      ? data.content[0].text
-      : (data.error || 'No response received.');
-
-    // Split on the checklist separator
-    const parts = fullText.split('===ELEMENT CHECKLIST===');
-    if (parts.length >= 2) {
-      const narrativePart = parts[0].replace('===STRENGTHENED NARRATIVE===','').trim();
-      const checklistPart = parts[1].trim();
-      strengthenedEl.innerHTML = renderNarrative(narrativePart);
-      checklistEl.innerHTML = renderChecklist(checklistPart);
-    } else {
-      strengthenedEl.innerHTML = renderNarrative(fullText);
-      checklistEl.innerHTML = '<p style="color:var(--text-lt);font-size:.88rem">Could not parse element checklist — review the full output above.</p>';
-    }
-
-    outputWrap.classList.add('show');
-    outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
-  } catch(err) {
-    errorEl.textContent = '⚠ Unable to reach AI service. Check your connection and try again. If the problem persists, the Netlify function may not be deployed. Error: ' + err.message;
-    errorEl.classList.add('show');
-  } finally {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-  }
+  const outputEl = document.getElementById('narr-prompt-output');
+  const outputWrap = document.getElementById('narr-output-wrap');
+  outputEl.textContent = prompt;
+  outputWrap.classList.add('show');
+  outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-// ── DE-IDENTIFIER ──────────────────────────────────────────────────
-function deidentifyNarrative() {
-  const el = document.getElementById('narr-input');
-  if (!el || !el.value.trim()) {
-    alert('Please paste your narrative first.');
-    return;
-  }
-
-  let text = el.value;
-  const changes = [];
-  let patientCount = 0;
-  let caregiverCount = 0;
-
-  // ── Helper to track and replace ──────────────────────────────────
-  function replace(pattern, replacement, label) {
-    const before = text;
-    text = text.replace(pattern, replacement);
-    if (text !== before) changes.push(label);
-  }
-
-  // ── 1. Salutation + full name → [patient] ────────────────────────
-  text = text.replace(/\b(Mr|Mrs|Ms|Miss|Dr|Rev)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g, function(match) {
-    patientCount++;
-    changes.push('Removed salutation + name: "' + match + '"');
-    return '[patient]';
-  });
-
-  // ── 2. First + Last capitalized name pairs (not clinical terms) ──
-  const clinicalWords = new Set([
-    'The','This','He','She','His','Her','They','Their','We','Our','It','Its',
-    'Patient','Caregiver','Family','Daughter','Son','Wife','Husband','Spouse',
-    'Nurse','Doctor','Physician','Social','Worker','Chaplain','Aide',
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday',
-    'January','February','March','April','May','June','July','August',
-    'September','October','November','December',
-    'Congestive','Heart','Failure','Chronic','Obstructive','Pulmonary',
-    'Disease','Dementia','Alzheimer','Cancer','Renal','Hepatic','Cardiac',
-    'Respiratory','Neurological','Diabetes','Mellitus','Hypertension',
-    'Parkinson','Stroke','Cerebral','Vascular','Peripheral','Arterial',
-    'Hospice','Medicare','Medicaid','Assessment','Admission','Discharge',
-    'Primary','Secondary','Terminal','Advanced','End','Stage','Late',
-    'Functional','Decline','Clinical','Medical','Nursing','Care','Plan',
-    'Goal','Intervention','Diagnosis','Prognosis','Symptom','Comfort',
-    'Pain','Dyspnea','Anxiety','Nausea','Fatigue','Weakness','Edema',
-    'Oxygen','Morphine','Lorazepam','Haloperidol','Atropine','Furosemide',
-    'Activities','Daily','Living','Ambulation','Transfer','Mobility',
-    'Oriented','Person','Place','Time','Cognitive','Mental','Status',
-    'Upon','During','Following','Prior','After','Before','While','Since',
-    'Regarding','Per','Within','Without','Between','Among','Through',
-    'Reports','Reported','States','Stated','Noted','Observed','Assessed',
-    'Reviewed','Discussed','Educated','Provided','Administered','Performed',
-    'IDG','IDT','RN','LPN','CNA','MD','NP','SW','MSW','PA',
-    'Integumentary','Cardiovascular','Musculoskeletal','Gastrointestinal',
-    'Genitourinary','Neurological','Assessment','Examination','Evaluation'
-  ]);
-
-  text = text.replace(/\b([A-Z][a-z]{1,15})\s+([A-Z][a-z]{1,15})\b/g, function(match, w1, w2) {
-    if (!clinicalWords.has(w1) && !clinicalWords.has(w2)) {
-      patientCount++;
-      changes.push('Removed possible name: "' + match + '"');
-      return '[patient]';
-    }
-    return match;
-  });
-
-  // ── 3. DOB patterns ──────────────────────────────────────────────
-  text = text.replace(/\b(dob|date of birth|born|birthdate)\s*[:#]?\s*\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/gi, function(match) {
-    changes.push('Removed date of birth: "' + match + '"');
-    return '[date of birth removed]';
-  });
-
-  // ── 4. Full dates MM/DD/YYYY ─────────────────────────────────────
-  text = text.replace(/\b(0?[1-9]|1[0-2])[\/\-](0?[1-9]|[12]\d|3[01])[\/\-](19|20)\d{2}\b/g, function(match) {
-    changes.push('Removed date: "' + match + '"');
-    return '[date removed]';
-  });
-
-  // ── 5. Phone numbers ─────────────────────────────────────────────
-  text = text.replace(/\b(\(\d{3}\)|\d{3})[\s.\-]\d{3}[\s.\-]\d{4}\b/g, function(match) {
-    changes.push('Removed phone number: "' + match + '"');
-    return '[phone removed]';
-  });
-
-  // ── 6. SSN ───────────────────────────────────────────────────────
-  text = text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, function(match) {
-    changes.push('Removed SSN: "' + match + '"');
-    return '[SSN removed]';
-  });
-
-  // ── 7. MRN ───────────────────────────────────────────────────────
-  text = text.replace(/\b(mrn|medical record|patient id|chart #?|acct #?)\s*[:#]?\s*\d+/gi, function(match) {
-    changes.push('Removed MRN/ID: "' + match + '"');
-    return '[MRN removed]';
-  });
-
-  // ── 8. Street addresses ──────────────────────────────────────────
-  text = text.replace(/\b\d{1,5}\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard|Court|Ct|Way|Circle|Cir)\b/gi, function(match) {
-    changes.push('Removed address: "' + match + '"');
-    return '[address removed]';
-  });
-
-  // ── 9. Email addresses ───────────────────────────────────────────
-  text = text.replace(/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g, function(match) {
-    changes.push('Removed email: "' + match + '"');
-    return '[email removed]';
-  });
-
-  // ── Update textarea ──────────────────────────────────────────────
-  el.value = text;
-
-  // ── Show change log ──────────────────────────────────────────────
-  const log = document.getElementById('deident-log');
-  if (changes.length === 0) {
-    log.style.display = 'block';
-    log.innerHTML = '<strong style="color:var(--green)">✅ No identifying information detected.</strong> Text appears safe to submit.';
-  } else {
-    log.style.display = 'block';
-    const items = changes.map(function(ch) {
-      return '<li style="margin-bottom:3px">' + ch.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>';
-    }).join('');
-    log.innerHTML = '<strong style="color:#7a4200">🔒 ' + changes.length + ' item' + (changes.length > 1 ? 's' : '') + ' replaced — review the text before submitting:</strong>'
-      + '<ul style="margin:8px 0 0 0;padding-left:18px">' + items + '</ul>'
-      + '<div style="margin-top:8px;font-size:.8rem;color:var(--text-lt)">Review the de-identified text above and confirm it is accurate before clicking Strengthen Narrative.</div>';
-  }
-
-  // Clear any existing PHI alerts since we just cleaned the text
-  clearPHIAlert('narr-input');
+function openCopilot() {
+  window.open('https://copilot.microsoft.com', '_blank');
 }
 
 function clearNarrative() {
-  ['narr-input','narr-dx'].forEach(id => {
+  ['narr-input','narr-dx'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('narr-output-wrap').classList.remove('show');
-  document.getElementById('narr-error').classList.remove('show');
+  const wrap = document.getElementById('narr-output-wrap');
+  if (wrap) wrap.classList.remove('show');
 }
+
 
 // ── COPY TO CLIPBOARD ──────────────────────────────────────────────
 function copyOutput(elementId, btn) {
@@ -6517,68 +6271,60 @@ function copyOutput(elementId, btn) {
 <div class="container">
 
 <div class="intro-strip" style="margin-bottom:14px">
-  <strong>Narrative Strengthener</strong> — Paste your draft admission narrative and AI will strengthen the clinical language, ensure all required hospice elements are present, and flag anything missing.
+  <span>✍️</span>
+  <strong>Narrative Strengthener</strong> — Build a hospice-compliant prompt from your draft notes, then open directly in Microsoft Copilot to generate a strengthened narrative. Your patient data stays within Luminos's HIPAA-covered Microsoft environment.
 </div>
 
-<div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>
-<strong>Important:</strong> The strengthened narrative is AI-generated. Always review and edit before entering into Firenote. Verify all clinical details are accurate and reflect the actual patient encounter. The nurse of record is responsible for all documented content.
-</div></div>
-
-<div class="alert" style="margin-bottom:14px;background:#fdf2f1;border-left:4px solid var(--red);border-radius:6px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
-  <span style="font-size:1.3rem;flex-shrink:0">🔒</span>
+<div class="alert" style="margin-bottom:14px;background:#eef3fb;border-left:4px solid #2563eb;border-radius:6px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+  <span style="font-size:1.3rem;flex-shrink:0">🛡️</span>
   <div>
-    <strong style="color:var(--red);font-size:.95rem">HIPAA Notice — Do Not Include Patient Identifying Information</strong>
-    <p style="margin-top:6px;font-size:.88rem;color:var(--text-mid);line-height:1.6">Do <strong>not</strong> enter any patient identifying information into this tool. This includes: patient name, date of birth, MRN, address, phone number, Social Security number, or any other information that could identify the patient. Use general clinical language only (e.g. "the patient," "the caregiver"). Remove all identifying details from your draft before pasting it here.</p>
+    <strong style="color:#1e3a8a;font-size:.92rem">HIPAA-Safe — Runs Through Your Microsoft Copilot License</strong>
+    <p style="margin-top:5px;font-size:.86rem;color:var(--text-mid);line-height:1.6;margin-bottom:0">This tool generates a structured prompt and opens it in Microsoft Copilot. Your narrative stays within Luminos's existing HIPAA-covered Microsoft environment — no data is sent to any third-party service. You must be signed into Copilot with your Luminos Microsoft credentials.</p>
   </div>
 </div>
 
 <div class="ai-tool-wrap">
   <div class="ai-tool-header">
     <h2>✍️ Narrative Strengthener</h2>
-    <p>Paste your draft narrative — AI will strengthen language and check for required hospice admission elements</p>
+    <p>Enter your draft notes below — the tool will build a compliant Copilot prompt ready to paste</p>
   </div>
   <div class="ai-tool-body">
 
     <div class="ai-field">
-      <label>Draft Nursing Narrative <span style="font-weight:700;color:var(--red);font-size:.8rem;text-transform:none;letter-spacing:0">⚠ No patient identifying information</span></label>
-      <textarea id="narr-input" style="min-height:200px;border-color:var(--border)" placeholder="Paste your draft admission nursing narrative here — NO patient names, DOB, MRN, or identifying information.
-
-Example: The patient is an 82-year-old male with end-stage CHF. He resides with his spouse who serves as the primary caregiver. He reports shortness of breath and bilateral lower extremity edema. Pain rated 4/10. Goals of care discussed and patient verbalized understanding of hospice philosophy. Medications reviewed with patient and caregiver..."></textarea>
-      <div class="ai-hint">Remove all identifying details before pasting. The more complete your draft, the better the output — even rough notes work.</div>
-    </div>
-
-    <div class="ai-field">
-      <label>Primary Hospice Diagnosis <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(helps AI check LCD criteria)</span></label>
+      <label>Primary Hospice Diagnosis</label>
       <input type="text" id="narr-dx" placeholder="e.g. End-stage CHF, Lung adenocarcinoma, End-stage COPD">
     </div>
 
-    <div class="ai-btn-row">
-      <button class="ai-submit-btn" id="narr-btn" onclick="runNarrativeStrengthener()">
-        <div class="spinner"></div>
-        <span class="btn-text">✨ Strengthen Narrative</span>
-      </button>
-      <button class="ai-clear-btn" onclick="deidentifyNarrative()" style="background:var(--amber-bg);border-color:var(--gold);color:#7a4200;font-weight:700" title="Automatically replace names and identifiers with safe placeholders">🔒 De-identify Text</button>
-      <button class="ai-clear-btn" onclick="clearNarrative()">✕ Clear</button>
+    <div class="ai-field">
+      <label>Draft Nursing Narrative / Notes</label>
+      <textarea id="narr-input" style="min-height:220px" placeholder="Paste your draft narrative or rough notes here. You may include patient details — this text stays on your device and is only sent to Microsoft Copilot through your Luminos login.
+
+Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver. SOB with minimal exertion, bilateral LE edema, PPS 30%. Pain 3/10 generalized, managed with PRN morphine. Alert and oriented x2, poor historian. Daughter reports significant decline over past 3 months. Medications reviewed, depression screening done, verbal cert obtained, goals of care discussed..."></textarea>
+      <div class="ai-hint">Include as much clinical detail as possible — the more you provide, the stronger the output from Copilot.</div>
     </div>
 
-    <div id="deident-log" style="display:none;margin-top:10px;padding:12px 14px;background:#fffbf0;border:1px solid var(--gold);border-radius:7px;font-size:.83rem;color:var(--text)"></div>
-
-    <div class="ai-error" id="narr-error"></div>
+    <div class="ai-btn-row">
+      <button class="ai-submit-btn" id="narr-btn" onclick="buildNarrativePrompt()">
+        <span class="btn-text">🔗 Build Copilot Prompt</span>
+      </button>
+      <button class="ai-clear-btn" onclick="clearNarrative()">✕ Clear</button>
+    </div>
 
     <div class="ai-output-wrap" id="narr-output-wrap">
 
       <div style="margin-bottom:16px">
-        <div class="ai-output-label">✅ Strengthened Narrative — Review &amp; Edit Before Entering into Firenote</div>
-        <div class="ai-output-box" id="narr-output-strengthened"></div>
-        <button class="ai-copy-btn" onclick="copyOutput('narr-output-strengthened', this)">📋 Copy Narrative</button>
+        <div class="ai-output-label">📋 Your Copilot Prompt — Copy and Paste into Microsoft Copilot</div>
+        <div class="ai-output-box" id="narr-prompt-output" style="font-size:.85rem;line-height:1.7;white-space:pre-wrap;max-height:400px"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="ai-copy-btn" onclick="copyOutput('narr-prompt-output', this)">📋 Copy Prompt</button>
+          <button class="ai-copy-btn" onclick="openCopilot()" style="background:var(--navy-mid)">🌐 Open Microsoft Copilot</button>
+        </div>
       </div>
 
-      <div>
-        <div class="ai-output-label">🔍 Element Checklist — Present vs Missing</div>
-        <div class="ai-output-box" id="narr-output-checklist" style="max-height:300px"></div>
+      <div style="padding:12px 16px;background:#eef3fb;border:1px solid #bfdbfe;border-radius:8px;font-size:.83rem;color:#1e3a8a;line-height:1.6">
+        <strong>How to use:</strong> Click <em>Copy Prompt</em> above, then click <em>Open Microsoft Copilot</em>. Sign in with your Luminos Microsoft credentials, paste the prompt, and Copilot will return a strengthened narrative with an element checklist. Copy the result into Firenote and review before saving.
       </div>
 
-      <div class="ai-disclaimer">⚠ AI-generated content requires nurse review before entry into Firenote. Verify all clinical details are accurate. The nurse of record is responsible for all documented content.</div>
     </div>
 
   </div>
