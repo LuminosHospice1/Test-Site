@@ -5606,6 +5606,38 @@ Be specific and actionable. Use hospice compliance language. Do not hedge excess
   }
 }
 
+function renderMarkdown(text) {
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = html.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    let l = lines[i];
+    if (l.startsWith('### ')) {
+      out.push('<h5 style="font-size:.87rem;font-weight:700;color:var(--navy-mid);margin:10px 0 3px">' + l.slice(4) + '</h5>');
+    } else if (l.startsWith('## ')) {
+      out.push('<h4 style="font-size:.92rem;font-weight:700;color:var(--navy);margin:14px 0 5px;border-bottom:1px solid var(--border);padding-bottom:3px">' + l.slice(3) + '</h4>');
+    } else if (l.startsWith('# ')) {
+      out.push('<h3 style="font-size:1rem;font-weight:700;color:var(--navy);margin:14px 0 6px">' + l.slice(2) + '</h3>');
+    } else if (l.trim().match(/^---+$/)) {
+      out.push('<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">');
+    } else if (l.trim().match(/^[-*] /)) {
+      const txt = l.replace(/^\s*[-*] /, '');
+      out.push('<div style="display:flex;gap:6px;margin:2px 0;padding-left:8px"><span style="color:var(--gold);flex-shrink:0">&#9658;</span><span>' + txt + '</span></div>');
+    } else if (l.match(/^\d+\. /)) {
+      const m = l.match(/^(\d+)\. (.*)/);
+      if (m) out.push('<div style="display:flex;gap:8px;margin:3px 0"><span style="font-weight:700;color:var(--navy);flex-shrink:0;min-width:20px">' + m[1] + '.</span><span>' + m[2] + '</span></div>');
+    } else if (l.trim() === '') {
+      out.push('<div style="margin-top:6px"></div>');
+    } else {
+      out.push('<p style="margin:3px 0">' + l + '</p>');
+    }
+  }
+  let result = out.join('');
+  result = result.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+  return result;
+}
+
 function showMedAiSection(state, text) {
   const wrap = document.getElementById('med-result');
   if (!wrap.classList.contains('show')) return;
@@ -5620,7 +5652,7 @@ function showMedAiSection(state, text) {
   if (state === 'loading') {
     aiEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-lt);font-size:.88rem"><div class="spinner" style="width:16px;height:16px;border:2px solid rgba(26,39,68,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> AI analysis running — applying CMS hospice benefit rules...</div>';
   } else if (state === 'result') {
-    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.9rem;color:var(--text);line-height:1.7">' + renderMarkdown(text) + '</div>';
   } else {
     aiEl.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + text + '</div>';
   }
@@ -5751,7 +5783,7 @@ function showDxAiSection(state, text) {
   if (state === 'loading') {
     aiEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-lt);font-size:.88rem"><div class="spinner" style="width:16px;height:16px;border:2px solid rgba(26,39,68,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> AI analysis running — applying CMS relatedness framework...</div>';
   } else if (state === 'result') {
-    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.9rem;color:var(--text);line-height:1.7">' + renderMarkdown(text) + '</div>';
   } else {
     aiEl.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + text + '</div>';
   }
