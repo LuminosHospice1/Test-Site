@@ -5874,6 +5874,51 @@ const PHI_PATTERNS = [
   { label: 'Name placeholder bracket', re: /\[(patient name|caregiver name|pt name|name|dob|date of birth|mrn)\]/i },
   { label: 'Medicare/Medicaid Number', re: /\b[A-Z]{1}\d{9}[A-Z]{1}\d{1}\b/ },
   { label: 'Email Address',            re: /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/ },
+  { label: 'Patient/Person Name (salutation + name)', re: /\b(Mr|Mrs|Ms|Miss|Dr|Rev)\s*\.?\s+[A-Z][a-z]+/ },
+  { label: 'Possible Full Name (First Last)',
+    re: (function() {
+      // Two consecutive capitalized words that are NOT common clinical/hospice terms
+      const clinicalWords = new Set([
+        'The','This','He','She','His','Her','They','Their','We','Our','It','Its',
+        'Patient','Caregiver','Family','Daughter','Son','Wife','Husband','Spouse',
+        'Nurse','Doctor','Physician','Social','Worker','Chaplain','Aide',
+        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday',
+        'January','February','March','April','May','June','July','August',
+        'September','October','November','December',
+        'Congestive','Heart','Failure','Chronic','Obstructive','Pulmonary',
+        'Disease','Dementia','Alzheimer','Cancer','Renal','Hepatic','Cardiac',
+        'Respiratory','Neurological','Diabetes','Mellitus','Hypertension',
+        'Parkinson','Stroke','Cerebral','Vascular','Peripheral','Arterial',
+        'Hospice','Medicare','Medicaid','Assessment','Admission','Discharge',
+        'Primary','Secondary','Terminal','Advanced','End','Stage','Late',
+        'Functional','Decline','Clinical','Medical','Nursing','Care','Plan',
+        'Goal','Intervention','Diagnosis','Prognosis','Symptom','Comfort',
+        'Pain','Dyspnea','Anxiety','Nausea','Fatigue','Weakness','Edema',
+        'Oxygen','Morphine','Lorazepam','Haloperidol','Atropine','Furosemide',
+        'Activities','Daily','Living','Ambulation','Transfer','Mobility',
+        'Oriented','Person','Place','Time','Cognitive','Mental','Status',
+        'IDG','IDT','RN','LPN','CNA','MD','NP','SW','MSW','PA','FAST','PPS',
+        'PHQ','NYHA','COPD','CHF','ALS','HIV','AIDS','CVA','TIA','UTI','GERD',
+        'Upon','During','Following','Prior','After','Before','While','Since',
+        'Regarding','Per','Within','Without','Between','Among','Through',
+        'Reports','Reported','States','Stated','Noted','Observed','Assessed',
+        'Reviewed','Discussed','Educated','Provided','Administered','Performed'
+      ]);
+      return {
+        test: function(str) {
+          const matches = str.match(/\b([A-Z][a-z]{1,15})\s+([A-Z][a-z]{1,15})\b/g);
+          if (!matches) return false;
+          for (const m of matches) {
+            const parts = m.split(' ');
+            if (!clinicalWords.has(parts[0]) && !clinicalWords.has(parts[1])) {
+              return true;
+            }
+          }
+          return false;
+        }
+      };
+    })()
+  },
 ];
 
 function scanForPHI(text) {
