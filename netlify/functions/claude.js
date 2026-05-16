@@ -59,7 +59,7 @@ exports.handler = async function (event, context) {
   // ── Call Anthropic API ──────────────────────────────────────────
   try {
     const requestBody = {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: Math.min(max_tokens, 2000), // cap at 2000 for cost control
       messages: [{ role: 'user', content: prompt }]
     };
