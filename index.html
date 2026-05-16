@@ -2266,8 +2266,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </style>
 
 <div class="intro-strip" style="margin-bottom:14px">
-  <strong>Clinical Checkers</strong> — AI-powered tools to help determine likely medication coverage and diagnosis relatedness based on CMS hospice guidelines.
-  These tools use the same frameworks from the Medication Coverage and Diagnosis Relatedness guides.
+  <strong>Clinical Checkers</strong> — Enter a medication or diagnosis and the tool will instantly apply the local rule engine, then call Claude AI for a full clinical analysis — including documentation guidance, audit flags, and physician language — based on CMS hospice benefit standards.
 </div>
 
 <div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>
@@ -5516,7 +5515,7 @@ function findMatch(input, ruleArray) {
   return bestMatch;
 }
 
-function runMedCheck() {
+async function runMedCheck() {
   const medName = document.getElementById('med-name').value.trim();
   const primaryDx = document.getElementById('med-primary-dx').value.trim();
   const indication = document.getElementById('med-indication').value.trim();
@@ -5524,35 +5523,107 @@ function runMedCheck() {
   if (!medName) { alert('Please enter a medication name.'); return; }
 
   const searchText = [medName, indication, context].join(' ');
+  const btn = document.getElementById('med-btn');
 
-  // Check not covered first
+  // ── Step 1: Run rule engine immediately ───────────────────────
+  let ruleCategory = null;
   let match = findMatch(searchText, MED_CAT3);
   if (match) {
+    ruleCategory = 'not-covered';
     showMedResult('NOT COVERED — Not a Hospice Responsibility', 'not-covered', '❌',
-      medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', 'LOW', 
-      match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands); return;
-  }
-  // Check physician review (NEVER auto-classify these)
-  match = findMatch(searchText, MED_CAT2);
-  if (match) {
-    showMedResult('PHYSICIAN REVIEW REQUIRED — Coverage Depends on Intent & Documentation', 'review', '⚠️',
-      medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', 'REVIEW',
-      match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands); return;
-  }
-  // Check likely covered
-  match = findMatch(searchText, MED_CAT1);
-  if (match) {
-    showMedResult('LIKELY COVERED — Hospice Responsibility', 'covered', '✅',
-      medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', match.confidence,
-      match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands); return;
+      medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', 'LOW',
+      match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands);
+  } else {
+    match = findMatch(searchText, MED_CAT2);
+    if (match) {
+      ruleCategory = 'review';
+      showMedResult('PHYSICIAN REVIEW REQUIRED — Coverage Depends on Intent & Documentation', 'review', '⚠️',
+        medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', 'REVIEW',
+        match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands);
+    } else {
+      match = findMatch(searchText, MED_CAT1);
+      if (match) {
+        ruleCategory = 'covered';
+        showMedResult('LIKELY COVERED — Hospice Responsibility', 'covered', '✅',
+          medName, primaryDx, match.drugClass, match.drugClass||match.indication||'--', match.confidence,
+          match.reason, match.nurseDoc, match.mdDoc, match.generic, match.brands);
+      } else {
+        ruleCategory = 'unknown';
+        showMedResult('NOT IN REFERENCE LIST — Consulting AI...', 'review', '🔵',
+          medName, primaryDx, 'Unknown', 'Not identified', 'REVIEW',
+          'This medication was not found in the local reference list. AI analysis is running below — please wait.',
+          '', '', '', '');
+      }
+    }
   }
 
-  // Not found — provide general CMS guidance
-  showMedResult('NOT IN REFERENCE LIST — Apply CMS Rules', 'review', '🔵',
-    medName, primaryDx, 'Unknown', 'Not identified', 'REVIEW',
-    'This medication was not found in the reference list. Apply the core CMS rule: if this medication manages a diagnosis that is related to the terminal prognosis, hospice is responsible for coverage. If it is purely preventive with no short-term comfort benefit, it is likely not covered.',
-    'Document: (1) what diagnosis this medication treats, (2) how that diagnosis relates to the terminal prognosis, (3) what comfort benefit the medication provides. Discuss with the physician.',
-    'Physician must document the relatedness of the diagnosis being treated and the comfort-focused rationale for continuing the medication.', '', '');
+  // ── Step 2: Call Claude API for enhanced analysis ─────────────
+  btn.classList.add('loading');
+  btn.disabled = true;
+  showMedAiSection('loading');
+
+  const ruleContext = ruleCategory === 'not-covered' ? 'The local rule engine flagged this as NOT COVERED.'
+    : ruleCategory === 'review' ? 'The local rule engine flagged this as PHYSICIAN REVIEW REQUIRED.'
+    : ruleCategory === 'covered' ? 'The local rule engine flagged this as LIKELY COVERED.'
+    : 'This medication was NOT FOUND in the local rule engine reference list.';
+
+  const prompt = `You are an expert hospice compliance specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and NHPCO standards.
+
+A hospice nurse is asking about medication coverage for a patient under the Medicare hospice benefit.
+
+MEDICATION: ${medName}
+PATIENT'S ACTIVE RELATED DIAGNOSES: ${primaryDx || 'Not specified'}
+INDICATION/USE: ${indication || 'Not specified'}
+ADDITIONAL CONTEXT: ${context || 'None provided'}
+LOCAL RULE ENGINE RESULT: ${ruleContext}
+
+Provide a thorough hospice medication coverage analysis. Address:
+1. COVERAGE DETERMINATION: Is this medication likely covered, not covered, or does it require physician review? Give a clear verdict.
+2. CLINICAL REASONING: Why — based on CMS rules, the terminal prognosis, and comfort benefit rationale.
+3. RELATEDNESS: How does the condition this medication treats relate (or not) to the terminal prognosis?
+4. NURSE DOCUMENTATION: Exactly what the nurse should document in the clinical record.
+5. PHYSICIAN DOCUMENTATION: What the physician needs to document to support or deny coverage.
+6. AUDIT RISK: Any specific audit flags or documentation gaps to be aware of.
+
+Be specific and actionable. Use hospice compliance language. Do not hedge excessively — give a clear professional opinion while noting that physician determination is required for relatedness.`;
+
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, max_tokens: 1200})
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+    const text = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text : (data.error || 'No response received.');
+    showMedAiSection('result', text);
+  } catch(err) {
+    showMedAiSection('error', '⚠ Could not reach AI service: ' + err.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showMedAiSection(state, text) {
+  const wrap = document.getElementById('med-result');
+  if (!wrap.classList.contains('show')) return;
+  let aiEl = document.getElementById('med-ai-analysis');
+  if (!aiEl) {
+    const body = document.getElementById('med-result-body');
+    aiEl = document.createElement('div');
+    aiEl.id = 'med-ai-analysis';
+    aiEl.style.cssText = 'margin-top:14px;border-top:1px solid var(--border);padding-top:14px';
+    body.appendChild(aiEl);
+  }
+  if (state === 'loading') {
+    aiEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-lt);font-size:.88rem"><div class="spinner" style="width:16px;height:16px;border:2px solid rgba(26,39,68,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> AI analysis running — applying CMS hospice benefit rules...</div>';
+  } else if (state === 'result') {
+    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  } else {
+    aiEl.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + text + '</div>';
+  }
 }
 
 function showMedResult(category, cssClass, icon, medName, primaryDx, drugClass, indication, confidence, reason, nurseDoc, mdDoc, generic, brands) {
@@ -5584,26 +5655,106 @@ function showMedResult(category, cssClass, icon, medName, primaryDx, drugClass, 
   wrap.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-function runDxCheck() {
+async function runDxCheck() {
   const dxName = document.getElementById('dx-name').value.trim();
   const primaryDx = document.getElementById('dx-primary').value.trim();
   const context = document.getElementById('dx-context').value.trim();
   if (!dxName) { alert('Please enter a diagnosis to evaluate.'); return; }
   const searchText = [dxName, context].join(' ');
+  const btn = document.getElementById('dx-btn');
 
+  // ── Step 1: Run rule engine immediately ───────────────────────
+  let ruleCategory = null;
   let match = findMatch(searchText, DX_NOT_RELATED);
   if (match) {
-    showDxResult(match.verdict, 'not-related', '❌', dxName, primaryDx, match.icd, match.system||'', null, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||''); return;
-  }
-  match = findMatch(searchText, DX_RELATED);
-  if (match) {
-    showDxResult(match.verdict, 'related', '✅', dxName, primaryDx, match.icd, match.system||'', match.q, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||''); return;
+    ruleCategory = 'not-related';
+    showDxResult(match.verdict, 'not-related', '❌', dxName, primaryDx, match.icd, match.system||'', null, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||'');
+  } else {
+    match = findMatch(searchText, DX_RELATED);
+    if (match) {
+      ruleCategory = 'related';
+      showDxResult(match.verdict, 'related', '✅', dxName, primaryDx, match.icd, match.system||'', match.q, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||'');
+    } else {
+      ruleCategory = 'unknown';
+      showDxResult('PHYSICIAN DETERMINATION REQUIRED — Consulting AI...', 'physician', '🔵', dxName, primaryDx, 'N/A', '', null,
+        'This diagnosis was not found in the local reference list. AI analysis is running below — please wait.',
+        '', '');
+    }
   }
 
-  showDxResult('PHYSICIAN DETERMINATION REQUIRED', 'physician', '🔵', dxName, primaryDx, 'N/A', '', null,
-    'Per CMS: "Virtually all diagnoses are related to the terminal prognosis." The DEFAULT assumption is RELATED.',
-    'Apply the 3 questions: Q1 — Caused or worsened BY the terminal diagnosis? Q2 — Contributes to the 6-month prognosis? Q3 — Caused by TREATMENT of a related condition? YES to any one = RELATED. If all three are NO, physician must document why it does not contribute.',
-    'Physician must document clinical rationale if marking this diagnosis as unrelated. Default assumption is RELATED.');
+  // ── Step 2: Call Claude API for enhanced analysis ─────────────
+  btn.classList.add('loading');
+  btn.disabled = true;
+  showDxAiSection('loading');
+
+  const ruleContext = ruleCategory === 'not-related' ? 'The local rule engine flagged this as LIKELY NOT RELATED.'
+    : ruleCategory === 'related' ? 'The local rule engine flagged this as LIKELY RELATED.'
+    : 'This diagnosis was NOT FOUND in the local rule engine reference list.';
+
+  const prompt = `You are an expert hospice compliance specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and the three-question relatedness framework.
+
+A hospice nurse needs to determine whether a diagnosis is related to the patient's terminal prognosis for the purposes of the Medicare hospice benefit.
+
+DIAGNOSIS BEING EVALUATED: ${dxName}
+PRIMARY HOSPICE DIAGNOSIS (TERMINAL): ${primaryDx || 'Not specified'}
+ADDITIONAL CONTEXT: ${context || 'None provided'}
+LOCAL RULE ENGINE RESULT: ${ruleContext}
+
+Apply the CMS three-question relatedness framework and provide a thorough analysis:
+
+Q1 — Was this condition CAUSED BY or WORSENED BY the terminal diagnosis?
+Q2 — Does this condition CONTRIBUTE TO the 6-month prognosis?
+Q3 — Was this condition CAUSED BY TREATMENT of a related condition?
+
+If YES to any one question = RELATED. If NO to all three = likely NOT RELATED (but physician must still document).
+
+Provide:
+1. RELATEDNESS VERDICT: Likely Related / Likely Not Related / Requires Physician Determination — with a clear rationale.
+2. FRAMEWORK ANALYSIS: Walk through each of the three questions for this specific diagnosis and terminal condition.
+3. ICD-10 CODE: Most appropriate code for this diagnosis if you can identify it.
+4. NURSE DOCUMENTATION: What the nurse should document clinically.
+5. PHYSICIAN DOCUMENTATION: Exactly what the physician needs to document to support the relatedness determination.
+6. IDT FLAG: Whether this should be flagged at the next IDT meeting and why.
+
+Remember: Per CMS guidance, virtually all diagnoses are considered related. The default assumption is RELATED unless the physician specifically documents otherwise with clinical rationale.`;
+
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, max_tokens: 1200})
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+    const text = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text : (data.error || 'No response received.');
+    showDxAiSection('result', text);
+  } catch(err) {
+    showDxAiSection('error', '⚠ Could not reach AI service: ' + err.message);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function showDxAiSection(state, text) {
+  const wrap = document.getElementById('dx-result');
+  if (!wrap.classList.contains('show')) return;
+  let aiEl = document.getElementById('dx-ai-analysis');
+  if (!aiEl) {
+    const body = document.getElementById('dx-result-body');
+    aiEl = document.createElement('div');
+    aiEl.id = 'dx-ai-analysis';
+    aiEl.style.cssText = 'margin-top:14px;border-top:1px solid var(--border);padding-top:14px';
+    body.appendChild(aiEl);
+  }
+  if (state === 'loading') {
+    aiEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-lt);font-size:.88rem"><div class="spinner" style="width:16px;height:16px;border:2px solid rgba(26,39,68,.2);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></div> AI analysis running — applying CMS relatedness framework...</div>';
+  } else if (state === 'result') {
+    aiEl.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🤖 AI Clinical Analysis</div><div style="font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  } else {
+    aiEl.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + text + '</div>';
+  }
 }
 
 function showDxResult(verdict, cssClass, icon, dxName, primaryDx, icd, system, q, reason, doc, mdDoc) {
