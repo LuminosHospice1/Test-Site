@@ -5871,11 +5871,24 @@ function renderCarePlan(text) {
 
 // ── NARRATIVE RENDERER ─────────────────────────────────────────────
 function renderNarrative(text) {
-  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Strip any leaked delimiters or title lines Claude might include
+  let clean = text
+    .replace(/===STRENGTHENED NARRATIVE===/g, '')
+    .replace(/===ELEMENT CHECKLIST===/g, '')
+    .replace(/^#+\s+.+$/gm, '')      // strip any # heading lines
+    .replace(/^HOSPICE ADMISSION.+$/gm, '')
+    .replace(/^REWRITE.+$/gm, '')
+    .trim();
+  let html = clean.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   html = html.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-  html = html.replace(/\n\n/g,'</p><p style="margin:8px 0">');
-  html = html.replace(/\n/g,'<br>');
-  return '<p style="margin:0;font-size:.9rem;color:var(--text);line-height:1.75">' + html + '</p>';
+  // Split into paragraphs on double newlines
+  const paras = html.split(/\n\n+/);
+  const rendered = paras
+    .map(p => p.replace(/\n/g,' ').trim())
+    .filter(p => p.length > 0)
+    .map(p => '<p style="margin:0 0 12px 0;font-size:.9rem;color:var(--text);line-height:1.8">' + p + '</p>')
+    .join('');
+  return rendered || '<p style="color:var(--text-lt)">No narrative content returned.</p>';
 }
 
 // ── CHECKLIST RENDERER ─────────────────────────────────────────────
@@ -6049,20 +6062,19 @@ REQUIRED ELEMENTS TO CHECK AND INCLUDE:
 - IDG coordination statement
 - Goals of care and patient/family understanding of hospice philosophy
 
-OUTPUT FORMAT — Use EXACTLY this structure:
+OUTPUT FORMAT — Use EXACTLY this structure with NO title, NO preamble, NO intro sentence before the delimiter:
 
 ===STRENGTHENED NARRATIVE===
-[Full rewritten narrative in first-person nursing voice, past tense, professional clinical tone. Do not use bullet points — write in paragraph form as a clinical narrative.]
+[Full rewritten narrative ONLY — first-person nursing voice, past tense, professional clinical tone, paragraph form. No bullet points. No title. No headers. Just the narrative paragraphs.]
 
 ===ELEMENT CHECKLIST===
 ✅ PRESENT: [element name] — [brief note on what was documented]
-✅ PRESENT: [element name] — [brief note]
 ⚠ PARTIAL: [element name] — [what was there and what is still needed]
 ❌ MISSING: [element name] — [what needs to be added]
-[Continue for all required elements]
+[Continue for ALL required elements listed above]
 
 MISSING ELEMENTS SUMMARY:
-[If any elements are missing, list them here with a one-sentence note on what to add. If all present, write "All required elements are present."]`;
+[If any elements are missing, list them with a one-sentence note. If all present, write "All required elements are present."]`;
 
   try {
     const resp = await fetch('/.netlify/functions/claude', {
