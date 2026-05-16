@@ -19,7 +19,8 @@
   --r:8px;--r-sm:5px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Arial,sans-serif;background:var(--cream);color:var(--text);font-size:15px;line-height:1.55}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg-outer,#e8eaf0);color:var(--text);font-size:15px;line-height:1.55}
+#page-wrap{max-width:1080px;margin:0 auto;background:var(--cream);min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.10)}
 
 /* ── HEADER ── */
 header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(26,39,68,.18)}
@@ -32,10 +33,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
 /* ── TABS ── */
 .tab-bar{background:var(--navy-mid);border-top:1px solid rgba(255,255,255,.08)}
-.tab-inner{max-width:1080px;margin:0 auto;display:flex;gap:0}
-.tab-btn{padding:12px 22px;font-family:inherit;font-size:.84rem;font-weight:600;color:rgba(255,255,255,.55);
-  background:transparent;border:none;cursor:pointer;border-bottom:3px solid transparent;
-  transition:all .15s;white-space:nowrap;letter-spacing:.02em}
+.tab-inner{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:auto auto;gap:0}
+.tab-btn{padding:11px 8px;font-family:inherit;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.55);background:transparent;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;letter-spacing:.02em;text-align:center;overflow:hidden;text-overflow:ellipsis}
 .tab-btn:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
 .tab-btn.active{color:#fff;border-bottom-color:var(--gold);background:rgba(255,255,255,.07)}
 .progress-bar{height:3px;background:var(--navy-mid)}
@@ -49,7 +48,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 /* ── SHARED ELEMENTS ── */
 .intro-strip{background:#fff;border:1px solid var(--border);border-left:4px solid var(--gold);
   border-radius:var(--r);padding:13px 17px;margin-bottom:18px;font-size:.87rem;
-  color:var(--text-mid);line-height:1.55;box-shadow:var(--shadow-sm)}
+  color:var(--text-mid);line-height:1.55;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px}
 .sub-gold{font-size:.86rem;font-weight:700;color:var(--gold);margin:14px 0 7px;letter-spacing:.02em}
 .sub-gold:first-child{margin-top:0}
 .sub-navy{font-size:.89rem;font-weight:700;color:var(--navy);margin:14px 0 7px}
@@ -159,7 +158,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 .stats-bar strong{color:var(--navy)}
 
 /* ── BOTTOM BAR (checklist) ── */
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--border);
+.bottom-bar{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--border);
   padding:11px 17px;display:flex;align-items:center;justify-content:center;gap:13px;
   box-shadow:0 -4px 20px rgba(26,39,68,.07);z-index:99;
   transition:opacity .2s;opacity:0;pointer-events:none}
@@ -180,7 +179,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 @media(max-width:620px){
   .two-col,.df-grid{grid-template-columns:1fr}
   .df-col:first-child{border-right:none}
-  .tab-btn{padding:10px 12px;font-size:.78rem}
+  .tab-inner{grid-template-columns:repeat(5,1fr)}
+  .tab-btn{padding:8px 4px;font-size:.7rem}
 }
 
 /* Search bar for walkthrough and checklist */
@@ -200,7 +200,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 /* Tablet (≤900px) */
 @media(max-width:900px){
   .container{padding:14px 16px}
-  .tab-btn{padding:10px 14px;font-size:.78rem}
+  .tab-inner{grid-template-columns:repeat(5,1fr)}
+  .tab-btn{padding:9px 6px;font-size:.74rem}
   .card-num{width:28px;height:28px;font-size:.8rem}
   .dtable{font-size:.83rem}
   .dtable th,.dtable td{padding:7px 9px}
@@ -220,11 +221,9 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   h1{font-size:1.05rem}
   .header-sub{font-size:.72rem}
 
-  /* Tab bar — horizontal scroll */
-  .tab-inner{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
-    scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
-  .tab-inner::-webkit-scrollbar{display:none}
-  .tab-btn{white-space:nowrap;padding:10px 13px;font-size:.75rem;flex-shrink:0}
+  /* Tab bar — 2 rows of 5 on mobile */
+  .tab-inner{grid-template-columns:repeat(5,1fr)}
+  .tab-btn{padding:8px 4px;font-size:.68rem;white-space:normal;line-height:1.2}
 
   /* Container */
   .container{padding:12px}
@@ -292,9 +291,33 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   .sub-gold,.sub-navy{font-size:.82rem}
 }
 
+  /* Force horizontal scroll on all wide reference tables */
+  #panel-meds table, #panel-rel table {
+    display:block;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  #panel-meds .dtable td, #panel-meds .dtable th,
+  #panel-rel .dtable td, #panel-rel .dtable th {
+    white-space:normal;
+    min-width:90px;
+    vertical-align:top;
+  }
+  /* Prevent panels overflowing screen width */
+  .panel, .container { overflow-x:hidden; max-width:100vw; box-sizing:border-box; }
+  /* Stack all inline grid layouts vertically */
+  #panel-rel [style*="display:grid"],
+  #panel-meds [style*="display:grid"] {
+    display:flex !important;
+    flex-direction:column !important;
+  }
+
+}
+
 /* Very small (≤380px) */
 @media(max-width:380px){
-  .tab-btn{padding:9px 10px;font-size:.72rem}
+  .tab-inner{grid-template-columns:repeat(5,1fr)}
+  .tab-btn{padding:7px 3px;font-size:.65rem}
   h1{font-size:.95rem}
   .card-bar h2{font-size:.86rem}
   .checker-field label{font-size:.76rem}
@@ -302,6 +325,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </style>
 </head>
 <body>
+<div id="page-wrap">
 
 <!-- ══ HEADER ══════════════════════════════════════════════════════ -->
 <header>
@@ -316,11 +340,13 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     <div class="tab-inner">
       <button class="tab-btn active" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
       <button class="tab-btn" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
-      <button class="tab-btn" onclick="switchTab('icd',this)">🔎 ICD-10 Reference</button>
-      <button class="tab-btn" onclick="switchTab('sample',this)">📄 Sample Admission</button>
       <button class="tab-btn" onclick="switchTab('meds',this)">💊 Medication Coverage</button>
       <button class="tab-btn" onclick="switchTab('rel',this)">🔗 Diagnosis Relatedness</button>
       <button class="tab-btn" onclick="switchTab('checker',this)">🧠 Clinical Checkers</button>
+      <button class="tab-btn" onclick="switchTab('careplan',this)">📋 Care Plan Builder</button>
+      <button class="tab-btn" onclick="switchTab('narrative',this)">✍️ Narrative Strengthener</button>
+      <button class="tab-btn" onclick="switchTab('icd',this)">🔎 ICD-10 Reference</button>
+      <button class="tab-btn" onclick="switchTab('sample',this)">📄 Sample Admission</button>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
@@ -1030,8 +1056,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div class="panel-search-wrap"><span class="panel-search-icon">🔍</span><input type="text" id="checkSearch" placeholder="Search the checklist... (e.g. medications, wound, QAPI, volunteer)"><button class="panel-search-clear" id="checkSearchClear" title="Clear">✕</button></div>
 <button class="print-btn" onclick="window.print()" style="margin-bottom:12px">🖨 Print This Section</button>
 <div class="intro-strip">
-  <span style="font-size:18px;flex-shrink:0;margin-right:8px">✅</span>
-  <div><strong>Use this checklist at every admission.</strong> Check items off as you complete them in Firenote. Items marked <span style="background:#fde8e8;color:var(--red);font-weight:700;font-size:.75rem;padding:1px 5px;border-radius:10px">REQ</span> are required on every admission.</div>
+  <span style="font-size:1.2rem;flex-shrink:0">✅</span>
+  <span><strong>Use this checklist at every admission.</strong> Check items off as you complete them in Firenote. Items marked <span style="background:#fde8e8;color:var(--red);font-weight:700;font-size:.75rem;padding:2px 6px;border-radius:10px;white-space:nowrap">REQ</span> are required on every admission.</span>
 </div>
 
 <!-- SECTION 0 — CONSENTS (inserted before MD Contact) -->
@@ -1505,9 +1531,9 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   /* Hide chrome */
   header,.tab-bar,.progress-bar,.print-btn,.bottom-bar{display:none!important}
   /* Hide all panels by default */
-  #panel-walkthrough,#panel-checklist,#panel-icd,#panel-sample,#panel-meds,#panel-rel,#panel-checker{display:none!important}
+  #panel-walkthrough,#panel-checklist,#panel-icd,#panel-sample,#panel-meds,#panel-rel,#panel-checker,#panel-careplan,#panel-narrative{display:none!important}
   /* Show only the active panel */
-  #panel-walkthrough.active,#panel-checklist.active,#panel-icd.active,#panel-sample.active,#panel-meds.active,#panel-rel.active,#panel-checker.active{display:block!important}
+  #panel-walkthrough.active,#panel-checklist.active,#panel-icd.active,#panel-sample.active,#panel-meds.active,#panel-rel.active,#panel-checker.active,#panel-careplan.active,#panel-narrative.active{display:block!important}
   /* Expand all cards */
   .card-body{display:block!important}
   .sec-body{display:block!important}
@@ -1952,7 +1978,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
 <!-- Real-world examples table -->
 <div class="sub-gold">Real-World Examples by Medication Class</div>
-<table class="dtable" style="margin:10px 0 16px">
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="dtable" style="margin:10px 0 16px">
   <thead><tr><th>Medication / Class</th><th>For Diagnosis / Symptom</th><th>Category</th><th>Hospice Pays?</th><th>Clinical Rationale</th></tr></thead>
   <tbody>
     <tr><td><strong>Morphine / Opioids</strong></td><td>Pain, dyspnea (related to terminal Dx)</td><td style="color:var(--green);font-weight:700">COVERED</td><td style="color:var(--green);font-weight:700">Yes — hospice</td><td>Directly manages symptoms caused by or related to the terminal illness. Core comfort medication — always covered.</td></tr>
@@ -1970,7 +1996,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     <tr><td><strong>Vitamins / Supplements</strong></td><td>General wellness (unrelated)</td><td style="color:var(--red);font-weight:700">NOT COVERED</td><td style="color:var(--red);font-weight:700">No — Part D / other</td><td>OTC vitamins and supplements with no documented relationship to the terminal prognosis. Not a hospice responsibility.</td></tr>
     <tr><td><strong>Aspirin (prophylactic)</strong></td><td>Primary cardiovascular prevention</td><td style="color:var(--red);font-weight:700">NOT COVERED</td><td style="color:var(--red);font-weight:700">No — Part D / other</td><td>Preventive aspirin for primary CV prevention has no role in comfort care. Not covered unless physician documents active cardiac condition contributing to prognosis.</td></tr>
   </tbody>
-</table>
+</table></div>
 
 <!-- Non-formulary scenarios -->
 <div class="sub-gold">Non-Formulary Medications — Scenarios, Obligations &amp; Documentation</div>
@@ -2110,7 +2136,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <!-- 3 Questions -->
 <div class="sub-gold">Ask These 3 Questions — In Order</div>
 <div class="alert info" style="margin:10px 0 10px"><span>✅</span><div><strong>Answer YES to any one of these → The diagnosis is RELATED</strong></div></div>
-<table class="dtable" style="margin-bottom:10px">
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="dtable" style="margin-bottom:10px;min-width:460px">
   <thead><tr><th style="width:5%"></th><th style="width:30%">Question</th><th>What to Consider</th></tr></thead>
   <tbody>
     <tr>
@@ -2129,7 +2155,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <td>Are there conditions arising from treating the terminal illness or related diagnoses? Classic examples: constipation from opioids, fatigue from steroids, nausea from medications, wound breakdown from immobility.</td>
     </tr>
   </tbody>
-</table>
+</table></div>
 <div class="alert danger" style="margin-bottom:16px"><span>✗</span><div><strong>If ALL THREE are NO:</strong> the diagnosis may be NOT RELATED. The physician must document the clinical rationale explicitly in the medical record. <strong>The default assumption is always RELATED.</strong></div></div>
 
 <!-- Real-world examples -->
@@ -5631,6 +5657,409 @@ document.addEventListener('keydown', function(e) {
 });
 
 
+// ── CARE PLAN BUILDER ──────────────────────────────────────────────
+async function runCarePlanBuilder() {
+  const problem = document.getElementById('cp-problem').value.trim();
+  const primaryDx = document.getElementById('cp-primary-dx').value.trim();
+  const details = document.getElementById('cp-details').value.trim();
+  const goals = document.getElementById('cp-goals').value;
+
+  if (!problem) { alert('Please enter a care plan problem or diagnosis.'); return; }
+
+  const btn = document.getElementById('cp-btn');
+  const errorEl = document.getElementById('cp-error');
+  const outputWrap = document.getElementById('cp-output-wrap');
+  const outputEl = document.getElementById('cp-output');
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+  errorEl.classList.remove('show');
+  outputWrap.classList.remove('show');
+
+  const goalsMap = {
+    comfort: 'comfort and symptom management',
+    family: 'family and caregiver support and education',
+    spiritual: 'spiritual and psychosocial wellbeing',
+    safety: 'safety and fall prevention'
+  };
+
+  const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
+
+Generate a complete hospice care plan for the following:
+
+CARE PLAN PROBLEM/DIAGNOSIS: ${problem}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${details || 'Not provided'}
+GOALS OF CARE EMPHASIS: ${goalsMap[goals]}
+
+REQUIREMENTS — STRICTLY FOLLOW THESE:
+
+1. GOAL: Must be comfort-focused only. Use this EXACT format:
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators], and trends in caregiver feedback by the end of the current benefit period."
+
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST follow this exact structure:
+
+   ASSESS — RN will assess [specific symptom, condition, or clinical indicator] at each visit
+   EDUCATE — RN will educate patient/caregiver on [specific topic relevant to the problem]
+   PERFORM — RN will perform [specific skilled nursing task or procedure]
+
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
+
+3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
+
+4. Format the output EXACTLY as shown below — no deviations:
+
+CARE PLAN PROBLEM:
+[problem statement]
+
+GOAL:
+[goal statement]
+
+INTERVENTIONS:
+ASSESS — RN will assess [...]
+EDUCATE — RN will educate patient/caregiver on [...]
+PERFORM — RN will perform [...]
+[additional ASSESS/EDUCATE/PERFORM lines if clinically appropriate]
+
+PHYSICIAN/IDT COORDINATION:
+[One sentence describing what to flag at IDT or discuss with MD]`;
+
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, max_tokens: 1200})
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+    const text = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text
+      : (data.error || 'No response received.');
+    outputEl.textContent = text;
+    outputWrap.classList.add('show');
+    outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+  } catch(err) {
+    errorEl.textContent = '⚠ Unable to reach AI service. Check your connection and try again. If the problem persists, the Netlify function may not be deployed. Error: ' + err.message;
+    errorEl.classList.add('show');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function clearCarePlan() {
+  ['cp-problem','cp-primary-dx','cp-details'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const sel = document.getElementById('cp-goals');
+  if (sel) sel.selectedIndex = 0;
+  document.getElementById('cp-output-wrap').classList.remove('show');
+  document.getElementById('cp-error').classList.remove('show');
+}
+
+// ── NARRATIVE STRENGTHENER ─────────────────────────────────────────
+async function runNarrativeStrengthener() {
+  const draft = document.getElementById('narr-input').value.trim();
+  const dx = document.getElementById('narr-dx').value.trim();
+
+  if (!draft) { alert('Please paste your draft narrative first.'); return; }
+  if (draft.length < 50) { alert('The narrative appears too short. Please paste your full draft.'); return; }
+
+  const btn = document.getElementById('narr-btn');
+  const errorEl = document.getElementById('narr-error');
+  const outputWrap = document.getElementById('narr-output-wrap');
+  const strengthenedEl = document.getElementById('narr-output-strengthened');
+  const checklistEl = document.getElementById('narr-output-checklist');
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+  errorEl.classList.remove('show');
+  outputWrap.classList.remove('show');
+
+  const prompt = `You are an expert hospice clinical documentation specialist and compliance auditor with deep knowledge of CMS hospice benefit requirements, LCD criteria, MAC audit standards, NHPCO guidelines, and 42 CFR §418.
+
+A hospice admission nurse has written a draft nursing narrative. Your job is to:
+1. Rewrite it with stronger clinical language while keeping first-person nursing voice and past tense
+2. Ensure all required hospice admission narrative elements are present
+3. Return a checklist showing what was present vs missing
+
+PRIMARY HOSPICE DIAGNOSIS: ${dx || 'Not specified — infer from narrative if possible'}
+
+DRAFT NARRATIVE:
+${draft}
+
+REQUIRED ELEMENTS TO CHECK AND INCLUDE:
+- Patient and caregiver identification (name/age/relationship)
+- Primary diagnosis and related conditions with symptom burden description
+- LCD criteria documentation (functional decline indicators, clinical findings supporting 6-month prognosis)
+- Pain assessment findings (scale, location, character, current management)
+- Symptom assessment (dyspnea, nausea, anxiety, agitation, constipation — as applicable)
+- Medication review (hospice-covered medications, supplies, and DME reviewed with patient/family/legal representative)
+- Depression screening documented (PHQ-2 or clinical assessment)
+- Verbal certification status (obtained, or transfer patient exception noted)
+- IDG coordination statement
+- Goals of care and patient/family understanding of hospice philosophy
+
+OUTPUT FORMAT — Use EXACTLY this structure:
+
+===STRENGTHENED NARRATIVE===
+[Full rewritten narrative in first-person nursing voice, past tense, professional clinical tone. Do not use bullet points — write in paragraph form as a clinical narrative.]
+
+===ELEMENT CHECKLIST===
+✅ PRESENT: [element name] — [brief note on what was documented]
+✅ PRESENT: [element name] — [brief note]
+⚠ PARTIAL: [element name] — [what was there and what is still needed]
+❌ MISSING: [element name] — [what needs to be added]
+[Continue for all required elements]
+
+MISSING ELEMENTS SUMMARY:
+[If any elements are missing, list them here with a one-sentence note on what to add. If all present, write "All required elements are present."]`;
+
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, max_tokens: 1800})
+    });
+    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+    const data = await resp.json();
+    const fullText = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text
+      : (data.error || 'No response received.');
+
+    // Split on the checklist separator
+    const parts = fullText.split('===ELEMENT CHECKLIST===');
+    if (parts.length >= 2) {
+      const narrativePart = parts[0].replace('===STRENGTHENED NARRATIVE===','').trim();
+      const checklistPart = parts[1].trim();
+      strengthenedEl.textContent = narrativePart;
+      checklistEl.textContent = checklistPart;
+    } else {
+      strengthenedEl.textContent = fullText;
+      checklistEl.textContent = 'Could not parse element checklist — review the full output above.';
+    }
+
+    outputWrap.classList.add('show');
+    outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+  } catch(err) {
+    errorEl.textContent = '⚠ Unable to reach AI service. Check your connection and try again. If the problem persists, the Netlify function may not be deployed. Error: ' + err.message;
+    errorEl.classList.add('show');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function clearNarrative() {
+  ['narr-input','narr-dx'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('narr-output-wrap').classList.remove('show');
+  document.getElementById('narr-error').classList.remove('show');
+}
+
+// ── COPY TO CLIPBOARD ──────────────────────────────────────────────
+function copyOutput(elementId, btn) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => {
+    // Fallback
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
 </script>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 8 — CARE PLAN BUILDER
+══════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-careplan">
+<div class="container">
+
+<style>
+.ai-tool-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:16px}
+.ai-tool-header{background:var(--navy);padding:16px 20px}
+.ai-tool-header h2{font-size:1rem;font-weight:700;color:#fff;margin-bottom:3px}
+.ai-tool-header p{font-size:.82rem;color:rgba(255,255,255,.5);margin:0}
+.ai-tool-body{padding:20px}
+.ai-field{margin-bottom:14px}
+.ai-field label{display:block;font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.ai-field input,.ai-field textarea,.ai-field select{width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.9rem;color:var(--text);outline:none;transition:border-color .15s;resize:vertical}
+.ai-field input:focus,.ai-field textarea:focus,.ai-field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,151,44,.1)}
+.ai-field textarea{min-height:80px}
+.ai-hint{font-size:.78rem;color:var(--text-lt);margin-top:4px;font-style:italic}
+.ai-btn-row{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.ai-submit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:background .14s}
+.ai-submit-btn:hover{background:var(--navy-mid)}
+.ai-submit-btn:disabled{background:var(--text-lt);cursor:not-allowed}
+.ai-submit-btn .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.ai-submit-btn.loading .spinner{display:block}
+.ai-submit-btn.loading .btn-text{opacity:.6}
+.ai-clear-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:transparent;color:var(--text-lt);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .14s}
+.ai-clear-btn:hover{background:var(--row-alt);color:var(--navy);border-color:var(--navy)}
+.ai-output-wrap{margin-top:18px;display:none}
+.ai-output-wrap.show{display:block}
+.ai-output-label{font-size:.78rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.ai-output-box{background:var(--row-alt);border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-size:.9rem;color:var(--text);line-height:1.7;white-space:pre-wrap;font-family:inherit;max-height:500px;overflow-y:auto}
+.ai-copy-btn{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .14s}
+.ai-copy-btn:hover{background:var(--navy-mid)}
+.ai-disclaimer{margin-top:10px;padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.25);border-radius:6px;font-size:.8rem;color:#7a4200;font-style:italic}
+.ai-error{margin-top:14px;padding:12px 16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.2);border-radius:6px;font-size:.88rem;color:var(--red);display:none}
+.ai-error.show{display:block}
+</style>
+
+<div class="intro-strip" style="margin-bottom:14px">
+  <strong>Care Plan Builder</strong> — AI-generated hospice care plan goals and structured interventions ready to copy into Firenote. Output follows the required <strong>Assess / Educate / Perform</strong> intervention structure with a minimum of one of each type per goal. All content is comfort-focused and aligned with CMS hospice benefit standards and 42 CFR §418.
+</div>
+
+<div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>
+<strong>Important:</strong> AI-generated content is a starting point only. Always review, edit, and personalize the output to reflect the actual patient before entering into Firenote. The nurse of record is responsible for all documented content.
+</div></div>
+
+<div class="ai-tool-wrap">
+  <div class="ai-tool-header">
+    <h2>📋 Care Plan Builder</h2>
+    <p>Enter care plan details below — AI will generate a comfort-focused goal and structured Assess / Educate / Perform interventions</p>
+  </div>
+  <div class="ai-tool-body">
+
+    <div class="ai-field">
+      <label>Care Plan Problem / Diagnosis</label>
+      <input type="text" id="cp-problem" placeholder="e.g. Chronic pain related to end-stage lung cancer, Dyspnea related to CHF, Anxiety related to terminal diagnosis">
+      <div class="ai-hint">Be specific — include the symptom and the underlying diagnosis it relates to</div>
+    </div>
+
+    <div class="ai-field">
+      <label>Primary Hospice Diagnosis</label>
+      <input type="text" id="cp-primary-dx" placeholder="e.g. End-stage COPD, Lung adenocarcinoma, End-stage CHF">
+    </div>
+
+    <div class="ai-field">
+      <label>Patient Details <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(optional — improves output)</span></label>
+      <textarea id="cp-details" placeholder="e.g. 84-year-old female, bedbound, PPS 20%, lives with adult daughter (primary caregiver), unable to verbalize pain, non-verbal assessment required, on morphine 2mg q4h PRN"></textarea>
+      <div class="ai-hint">Include functional status, caregiver situation, current medications, communication ability — anything clinically relevant</div>
+    </div>
+
+    <div class="ai-field">
+      <label>Goals of Care Direction</label>
+      <select id="cp-goals">
+        <option value="comfort">Comfort / Symptom Management (default hospice focus)</option>
+        <option value="family">Family/Caregiver Support & Education emphasis</option>
+        <option value="spiritual">Spiritual / Psychosocial emphasis</option>
+        <option value="safety">Safety & Fall Prevention emphasis</option>
+      </select>
+    </div>
+
+    <div class="ai-btn-row">
+      <button class="ai-submit-btn" id="cp-btn" onclick="runCarePlanBuilder()">
+        <div class="spinner"></div>
+        <span class="btn-text">✨ Generate Care Plan</span>
+      </button>
+      <button class="ai-clear-btn" onclick="clearCarePlan()">✕ Clear</button>
+    </div>
+
+    <div class="ai-error" id="cp-error"></div>
+
+    <div class="ai-output-wrap" id="cp-output-wrap">
+      <div class="ai-output-label">Generated Care Plan — Review &amp; Edit Before Entering into Firenote</div>
+      <div class="ai-output-box" id="cp-output"></div>
+      <button class="ai-copy-btn" onclick="copyOutput('cp-output', this)">📋 Copy to Clipboard</button>
+      <div class="ai-disclaimer">⚠ AI-generated content requires nurse review before entry into Firenote. Personalize all details to reflect the actual patient. The nurse of record is responsible for all documented content.</div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- end container -->
+</div><!-- end panel-careplan -->
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 9 — NARRATIVE STRENGTHENER
+══════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-narrative">
+<div class="container">
+
+<div class="intro-strip" style="margin-bottom:14px">
+  <strong>Narrative Strengthener</strong> — Paste your draft admission narrative and AI will strengthen the clinical language, ensure all required hospice elements are present, and flag anything missing.
+</div>
+
+<div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>
+<strong>Important:</strong> The strengthened narrative is AI-generated. Always review and edit before entering into Firenote. Verify all clinical details are accurate and reflect the actual patient encounter. The nurse of record is responsible for all documented content.
+</div></div>
+
+<div class="alert" style="margin-bottom:14px;background:#fdf2f1;border-left:4px solid var(--red);border-radius:6px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+  <span style="font-size:1.3rem;flex-shrink:0">🔒</span>
+  <div>
+    <strong style="color:var(--red);font-size:.95rem">HIPAA Notice — Do Not Include Patient Identifying Information</strong>
+    <p style="margin-top:6px;font-size:.88rem;color:var(--text-mid);line-height:1.6">Do <strong>not</strong> enter any patient identifying information into this tool. This includes: patient name, date of birth, MRN, address, phone number, Social Security number, or any other information that could identify the patient. Use general clinical language only (e.g. "the patient," "the caregiver"). Remove all identifying details from your draft before pasting it here.</p>
+  </div>
+</div>
+
+<div class="ai-tool-wrap">
+  <div class="ai-tool-header">
+    <h2>✍️ Narrative Strengthener</h2>
+    <p>Paste your draft narrative — AI will strengthen language and check for required hospice admission elements</p>
+  </div>
+  <div class="ai-tool-body">
+
+    <div class="ai-field">
+      <label>Draft Nursing Narrative <span style="font-weight:700;color:var(--red);font-size:.8rem;text-transform:none;letter-spacing:0">⚠ No patient identifying information</span></label>
+      <textarea id="narr-input" style="min-height:200px;border-color:var(--border)" placeholder="Paste your draft admission nursing narrative here — NO patient names, DOB, MRN, or identifying information.
+
+Example: The patient is an 82-year-old male with end-stage CHF. He resides with his spouse who serves as the primary caregiver. He reports shortness of breath and bilateral lower extremity edema. Pain rated 4/10. Goals of care discussed and patient verbalized understanding of hospice philosophy. Medications reviewed with patient and caregiver..."></textarea>
+      <div class="ai-hint">Remove all identifying details before pasting. The more complete your draft, the better the output — even rough notes work.</div>
+    </div>
+
+    <div class="ai-field">
+      <label>Primary Hospice Diagnosis <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(helps AI check LCD criteria)</span></label>
+      <input type="text" id="narr-dx" placeholder="e.g. End-stage CHF, Lung adenocarcinoma, End-stage COPD">
+    </div>
+
+    <div class="ai-btn-row">
+      <button class="ai-submit-btn" id="narr-btn" onclick="runNarrativeStrengthener()">
+        <div class="spinner"></div>
+        <span class="btn-text">✨ Strengthen Narrative</span>
+      </button>
+      <button class="ai-clear-btn" onclick="clearNarrative()">✕ Clear</button>
+    </div>
+
+    <div class="ai-error" id="narr-error"></div>
+
+    <div class="ai-output-wrap" id="narr-output-wrap">
+
+      <div style="margin-bottom:16px">
+        <div class="ai-output-label">✅ Strengthened Narrative — Review &amp; Edit Before Entering into Firenote</div>
+        <div class="ai-output-box" id="narr-output-strengthened"></div>
+        <button class="ai-copy-btn" onclick="copyOutput('narr-output-strengthened', this)">📋 Copy Narrative</button>
+      </div>
+
+      <div>
+        <div class="ai-output-label">🔍 Element Checklist — Present vs Missing</div>
+        <div class="ai-output-box" id="narr-output-checklist" style="max-height:300px"></div>
+      </div>
+
+      <div class="ai-disclaimer">⚠ AI-generated content requires nurse review before entry into Firenote. Verify all clinical details are accurate. The nurse of record is responsible for all documented content.</div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- end container -->
+</div><!-- end panel-narrative -->
+</div><!-- end page-wrap -->
 </body>
-</html>
