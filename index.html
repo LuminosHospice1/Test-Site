@@ -6244,6 +6244,135 @@ MISSING ELEMENTS SUMMARY:
   }
 }
 
+// ── DE-IDENTIFIER ──────────────────────────────────────────────────
+function deidentifyNarrative() {
+  const el = document.getElementById('narr-input');
+  if (!el || !el.value.trim()) {
+    alert('Please paste your narrative first.');
+    return;
+  }
+
+  let text = el.value;
+  const changes = [];
+  let patientCount = 0;
+  let caregiverCount = 0;
+
+  // ── Helper to track and replace ──────────────────────────────────
+  function replace(pattern, replacement, label) {
+    const before = text;
+    text = text.replace(pattern, replacement);
+    if (text !== before) changes.push(label);
+  }
+
+  // ── 1. Salutation + full name → [patient] ────────────────────────
+  text = text.replace(/\b(Mr|Mrs|Ms|Miss|Dr|Rev)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g, function(match) {
+    patientCount++;
+    changes.push('Removed salutation + name: "' + match + '"');
+    return '[patient]';
+  });
+
+  // ── 2. First + Last capitalized name pairs (not clinical terms) ──
+  const clinicalWords = new Set([
+    'The','This','He','She','His','Her','They','Their','We','Our','It','Its',
+    'Patient','Caregiver','Family','Daughter','Son','Wife','Husband','Spouse',
+    'Nurse','Doctor','Physician','Social','Worker','Chaplain','Aide',
+    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday',
+    'January','February','March','April','May','June','July','August',
+    'September','October','November','December',
+    'Congestive','Heart','Failure','Chronic','Obstructive','Pulmonary',
+    'Disease','Dementia','Alzheimer','Cancer','Renal','Hepatic','Cardiac',
+    'Respiratory','Neurological','Diabetes','Mellitus','Hypertension',
+    'Parkinson','Stroke','Cerebral','Vascular','Peripheral','Arterial',
+    'Hospice','Medicare','Medicaid','Assessment','Admission','Discharge',
+    'Primary','Secondary','Terminal','Advanced','End','Stage','Late',
+    'Functional','Decline','Clinical','Medical','Nursing','Care','Plan',
+    'Goal','Intervention','Diagnosis','Prognosis','Symptom','Comfort',
+    'Pain','Dyspnea','Anxiety','Nausea','Fatigue','Weakness','Edema',
+    'Oxygen','Morphine','Lorazepam','Haloperidol','Atropine','Furosemide',
+    'Activities','Daily','Living','Ambulation','Transfer','Mobility',
+    'Oriented','Person','Place','Time','Cognitive','Mental','Status',
+    'Upon','During','Following','Prior','After','Before','While','Since',
+    'Regarding','Per','Within','Without','Between','Among','Through',
+    'Reports','Reported','States','Stated','Noted','Observed','Assessed',
+    'Reviewed','Discussed','Educated','Provided','Administered','Performed',
+    'IDG','IDT','RN','LPN','CNA','MD','NP','SW','MSW','PA',
+    'Integumentary','Cardiovascular','Musculoskeletal','Gastrointestinal',
+    'Genitourinary','Neurological','Assessment','Examination','Evaluation'
+  ]);
+
+  text = text.replace(/\b([A-Z][a-z]{1,15})\s+([A-Z][a-z]{1,15})\b/g, function(match, w1, w2) {
+    if (!clinicalWords.has(w1) && !clinicalWords.has(w2)) {
+      patientCount++;
+      changes.push('Removed possible name: "' + match + '"');
+      return '[patient]';
+    }
+    return match;
+  });
+
+  // ── 3. DOB patterns ──────────────────────────────────────────────
+  text = text.replace(/\b(dob|date of birth|born|birthdate)\s*[:#]?\s*\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/gi, function(match) {
+    changes.push('Removed date of birth: "' + match + '"');
+    return '[date of birth removed]';
+  });
+
+  // ── 4. Full dates MM/DD/YYYY ─────────────────────────────────────
+  text = text.replace(/\b(0?[1-9]|1[0-2])[\/\-](0?[1-9]|[12]\d|3[01])[\/\-](19|20)\d{2}\b/g, function(match) {
+    changes.push('Removed date: "' + match + '"');
+    return '[date removed]';
+  });
+
+  // ── 5. Phone numbers ─────────────────────────────────────────────
+  text = text.replace(/\b(\(\d{3}\)|\d{3})[\s.\-]\d{3}[\s.\-]\d{4}\b/g, function(match) {
+    changes.push('Removed phone number: "' + match + '"');
+    return '[phone removed]';
+  });
+
+  // ── 6. SSN ───────────────────────────────────────────────────────
+  text = text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, function(match) {
+    changes.push('Removed SSN: "' + match + '"');
+    return '[SSN removed]';
+  });
+
+  // ── 7. MRN ───────────────────────────────────────────────────────
+  text = text.replace(/\b(mrn|medical record|patient id|chart #?|acct #?)\s*[:#]?\s*\d+/gi, function(match) {
+    changes.push('Removed MRN/ID: "' + match + '"');
+    return '[MRN removed]';
+  });
+
+  // ── 8. Street addresses ──────────────────────────────────────────
+  text = text.replace(/\b\d{1,5}\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Blvd|Boulevard|Court|Ct|Way|Circle|Cir)\b/gi, function(match) {
+    changes.push('Removed address: "' + match + '"');
+    return '[address removed]';
+  });
+
+  // ── 9. Email addresses ───────────────────────────────────────────
+  text = text.replace(/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g, function(match) {
+    changes.push('Removed email: "' + match + '"');
+    return '[email removed]';
+  });
+
+  // ── Update textarea ──────────────────────────────────────────────
+  el.value = text;
+
+  // ── Show change log ──────────────────────────────────────────────
+  const log = document.getElementById('deident-log');
+  if (changes.length === 0) {
+    log.style.display = 'block';
+    log.innerHTML = '<strong style="color:var(--green)">✅ No identifying information detected.</strong> Text appears safe to submit.';
+  } else {
+    log.style.display = 'block';
+    const items = changes.map(function(ch) {
+      return '<li style="margin-bottom:3px">' + ch.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>';
+    }).join('');
+    log.innerHTML = '<strong style="color:#7a4200">🔒 ' + changes.length + ' item' + (changes.length > 1 ? 's' : '') + ' replaced — review the text before submitting:</strong>'
+      + '<ul style="margin:8px 0 0 0;padding-left:18px">' + items + '</ul>'
+      + '<div style="margin-top:8px;font-size:.8rem;color:var(--text-lt)">Review the de-identified text above and confirm it is accurate before clicking Strengthen Narrative.</div>';
+  }
+
+  // Clear any existing PHI alerts since we just cleaned the text
+  clearPHIAlert('narr-input');
+}
+
 function clearNarrative() {
   ['narr-input','narr-dx'].forEach(id => {
     const el = document.getElementById(id);
@@ -6428,8 +6557,11 @@ Example: The patient is an 82-year-old male with end-stage CHF. He resides with 
         <div class="spinner"></div>
         <span class="btn-text">✨ Strengthen Narrative</span>
       </button>
+      <button class="ai-clear-btn" onclick="deidentifyNarrative()" style="background:var(--amber-bg);border-color:var(--gold);color:#7a4200;font-weight:700" title="Automatically replace names and identifiers with safe placeholders">🔒 De-identify Text</button>
       <button class="ai-clear-btn" onclick="clearNarrative()">✕ Clear</button>
     </div>
+
+    <div id="deident-log" style="display:none;margin-top:10px;padding:12px 14px;background:#fffbf0;border:1px solid var(--gold);border-radius:7px;font-size:.83rem;color:var(--text)"></div>
 
     <div class="ai-error" id="narr-error"></div>
 
