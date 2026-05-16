@@ -5840,6 +5840,71 @@ document.addEventListener('keydown', function(e) {
 });
 
 
+
+// ── CARE PLAN RENDERER ─────────────────────────────────────────────
+function renderCarePlan(text) {
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = html.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    let l = lines[i];
+    if (l.startsWith('## ')) {
+      out.push('<div style="font-size:.72rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--border)">' + l.slice(3) + '</div>');
+    } else if (l.trim().startsWith('**ASSESS**')) {
+      const txt = l.replace(/\*\*ASSESS\*\*/,'').trim().replace(/^—\s*/,'');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:#eef3fb;border-radius:6px;border-left:3px solid var(--blue)"><span style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">ASSESS</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.trim().startsWith('**EDUCATE**')) {
+      const txt = l.replace(/\*\*EDUCATE\*\*/,'').trim().replace(/^—\s*/,'');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:var(--green-bg);border-radius:6px;border-left:3px solid var(--green)"><span style="font-size:.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">EDUCATE</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.trim().startsWith('**PERFORM**')) {
+      const txt = l.replace(/\*\*PERFORM\*\*/,'').trim().replace(/^—\s*/,'');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:var(--amber-bg);border-radius:6px;border-left:3px solid var(--gold)"><span style="font-size:.72rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">PERFORM</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.trim() === '') {
+      out.push('<div style="margin-top:4px"></div>');
+    } else {
+      let ln = l.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      out.push('<p style="margin:3px 0;font-size:.9rem;color:var(--text)">' + ln + '</p>');
+    }
+  }
+  return out.join('');
+}
+
+// ── NARRATIVE RENDERER ─────────────────────────────────────────────
+function renderNarrative(text) {
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  html = html.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+  html = html.replace(/\n\n/g,'</p><p style="margin:8px 0">');
+  html = html.replace(/\n/g,'<br>');
+  return '<p style="margin:0;font-size:.9rem;color:var(--text);line-height:1.75">' + html + '</p>';
+}
+
+// ── CHECKLIST RENDERER ─────────────────────────────────────────────
+function renderChecklist(text) {
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = html.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    let l = lines[i].trim();
+    if (!l) { out.push('<div style="margin-top:4px"></div>'); continue; }
+    if (l.startsWith('✅')) {
+      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--green-bg);border-radius:5px"><span style="color:var(--green);flex-shrink:0;font-size:1rem">✅</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.startsWith('⚠')) {
+      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--amber-bg);border-radius:5px"><span style="color:var(--gold);flex-shrink:0;font-size:1rem">⚠️</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.startsWith('❌')) {
+      const txt = l.slice(1).trim().replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      out.push('<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;margin:4px 0;background:var(--red-bg);border-radius:5px"><span style="color:var(--red);flex-shrink:0;font-size:1rem">❌</span><span style="font-size:.87rem;color:var(--text)">' + txt + '</span></div>');
+    } else if (l.startsWith('MISSING ELEMENTS SUMMARY')) {
+      out.push('<div style="font-size:.75rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 6px;padding-top:10px;border-top:1px solid var(--border)">Missing Elements Summary</div>');
+    } else {
+      let ln = l.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+      out.push('<p style="margin:3px 0;font-size:.87rem;color:var(--text-mid)">' + ln + '</p>');
+    }
+  }
+  return out.join('');
+}
+
 // ── CARE PLAN BUILDER ──────────────────────────────────────────────
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
@@ -5890,21 +5955,21 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
 
 3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
 
-4. Format the output EXACTLY as shown below — no deviations:
+4. Format the output EXACTLY as shown below using these exact headers — no deviations:
 
-CARE PLAN PROBLEM:
+## CARE PLAN PROBLEM
 [problem statement]
 
-GOAL:
+## GOAL
 [goal statement]
 
-INTERVENTIONS:
-ASSESS — RN will assess [...]
-EDUCATE — RN will educate patient/caregiver on [...]
-PERFORM — RN will perform [...]
-[additional ASSESS/EDUCATE/PERFORM lines if clinically appropriate]
+## INTERVENTIONS
+**ASSESS** — RN will assess [...]
+**EDUCATE** — RN will educate patient/caregiver on [...]
+**PERFORM** — RN will perform [...]
+[additional **ASSESS** / **EDUCATE** / **PERFORM** lines if clinically appropriate]
 
-PHYSICIAN/IDT COORDINATION:
+## PHYSICIAN/IDT COORDINATION
 [One sentence describing what to flag at IDT or discuss with MD]`;
 
   try {
@@ -5918,7 +5983,7 @@ PHYSICIAN/IDT COORDINATION:
     const text = data.content && data.content[0] && data.content[0].text
       ? data.content[0].text
       : (data.error || 'No response received.');
-    outputEl.textContent = text;
+    outputEl.innerHTML = renderCarePlan(text);
     outputWrap.classList.add('show');
     outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
   } catch(err) {
@@ -6016,11 +6081,11 @@ MISSING ELEMENTS SUMMARY:
     if (parts.length >= 2) {
       const narrativePart = parts[0].replace('===STRENGTHENED NARRATIVE===','').trim();
       const checklistPart = parts[1].trim();
-      strengthenedEl.textContent = narrativePart;
-      checklistEl.textContent = checklistPart;
+      strengthenedEl.innerHTML = renderNarrative(narrativePart);
+      checklistEl.innerHTML = renderChecklist(checklistPart);
     } else {
-      strengthenedEl.textContent = fullText;
-      checklistEl.textContent = 'Could not parse element checklist — review the full output above.';
+      strengthenedEl.innerHTML = renderNarrative(fullText);
+      checklistEl.innerHTML = '<p style="color:var(--text-lt);font-size:.88rem">Could not parse element checklist — review the full output above.</p>';
     }
 
     outputWrap.classList.add('show');
@@ -6098,7 +6163,7 @@ function copyOutput(elementId, btn) {
 .ai-output-wrap{margin-top:18px;display:none}
 .ai-output-wrap.show{display:block}
 .ai-output-label{font-size:.78rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.ai-output-box{background:var(--row-alt);border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-size:.9rem;color:var(--text);line-height:1.7;white-space:pre-wrap;font-family:inherit;max-height:500px;overflow-y:auto}
+.ai-output-box{background:var(--row-alt);border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-size:.9rem;color:var(--text);line-height:1.7;font-family:inherit;max-height:500px;overflow-y:auto}
 .ai-copy-btn{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;transition:background .14s}
 .ai-copy-btn:hover{background:var(--navy-mid)}
 .ai-disclaimer{margin-top:10px;padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.25);border-radius:6px;font-size:.8rem;color:#7a4200;font-style:italic}
