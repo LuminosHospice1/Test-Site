@@ -2277,12 +2277,13 @@ Use these results as a starting point for your MD conversation, not as a final a
 
 <div class="checker-wrap">
   <div class="checker-header">
-    <h2>💊 Medication Coverage &amp; Diagnosis Relatedness Checker</h2>
+    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness &amp; Drug Interaction Parser</h2>
     <p>Enter medication and/or diagnosis details below — AI will apply CMS hospice benefit rules to provide guidance</p>
   </div>
   <div class="checker-tabs">
     <button class="checker-tab active" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
     <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
+    <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
   </div>
   <div class="checker-body">
 
@@ -2388,6 +2389,30 @@ Use these results as a starting point for your MD conversation, not as a final a
   </div>
 </div>
 
+
+    <!-- DRUG INTERACTION PARSER -->
+    <div id="drug-interactions" class="checker-section">
+      <div class="checker-field">
+        <label>Paste Drug Interaction Alert from Firenote</label>
+        <textarea id="dip-input" style="min-height:160px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="Paste the full Drug/Allergy interactions text from the red box in Firenote here...
+
+Example:
+Drug/Allergy interactions
+Major Drug Interaction - Aspirin EC Low Strength and Meloxicam
+Non-selective nonsteroidal anti-inflammatory agents (eg, Meloxicam Oral Tablet 7.5 MG) may diminish the cardioprotective effect of aspirin.
+Moderate Drug Interaction - Cozaar and Fluconazole
+The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg, Fluconazole Oral Tablet 150 MG)."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center">
+        <button class="checker-btn" id="dip-parse-btn" onclick="parseInteractions()">⚠️ Parse Interactions</button>
+        <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:.8rem;font-weight:700">
+          <button id="dip-mode-summary" onclick="setDipMode('summary')" style="padding:8px 14px;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:700;background:var(--navy);color:#fff;transition:all .15s">📝 Summarized</button>
+          <button id="dip-mode-full" onclick="setDipMode('full')" style="padding:8px 14px;border:none;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:700;background:transparent;color:var(--text-lt);transition:all .15s">📄 Full Detail</button>
+        </div>
+        <button class="ai-clear-btn" onclick="clearDrugParser()" style="padding:10px 18px">✕ Clear</button>
+      </div>
+      <div id="dip-results" style="display:none;margin-top:20px"></div>
+    </div>
 
 </div></div><!-- end panel checker -->
 
@@ -6156,6 +6181,292 @@ function copyOutput(elementId, btn) {
     btn.textContent = '✓ Copied!';
     setTimeout(() => { btn.textContent = orig; }, 2000);
   });
+}
+
+
+// ── DRUG PARSER MODE TOGGLE ────────────────────────────────────────
+window.dipMode = 'summary';
+
+function setDipMode(mode) {
+  window.dipMode = mode;
+  const sumBtn = document.getElementById('dip-mode-summary');
+  const fullBtn = document.getElementById('dip-mode-full');
+  if (mode === 'summary') {
+    sumBtn.style.background = 'var(--navy)';
+    sumBtn.style.color = '#fff';
+    fullBtn.style.background = 'transparent';
+    fullBtn.style.color = 'var(--text-lt)';
+  } else {
+    fullBtn.style.background = 'var(--navy)';
+    fullBtn.style.color = '#fff';
+    sumBtn.style.background = 'transparent';
+    sumBtn.style.color = 'var(--text-lt)';
+  }
+  // Re-parse if results are already showing
+  const results = document.getElementById('dip-results');
+  if (results && results.style.display !== 'none' && results.innerHTML !== '') {
+    parseInteractions();
+  }
+}
+
+function summarizeRisk(firstSentence, severity) {
+  // Use the full first sentence — concise enough without truncating
+  // Just clean up trailing whitespace and ensure it ends cleanly
+  let risk = firstSentence.trim();
+  // Remove trailing period since we add one in the intervention text
+  if (risk.endsWith('.')) risk = risk.slice(0, -1);
+  return risk;
+}
+
+// ── DRUG INTERACTION PARSER ────────────────────────────────────────
+function parseInteractions() {
+  const raw = document.getElementById('dip-input').value.trim();
+  if (!raw) { alert('Please paste the drug interaction text from Firenote first.'); return; }
+
+  // Parse interactions from pasted text
+  const interactions = [];
+  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  const headerRe = /^(Major|Moderate|Minor)\s+Drug\s+Interaction\s+-\s+(.+)$/i;
+
+  let current = null;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(headerRe);
+    if (m) {
+      if (current) interactions.push(current);
+      current = { severity: m[1], drugs: m[2].trim(), description: '' };
+    } else if (current) {
+      current.description += (current.description ? ' ' : '') + lines[i];
+    }
+  }
+  if (current) interactions.push(current);
+
+  if (interactions.length === 0) {
+    alert('No drug interactions found. Make sure you pasted the full text from the Firenote red box including the "Major/Moderate/Minor Drug Interaction" header lines.');
+    return;
+  }
+
+  // Build results HTML
+  const resultsEl = document.getElementById('dip-results');
+  resultsEl.innerHTML = '';
+
+  // ── STEP 1: Care Plan Problem ──────────────────────────────────
+  const step1Text = 'Z91.89 — Other Personal Risk Factors, Not Elsewhere Classified';
+  const step1 = buildStepCard('1', 'Care Plan Problem', step1Text, step1Text);
+  resultsEl.appendChild(step1);
+
+  // ── STEP 2: Goal ───────────────────────────────────────────────
+  const step2Text = 'Patient will remain free from adverse medication effects as measured by absence of observed signs/symptoms of medication-related complications, safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks by end of the current benefit period.';
+  const step2 = buildStepCard('2', 'Goal', step2Text, step2Text);
+  resultsEl.appendChild(step2);
+
+  // ── STEP 3: Standard Interventions (one card per intervention) ──
+  const step3Lines = [
+    'Review medication profile for: Drug-to-drug interactions | Duplicate therapies | Allergy risks',
+    'Reconcile medications at each visit and with any medication change',
+    'Educate patient/caregiver on: Purpose of medications, potential side effects and interactions, and when to report symptoms'
+  ];
+  const step3Wrap = document.createElement('div');
+  step3Wrap.style.cssText = 'background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
+  const step3Hdr = document.createElement('div');
+  step3Hdr.style.cssText = 'padding:10px 14px;background:var(--row-alt);border-bottom:1px solid var(--border)';
+  step3Hdr.innerHTML = '<span style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em">Step 3 — Standard Interventions</span>';
+  step3Wrap.appendChild(step3Hdr);
+  step3Lines.forEach(function(line) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border)';
+    const txt = document.createElement('div');
+    txt.style.cssText = 'font-size:.88rem;color:var(--text);line-height:1.65;flex:1';
+    txt.textContent = '• ' + line;
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;flex-shrink:0';
+    btn.textContent = '📋 Copy';
+    btn.addEventListener('click', function() { copyText2(line, btn); });
+    row.appendChild(txt);
+    row.appendChild(btn);
+    step3Wrap.appendChild(row);
+  });
+  resultsEl.appendChild(step3Wrap);
+
+  // ── STEP 4: One card per interaction ──────────────────────────
+  interactions.forEach(function(ix, idx) {
+    const card = buildInteractionCard(ix, idx);
+    resultsEl.appendChild(card);
+  });
+
+  // ── Info box ───────────────────────────────────────────────────
+  const infoBox = document.createElement('div');
+  infoBox.style.cssText = 'margin-top:16px;padding:14px 16px;background:#eef3fb;border:1px solid #bfdbfe;border-radius:8px;font-size:.84rem;color:#1e3a8a;line-height:1.65';
+  infoBox.innerHTML = '<strong>📋 Documentation Reminder:</strong> After the physician responds, document the reply in the comment field of each <em>Alert physician</em> intervention. Once the physician has responded, that alert intervention may be discontinued — keep the <em>Monitor for</em> intervention active unless the medication causing the interaction is discontinued and the alert disappears from Firenote.';
+  resultsEl.appendChild(infoBox);
+
+  resultsEl.style.display = 'block';
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildStepCard(num, label, displayText, copyText) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--row-alt);border-bottom:1px solid var(--border)';
+
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em';
+  title.textContent = 'Step ' + num + ' — ' + label;
+
+  const btn = document.createElement('button');
+  btn.style.cssText = 'padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer';
+  btn.textContent = '📋 Copy';
+  btn.addEventListener('click', function() { copyText2(copyText, btn); });
+
+  hdr.appendChild(title);
+  hdr.appendChild(btn);
+
+  const body = document.createElement('div');
+  body.style.cssText = 'padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap';
+  body.textContent = displayText;
+
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function buildInteractionCard(ix, idx) {
+  const severityMap = {
+    major:    { bg: '#fdf2f1', border: 'var(--red)',   badge: '#c0392b', badgeBg: '#fde8e8', label: 'MAJOR' },
+    moderate: { bg: '#fffbf0', border: 'var(--gold)',  badge: '#7a4200', badgeBg: var_amber_bg(), label: 'MODERATE' },
+    minor:    { bg: '#eef3fb', border: '#2563eb',      badge: '#1e3a8a', badgeBg: '#dbeafe', label: 'MINOR' }
+  };
+  const sev = severityMap[ix.severity.toLowerCase()] || severityMap.minor;
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:' + sev.bg + ';border:1px solid var(--border);border-left:4px solid ' + sev.border + ';border-radius:8px;margin-bottom:14px;overflow:hidden';
+
+  // Card header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+
+  const badge = document.createElement('span');
+  badge.style.cssText = 'font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:10px;background:' + sev.badgeBg + ';color:' + sev.badge + ';letter-spacing:.05em';
+  badge.textContent = sev.label;
+
+  const drugPair = document.createElement('span');
+  drugPair.style.cssText = 'font-weight:700;font-size:.92rem;color:var(--navy)';
+  drugPair.textContent = ix.drugs;
+
+  hdr.appendChild(badge);
+  hdr.appendChild(drugPair);
+  card.appendChild(hdr);
+
+  // Build intervention text based on selected mode
+  const mode = window.dipMode || 'summary';
+  const firstSentence = ix.description.split('.')[0].trim();
+  // Extract a short risk phrase from first sentence
+  const riskSummary = summarizeRisk(firstSentence, ix.severity);
+
+  let intAText, intBText;
+  if (mode === 'full') {
+    intAText = 'Alert physician of potential for: ' + ix.severity + ' Drug Interaction — ' + ix.drugs + '\nInteraction detail: ' + ix.description;
+    intBText = 'Monitor for: ' + ix.severity + ' Drug Interaction — ' + ix.drugs + '\nClinical risk: ' + ix.description;
+  } else {
+    intAText = 'Alert physician of potential for: ' + ix.severity + ' Drug Interaction — ' + ix.drugs + '. Risk: ' + riskSummary + '.';
+    intBText = 'Monitor for: Signs/symptoms of ' + ix.severity + ' Drug Interaction — ' + ix.drugs + '. Watch for: ' + riskSummary + '.';
+  }
+
+  // Intervention A — Alert physician
+  const rowA = buildInterventionRow(
+    'A',
+    'Add, then discontinue after physician responds',
+    intAText,
+    intAText,
+    '#c0392b'
+  );
+  card.appendChild(rowA);
+
+  // Intervention B — Monitor
+  const rowB = buildInterventionRow(
+    'B',
+    'Keep active unless medication discontinued',
+    intBText,
+    intBText,
+    '#1e3a8a'
+  );
+  card.appendChild(rowB);
+
+  return card;
+}
+
+function var_amber_bg() {
+  // Read CSS variable fallback
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue('--amber-bg').trim() || '#fffbf0';
+  } catch(e) { return '#fffbf0'; }
+}
+
+function buildInterventionRow(letter, sublabel, displayText, copyText, accentColor) {
+  const row = document.createElement('div');
+  row.style.cssText = 'padding:12px 14px;border-bottom:1px solid var(--border)';
+
+  const meta = document.createElement('div');
+  meta.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap';
+
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'display:flex;align-items:center;gap:8px';
+
+  const letterBadge = document.createElement('span');
+  letterBadge.style.cssText = 'font-size:.7rem;font-weight:700;width:20px;height:20px;border-radius:50%;background:' + accentColor + ';color:#fff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0';
+  letterBadge.textContent = letter;
+
+  const subLabelEl = document.createElement('span');
+  subLabelEl.style.cssText = 'font-size:.78rem;font-style:italic;color:var(--text-lt)';
+  subLabelEl.textContent = sublabel;
+
+  lbl.appendChild(letterBadge);
+  lbl.appendChild(subLabelEl);
+
+  const btn = document.createElement('button');
+  btn.style.cssText = 'padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.74rem;font-weight:600;cursor:pointer;flex-shrink:0';
+  btn.textContent = '📋 Copy';
+  btn.addEventListener('click', function() { copyText2(copyText, btn); });
+
+  meta.appendChild(lbl);
+  meta.appendChild(btn);
+
+  const text = document.createElement('div');
+  text.style.cssText = 'font-size:.86rem;color:var(--text);line-height:1.65;white-space:pre-wrap;padding-left:28px';
+  text.textContent = displayText;
+
+  row.appendChild(meta);
+  row.appendChild(text);
+  return row;
+}
+
+function copyText2(text, btn) {
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '✓ Copied';
+    btn.style.background = 'var(--green)';
+    setTimeout(function() { btn.textContent = orig; btn.style.background = 'var(--navy)'; }, 2000);
+  }).catch(function() {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copied';
+    btn.style.background = 'var(--green)';
+    setTimeout(function() { btn.textContent = orig; btn.style.background = 'var(--navy)'; }, 2000);
+  });
+}
+
+function clearDrugParser() {
+  const inp = document.getElementById('dip-input');
+  if (inp) inp.value = '';
+  const res = document.getElementById('dip-results');
+  if (res) { res.innerHTML = ''; res.style.display = 'none'; }
 }
 
 </script>
