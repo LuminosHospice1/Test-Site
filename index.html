@@ -7399,27 +7399,42 @@ function clearPHIAlert(fieldId) {
 
 
 // ── CARE PLAN RENDERER ─────────────────────────────────────────────
-function cpCopyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.innerHTML;
+// Store copy payloads by key to avoid any quoting issues in onclick attributes
+window._cpPayloads = {};
+var _cpIdx = 0;
+
+function cpCopyText(key, btn) {
+  var text = window._cpPayloads[key] || '';
+  function done() {
+    var orig = btn.innerHTML;
     btn.innerHTML = '✓ Copied!';
     btn.style.background = 'var(--green)';
-    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    const orig = btn.innerHTML;
-    btn.innerHTML = '✓ Copied!';
-    btn.style.background = 'var(--green)';
-    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
-  });
+    setTimeout(function() { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); done();
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  }
+}
+
+function makeCpBtn(text, label, extraStyle) {
+  var key = 'cp' + (_cpIdx++);
+  window._cpPayloads[key] = text;
+  return '<button onclick="cpCopyText(\'' + key + '\',this)" style="' + (extraStyle || '') + 'background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">' + label + '</button>';
 }
 
 function renderCarePlan(text) {
+  // Reset payload store for this render
+  window._cpPayloads = {};
+  _cpIdx = 0;
+
   // Split into named sections by ## headers
   const sections = [];
   let current = null;
@@ -7449,27 +7464,24 @@ function renderCarePlan(text) {
       const lt = l.trim();
       if (lt.startsWith('**ASSESS**')) {
         const txt = lt.replace(/\*\*ASSESS\*\*/, '').replace(/^[\s—-]+/, '');
-        const plain = 'ASSESS — ' + txt;
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:#eef3fb;border-radius:6px;border-left:3px solid var(--blue)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">ASSESS</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
-          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + makeCpBtn('ASSESS — ' + txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
       } else if (lt.startsWith('**EDUCATE**')) {
         const txt = lt.replace(/\*\*EDUCATE\*\*/, '').replace(/^[\s—-]+/, '');
-        const plain = 'EDUCATE — ' + txt;
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--green-bg);border-radius:6px;border-left:3px solid var(--green)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">EDUCATE</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
-          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + makeCpBtn('EDUCATE — ' + txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
       } else if (lt.startsWith('**PERFORM**')) {
         const txt = lt.replace(/\*\*PERFORM\*\*/, '').replace(/^[\s—-]+/, '');
-        const plain = 'PERFORM — ' + txt;
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg);border-radius:6px;border-left:3px solid var(--gold)">'
           + '<span style="font-size:.72rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">PERFORM</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
-          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + makeCpBtn('PERFORM — ' + txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
       } else if (lt === '') {
         return '<div style="margin-top:3px"></div>';
@@ -7484,7 +7496,7 @@ function renderCarePlan(text) {
       '<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
       + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.08em">' + escHtml(sec.title) + '</span>'
-      + '<button onclick="cpCopyText(' + JSON.stringify(plainText) + ',this)" style="padding:4px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Copy Section</button>'
+      + makeCpBtn(plainText, '📋 Copy Section', 'padding:4px 12px;')
       + '</div>'
       + '<div style="padding:10px 12px">' + contentHtml + '</div>'
       + '</div>'
