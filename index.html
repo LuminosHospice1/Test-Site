@@ -338,7 +338,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   </div>
   <div class="tab-bar">
     <div class="tab-inner">
-      <button class="tab-btn active" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
+      <button class="tab-btn active" onclick="switchTab('guide',this)">📖 User Guide</button>
+      <button class="tab-btn" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
       <button class="tab-btn" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
       <button class="tab-btn" onclick="switchTab('meds',this)">💊 Medication Coverage</button>
       <button class="tab-btn" onclick="switchTab('rel',this)">🔗 Diagnosis Relatedness</button>
@@ -353,9 +354,1275 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </header>
 
 <!-- ══════════════════════════════════════════════════════════════════
+     PANEL 0 — USER GUIDE
+══════════════════════════════════════════════════════════════════ -->
+<style>
+/* :root already defined */
+
+
+
+
+
+.page-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  background: var(--cream);
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0,0,0,.10);
+}
+
+/* ── HEADER ── */
+.guide-header {
+  background: var(--navy);
+  padding: 0;
+}
+.guide-header-top {
+  padding: 22px 28px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.guide-logo-circle {
+  width: 50px;
+  height: 50px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.guide-title h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: .02em;
+}
+.guide-title h1 span { color: var(--gold-lt); }
+.guide-title p {
+  font-size: .72rem;
+  color: rgba(255,255,255,.45);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  margin-top: 3px;
+}
+.guide-header-band {
+  background: var(--gold);
+  padding: 8px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.guide-header-band .tagline {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: .04em;
+}
+.guide-header-band .url {
+  font-size: .73rem;
+  color: rgba(26,39,68,.65);
+  font-weight: 600;
+}
+
+/* ── CONTENT CONTAINER ── */
+.content {
+  padding: 24px 28px 60px;
+}
+
+/* ── PRINT BUTTON ── */
+.print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 20px;
+  transition: background .14s;
+}
+.print-btn:hover { background: var(--navy-mid); }
+
+/* ── TABLE OF CONTENTS ── */
+.toc-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--r);
+  padding: 18px 22px;
+  margin-bottom: 26px;
+  box-shadow: var(--shadow);
+}
+.toc-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-lt);
+  margin-bottom: 12px;
+}
+.toc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 16px;
+}
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  text-decoration: none;
+  color: var(--navy-mid);
+  font-size: .85rem;
+  border-bottom: 1px dashed var(--border-lt);
+}
+.toc-item:hover { color: var(--gold); }
+.toc-num {
+  font-size: .68rem;
+  font-weight: 800;
+  color: var(--gold);
+  background: var(--gold-pale);
+  border: 1px solid rgba(201,151,44,.3);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── SECTION HEADERS ── */
+.section {
+  margin-bottom: 30px;
+  scroll-margin-top: 16px;
+}
+.section-hdr {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 0;
+  border-radius: var(--r) var(--r) 0 0;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.section-num {
+  background: var(--gold);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.section-bar {
+  background: var(--navy);
+  flex: 1;
+  padding: 11px 18px;
+}
+.section-bar h2 {
+  font-size: .93rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.section-bar p {
+  font-size: .74rem;
+  color: rgba(255,255,255,.48);
+  margin-top: 2px;
+}
+.section-
+.section-body p {
+  font-size: .88rem;
+  color: var(--text-mid);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+.section-body p:last-child { margin-bottom: 0; }
+
+/* ── TAB CARDS ── */
+.tab-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(26,39,68,.06);
+}
+.tab-card-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--row-alt);
+  border-bottom: 1px solid var(--border);
+}
+.tab-card-icon { font-size: 1.1rem; flex-shrink: 0; }
+.tab-card-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--navy);
+  flex: 1;
+}
+.tab-card-tag {
+  font-size: .66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.tab-card-tag.ai { background: #e8f0fe; color: #1a4a9e; }
+.tab-card-tag.ref { background: var(--gold-pale); color: #7a4c00; }
+.tab-card-tag.interactive { background: var(--green-bg); color: var(--green); }
+.tab-card-
+.tab-card-body strong { color: var(--navy); }
+.tab-card-body ul {
+  margin: 6px 0 0 18px;
+}
+.tab-card-body ul li {
+  margin-bottom: 3px;
+}
+.tab-card-body ul li::marker { color: var(--gold); }
+
+/* ── SUBHEADINGS ── */
+.sub-gold {
+  font-size: .83rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 16px 0 7px;
+  letter-spacing: .02em;
+}
+.sub-gold:first-child { margin-top: 0; }
+.sub-navy {
+  font-size: .86rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 14px 0 7px;
+}
+
+/* ── ALERTS / CALL-OUTS ── */
+.alert {
+  border-radius: var(--r);
+  padding: 10px 13px;
+  margin-bottom: 11px;
+  display: flex;
+  gap: 9px;
+  font-size: .84rem;
+  line-height: 1.55;
+}
+.alert.danger { background: var(--red-bg); border-left: 3px solid var(--red); color: #7a1f1a; }
+.alert.warning { background: var(--amber-bg); border-left: 3px solid var(--gold); color: #6b4200; }
+.alert.info { background: var(--blue-bg); border-left: 3px solid var(--blue); color: #1a3a6b; }
+.alert.tip { background: var(--gold-pale); border-left: 3px solid var(--gold); color: #5a3c00; }
+.alert.success { background: var(--green-bg); border-left: 3px solid var(--green); color: #0f4a2e; }
+
+/* ── WORKFLOW STEPS ── */
+.workflow { margin: 10px 0; }
+.wf-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 14px;
+  position: relative;
+}
+.wf-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.wf-num {
+  width: 28px;
+  height: 28px;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 50%;
+  font-size: .76rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  z-index: 1;
+}
+.wf-content { flex: 1; }
+.wf-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+.wf-desc {
+  font-size: .83rem;
+  color: var(--text-mid);
+  line-height: 1.55;
+}
+.wf-tag {
+  display: inline-block;
+  font-size: .66rem;
+  font-weight: 700;
+  background: var(--navy-mid);
+  color: rgba(255,255,255,.85);
+  padding: 1px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── QUICK REFERENCE TABLE ── */
+.qtable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: .84rem;
+}
+.qtable th {
+  background: var(--navy-mid);
+  color: #fff;
+  padding: 7px 10px;
+  text-align: left;
+  font-size: .76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.qtable td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-lt);
+  vertical-align: top;
+  color: var(--text-mid);
+}
+.qtable tr:nth-child(even) td { background: var(--row-alt); }
+.qtable td:first-child { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.qtable td .note { font-size: .76rem; color: var(--text-lt); font-style: italic; display: block; margin-top: 2px; }
+.qtable .red { color: var(--red); }
+.qtable .green { color: var(--green); }
+
+/* ── MISTAKE / TIPS LIST ── */
+.mistake-list { list-style: none; margin: 0; padding: 0; }
+.mistake-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-lt);
+  font-size: .86rem;
+  color: var(--text-mid);
+  line-height: 1.55;
+}
+.mistake-list li:last-child { border-bottom: none; }
+.mistake-list .icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.mistake-list li strong { color: var(--navy); }
+
+/* ── BLIST ── */
+.blist { margin: 5px 0 10px 18px; }
+.blist li {
+  font-size: .86rem;
+  color: var(--text-mid);
+  line-height: 1.55;
+  margin-bottom: 3px;
+}
+.blist li::marker { color: var(--gold); }
+
+/* ── DIVIDER ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ── FOOTER ── */
+.guide-footer {
+  background: var(--navy);
+  padding: 16px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.guide-footer p {
+  font-size: .74rem;
+  color: rgba(255,255,255,.4);
+}
+.guide-footer a {
+  font-size: .74rem;
+  color: var(--gold-lt);
+  text-decoration: none;
+}
+
+/* ── SEARCH BAR ── */
+.guide-search-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.guide-search-wrap input {
+  width: 100%;
+  padding: 11px 42px 11px 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  box-shadow: var(--shadow);
+}
+.guide-search-wrap input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,151,44,.12);
+}
+.guide-search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-lt);
+  font-size: .95rem;
+  pointer-events: none;
+}
+.guide-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-lt);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: none;
+}
+.guide-search-clear:hover { color: var(--navy); background: var(--row-alt); }
+.guide-search-count {
+  font-size: .76rem;
+  color: var(--text-lt);
+  margin-top: 5px;
+  margin-left: 2px;
+  min-height: 1em;
+}
+.guide-search-highlight {
+  background: #fff3b0;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.guide-search-no-results {
+  background: var(--amber-bg);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  font-size: .86rem;
+  color: #6b4200;
+  display: none;
+  margin-bottom: 12px;
+}
+
+/* ── PRINT ── */
+
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .content { padding: 16px 14px 40px; }
+  .toc-grid { grid-template-columns: 1fr; }
+  .guide-header-top { padding: 16px 16px 12px; }
+  .guide-header-band { padding: 8px 16px; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .qtable { font-size: .78rem; }
+}
+</style>
+<div class="panel active" id="panel-guide">
+<div style="max-width:1080px;margin:0 auto">
+<div class="page-wrap">
+
+<!-- ══ HEADER ══ -->
+<div class="guide-header">
+  <div class="guide-header-top">
+    <div class="guide-logo-circle">🏥</div>
+    <div class="guide-title">
+      <h1>LUMINOS HOSPICE <span>ADMISSION TOOLS</span></h1>
+      <p>User Guide — All Tabs &amp; Features</p>
+    </div>
+  </div>
+  <div class="guide-header-band">
+    <span class="tagline">Reference guide for hospice nursing admission documentation in Firenote</span>
+    <span class="url">luminosadmissiontools.netlify.app</span>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+<button class="print-btn" onclick="window.print()">🖨 Print This Guide</button>
+
+<!-- SEARCH BAR -->
+<div class="guide-search-wrap">
+  <span class="guide-search-icon">🔍</span>
+  <input type="text" id="guideSearch" placeholder="Search the guide… (e.g. depression screening, QAPI, verbal cert, care plan)" oninput="guideSearchRun()" autocomplete="off">
+  <button class="guide-search-clear" id="guideSearchClear" onclick="guideSearchClear()" title="Clear search">✕</button>
+</div>
+<div class="guide-search-count" id="guideSearchCount"></div>
+<div class="guide-search-no-results" id="guideSearchNone">No results found. Try different keywords.</div>
+
+<!-- INTRO -->
+<div class="alert info" style="margin-bottom:20px">
+  <span>ℹ️</span>
+  <div><strong>Who this guide is for:</strong> Luminos Hospice nurses performing admissions in Firenote. This guide covers every tab in the Admission Tools application — what it does, how to use it, and the clinical rules behind it. Keep this guide open alongside the tool during your first several admissions.</div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc-box">
+  <div class="toc-label">Contents</div>
+  <div class="toc-grid">
+    <a href="#sec-overview" class="toc-item"><span class="toc-num">1</span> Tool Overview &amp; How to Access</a>
+    <a href="#sec-workflow" class="toc-item"><span class="toc-num">2</span> Recommended Admission Workflow</a>
+    <a href="#sec-walkthrough" class="toc-item"><span class="toc-num">3</span> 📋 Assessment Walkthrough Tab</a>
+    <a href="#sec-checklist" class="toc-item"><span class="toc-num">4</span> ✅ Admission Checklist Tab</a>
+    <a href="#sec-meds" class="toc-item"><span class="toc-num">5</span> 💊 Medication Coverage Tab</a>
+    <a href="#sec-rel" class="toc-item"><span class="toc-num">6</span> 🔗 Diagnosis Relatedness Tab</a>
+    <a href="#sec-checkers" class="toc-item"><span class="toc-num">7</span> 🧠 Clinical Checkers Tab</a>
+    <a href="#sec-careplan" class="toc-item"><span class="toc-num">8</span> 📋 Care Plan Builder Tab</a>
+    <a href="#sec-narrative" class="toc-item"><span class="toc-num">9</span> ✍️ Narrative Strengthener Tab</a>
+    <a href="#sec-icd" class="toc-item"><span class="toc-num">10</span> 🔎 ICD-10 Reference Tab</a>
+    <a href="#sec-sample" class="toc-item"><span class="toc-num">11</span> 📄 Sample Admission Tab</a>
+    <a href="#sec-mistakes" class="toc-item"><span class="toc-num">12</span> Common Mistakes to Avoid</a>
+    <a href="#sec-quickref" class="toc-item"><span class="toc-num">13</span> Quick Reference Card</a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 1 — OVERVIEW
+══════════════════════════════════════ -->
+<div class="section" id="sec-overview">
+  <div class="section-hdr">
+    <div class="section-num">1</div>
+    <div class="section-bar">
+      <h2>Tool Overview &amp; How to Access</h2>
+      <p>What Luminos Admission Tools is and where to find it</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The <strong>Luminos Admission Tools</strong> is a 9-tab web application built specifically for hospice nursing admissions in Firenote. It consolidates every reference guide, compliance rule, ICD-10 code, and documentation aid you need for an admission into one bookmarked page — organized to match the order you'll work through Firenote.</p>
+
+    <div class="sub-gold">Access</div>
+    <p>Open a browser on your laptop, tablet, or phone and navigate to:</p>
+    <div class="alert tip" style="font-size:.92rem;font-weight:700;letter-spacing:.02em">
+      <span>🌐</span>
+      <div>luminosadmissiontools.netlify.app</div>
+    </div>
+    <p>Bookmark this URL. The tool works on any device with a browser and does not require a login. The site is hosted securely and deployed automatically when updates are made by the QA team.</p>
+
+    <div class="sub-gold">What Each Tab Does at a Glance</div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">📋</span><span class="tab-card-title">Assessment Walkthrough</span><span class="tab-card-tag interactive">Reference</span></div>
+      <div class="tab-card-body">Step-by-step clinical guidance for every section of the Firenote admission assessment. 14 expandable cards following Firenote screen order.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">✅</span><span class="tab-card-title">Admission Checklist</span><span class="tab-card-tag interactive">Interactive</span></div>
+      <div class="tab-card-body">Live progress-tracking checklist you check off in real time as you complete each required step of the admission.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">💊</span><span class="tab-card-title">Medication Coverage</span><span class="tab-card-tag ref">Reference</span></div>
+      <div class="tab-card-body">Full guide to the three medication categories (covered, non-covered, non-formulary), with real-world examples by drug class. Based on 42 CFR §418.106.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">🔗</span><span class="tab-card-title">Diagnosis Relatedness</span><span class="tab-card-tag ref">Reference</span></div>
+      <div class="tab-card-body">Decision framework for determining whether a diagnosis is related or non-related to the terminal prognosis. Includes real-world examples and the 3-question process.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">🧠</span><span class="tab-card-title">Clinical Checkers</span><span class="tab-card-tag ai">AI-Powered</span></div>
+      <div class="tab-card-body">Three sub-tools: Medication Coverage Checker, Diagnosis Relatedness Checker, and Drug Interaction Parser — each backed by AI analysis of CMS hospice benefit rules.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">📋</span><span class="tab-card-title">Care Plan Builder</span><span class="tab-card-tag ai">AI-Powered</span></div>
+      <div class="tab-card-body">AI generates a complete, comfort-focused care plan goal with structured Assess / Educate / Perform interventions — ready to copy into Firenote.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">✍️</span><span class="tab-card-title">Narrative Strengthener</span><span class="tab-card-tag ai">Copilot</span></div>
+      <div class="tab-card-body">Enter your draft notes and the tool builds a HIPAA-safe structured prompt, then opens it directly in Microsoft Copilot using your Luminos credentials.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">🔎</span><span class="tab-card-title">ICD-10 Reference</span><span class="tab-card-tag ref">Reference</span></div>
+      <div class="tab-card-body">Searchable, filterable database of 200+ hospice-relevant ICD-10 codes across 15 categories — with goals, interventions, and documentation notes for each.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-card-hdr"><span class="tab-card-icon">📄</span><span class="tab-card-title">Sample Admission</span><span class="tab-card-tag ref">Reference</span></div>
+      <div class="tab-card-body">A fully annotated, compliant admission note you can use as a model. Expandable cards with color-coded annotation boxes showing what makes each section audit-ready.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 2 — WORKFLOW
+══════════════════════════════════════ -->
+<div class="section" id="sec-workflow">
+  <div class="section-hdr">
+    <div class="section-num">2</div>
+    <div class="section-bar">
+      <h2>Recommended Admission Workflow</h2>
+      <p>How to use the tool effectively during an actual admission</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Admission Tools is designed to run alongside Firenote — open both side-by-side or switch between them. This is the recommended order of use:</p>
+
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-content">
+          <div class="wf-title">Before the visit — review the ICD-10 Reference and Medication Coverage tabs</div>
+          <div class="wf-desc">If you know the primary diagnosis in advance, look it up in the ICD-10 Reference. Review related codes, goals, and common medication coverage questions. Use the Medication Coverage tab if you expect complex medication decisions.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-content">
+          <div class="wf-title">During the admission — follow the Assessment Walkthrough card by card</div>
+          <div class="wf-desc">Open the Assessment Walkthrough and expand each card as you work through that section in Firenote. Every required field, scoring scale, and clinical rule is documented in the card. Use the search bar if you need to find a specific topic quickly.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-content">
+          <div class="wf-title">When building the care plan — use the Care Plan Builder</div>
+          <div class="wf-desc">Switch to the Care Plan Builder tab. Enter each care plan problem, the primary diagnosis, and any relevant patient details. Copy the generated goal and interventions directly into Firenote. Review and personalize before saving.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <div class="wf-content">
+          <div class="wf-title">When writing the narrative — use the Narrative Strengthener</div>
+          <div class="wf-desc">Enter your rough notes and primary diagnosis into the Narrative Strengthener. The tool builds a compliant Copilot prompt and opens Microsoft Copilot automatically. Paste the prompt, review Copilot's output, then copy the final narrative into Firenote's nursing narrative field.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">5</div>
+        <div class="wf-content">
+          <div class="wf-title">For questionable medications or diagnoses — use the Clinical Checkers</div>
+          <div class="wf-desc">If you're unsure whether a medication is covered or a diagnosis is related, use the Clinical Checkers tab. Enter the details and review the AI guidance. Always bring the result to the physician conversation — the checker's output is a starting point, not a final determination.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">6</div>
+        <div class="wf-content">
+          <div class="wf-title">Before signing — run through the Admission Checklist</div>
+          <div class="wf-desc">Switch to the Admission Checklist and work through each section from top to bottom. Check off every item. Do not sign the admission until all critical (red-tagged) items are complete. Pay special attention to the Verbal Certification and narrative CTI attachment steps.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert tip">
+      <span>💡</span>
+      <div><strong>Simple rule:</strong> Review → Document → Use the tools → Check off → Then sign. The tool is designed to support you at each of those steps.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 3 — WALKTHROUGH
+══════════════════════════════════════ -->
+<div class="section" id="sec-walkthrough">
+  <div class="section-hdr">
+    <div class="section-num">3</div>
+    <div class="section-bar">
+      <h2>📋 Assessment Walkthrough Tab</h2>
+      <p>14 expandable cards following Firenote screen order</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Assessment Walkthrough is the primary clinical reference tab. It mirrors the Firenote admission assessment screen by screen — so when you're working in a particular section of Firenote, you can open the matching card here for guidance on what to document and how.</p>
+
+    <div class="sub-gold">How to Use It</div>
+    <ul class="blist">
+      <li>Click any card header to expand it. Click again to collapse.</li>
+      <li>Use the <strong>search bar</strong> at the top to jump to any topic (e.g. "pain", "HOPE", "fall risk", "depression").</li>
+      <li>Cards are numbered 1–14 matching Firenote screen order — work through them in sequence for your first several admissions.</li>
+    </ul>
+
+    <div class="sub-gold">The 14 Cards</div>
+    <table class="qtable">
+      <thead><tr><th>#</th><th>Card Title</th><th>What's in It</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Visit Details &amp; Patient Info</td><td>Date/time entry, facility vs. home documentation, emergency preparedness note<span class="note">Required: confirm who is present and document their names</span></td></tr>
+        <tr><td>2</td><td>Preliminary Assessment</td><td>Initial functional status, reason for referral, source of referral</td></tr>
+        <tr><td>3</td><td>Symptom Assessment</td><td>All required symptom domains: pain, dyspnea, anxiety/agitation, nausea, constipation, wound/skin. Includes branching rules and PRN medication documentation.</td></tr>
+        <tr><td>4</td><td>Pain Assessment</td><td>Required components, verbal vs. non-verbal scales, comprehensive vs. brief assessment rules, Firenote field labels</td></tr>
+        <tr><td>5</td><td>Functional &amp; Cognitive Assessment</td><td>PPS scale with visual table, FAST scale with Luminos policy (all dementia types), MMSE/SLUMS guidance</td></tr>
+        <tr><td>6</td><td>HOPE Section I — Symptoms</td><td>HOPE symptom impact screening: day-of requirement, comorbid-only scoring guidance, 24-hour documentation deadline</td></tr>
+        <tr><td>7</td><td>Nursing Narrative</td><td>Required narrative elements, depression screening (both paths), templates for verbal and non-verbal patients, CTI attachment instructions, Copilot prompt</td></tr>
+        <tr><td>8</td><td>Care Plan</td><td>Problem list structure, Assess/Educate/Perform requirement, grouping diagnoses, AI tools, aide care plan rules</td></tr>
+        <tr><td>9</td><td>Medications &amp; Orders</td><td>Order entry checklist, PRN medication documentation, formulary vs. non-formulary guidance, drug interaction Z91.89 rule</td></tr>
+        <tr><td>10</td><td>Bereavement Risk Assessment</td><td>Scoring factors, documentation of score in narrative, referral thresholds</td></tr>
+        <tr><td>11</td><td>Verbal Certification &amp; CTI</td><td>48-hour rule, transfer patient exception, how to attach the nursing narrative to the CTI, physician attestation support</td></tr>
+        <tr><td>12</td><td>Diagnosis List &amp; Relatedness</td><td>Related vs. non-related classification, MAC documentation requirement, QAPI triggers</td></tr>
+        <tr><td>13</td><td>IDG &amp; Care Coordination</td><td>Required IDG coordination statement, volunteers, chaplain, social work documentation</td></tr>
+        <tr><td>14</td><td>Review &amp; Finish</td><td>Final verification checklist, RapidChart editing guidance, what "Performed" means for SNP, common last-minute errors</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-gold">Key Clinical Rules in the Walkthrough</div>
+    <ul class="blist">
+      <li><strong>Depression Screening:</strong> Must be documented manually in the nursing narrative on every admission — Firenote has no dedicated field. Two paths: patient can participate (PHQ-2 questions) vs. cannot participate (observational documentation).</li>
+      <li><strong>FAST Scale:</strong> Validated for Alzheimer's disease; supported for all dementia types at Luminos with documentation of overall functional decline rather than strict stage criteria.</li>
+      <li><strong>PPS Scale:</strong> Uses a 5-column table (Ambulation, Activity &amp; Evidence, Self-Care, Intake, Conscious Level). Document the row that best matches the patient's overall status.</li>
+      <li><strong>MAC Measurement:</strong> Bi-weekly per Luminos policy.</li>
+      <li><strong>Symptom Impact Screening:</strong> Must be completed day-of admission; if not, document why in the narrative within 24 hours.</li>
+      <li><strong>Care Plan Goals:</strong> Must be comfort-focused and end-of-life appropriate — never curative or restorative targets.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 4 — CHECKLIST
+══════════════════════════════════════ -->
+<div class="section" id="sec-checklist">
+  <div class="section-hdr">
+    <div class="section-num">4</div>
+    <div class="section-bar">
+      <h2>✅ Admission Checklist Tab</h2>
+      <p>Live progress-tracking checklist for every admission</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Admission Checklist is your final quality check before signing the admission in Firenote. It organizes every required action into five sections with live checkboxes you click off as you complete them.</p>
+
+    <div class="sub-gold">How to Use It</div>
+    <ul class="blist">
+      <li>Click any checklist item to mark it complete — it turns green. Click again to uncheck.</li>
+      <li>Items marked <strong style="color:var(--red)">REQ</strong> in red are critical — the admission is not complete without them.</li>
+      <li>A progress bar at the top tracks your overall completion percentage.</li>
+      <li>Use the <strong>search bar</strong> to quickly find a specific item (e.g. "QAPI", "wound", "volunteer").</li>
+      <li>Click <strong>Print</strong> to print the checklist for your records.</li>
+    </ul>
+
+    <div class="sub-gold">The Five Checklist Sections</div>
+    <table class="qtable">
+      <thead><tr><th>#</th><th>Section</th><th>What It Covers</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>MD Call &amp; Verification</td><td>Verbal certification, narrative attachment to CTI, primary diagnosis confirmation, relatedness/medication review with MD, documenting outcome of call</td></tr>
+        <tr><td>2</td><td>Required Entries in Firenote</td><td>All orders (admission, diet, medications, O2, wound, catheter), diagnosis list with relatedness marked, QAPI entries for wounds/infections present on admission</td></tr>
+        <tr><td>3</td><td>Care Plan</td><td>One problem per diagnosis, all interventions marked "Performed," aide care plan completed, goals comfort-focused</td></tr>
+        <tr><td>4</td><td>Nursing Narrative</td><td>Depression screening documented, narrative supports hospice eligibility, all required elements present</td></tr>
+        <tr><td>5</td><td>Final Verification</td><td>HOPE assessment complete and consistent, bereavement score matches bereavement section, RapidChart reviewed and edited, IDG coordination statement documented</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert danger">
+      <span>🚨</span>
+      <div><strong>Do not sign the admission until all REQ (red) items are complete.</strong> Missing a critical item — particularly the Verbal Certification or the narrative attachment to the CTI — creates an audit vulnerability and may result in a claim denial.</div>
+    </div>
+
+    <div class="alert warning">
+      <span>⚠️</span>
+      <div><strong>Checkboxes do not save between sessions.</strong> The checklist resets when you close the browser. Use it as a live working tool during your admission, then print a copy if you need a record.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 5 — MEDICATION COVERAGE
+══════════════════════════════════════ -->
+<div class="section" id="sec-meds">
+  <div class="section-hdr">
+    <div class="section-num">5</div>
+    <div class="section-bar">
+      <h2>💊 Medication Coverage Tab</h2>
+      <p>42 CFR §418.106 — what's covered, what's not, and your documentation obligations</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>This tab is a reference guide — not interactive. Use it when reviewing the medication list with the MD during the admission call, or when you need to explain medication coverage to the patient/family.</p>
+
+    <div class="sub-gold">The Three Medication Categories</div>
+    <table class="qtable">
+      <thead><tr><th>Category</th><th>What It Means</th><th>Your Role</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="green">Covered — Related</td>
+          <td>Medication treats a condition that is related to the terminal prognosis. Hospice must provide it at no cost to the patient.</td>
+          <td>Enter in Firenote. Document the related diagnosis. No special approval needed.</td>
+        </tr>
+        <tr>
+          <td>Covered — Non-Related</td>
+          <td>Medication treats a non-related condition where hospice has elected to cover it as part of the plan of care.</td>
+          <td>IDT review required. Document the non-related condition. Physician must agree.</td>
+        </tr>
+        <tr>
+          <td class="red">Not Covered</td>
+          <td>Medication is not related to terminal prognosis and hospice has not elected to cover it. Patient pays out of pocket or Medicare Part D applies.</td>
+          <td>Document the discussion with patient/family. Do not include in hospice medication orders.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="sub-gold">Key Concepts to Know</div>
+    <ul class="blist">
+      <li><strong>Non-formulary medications</strong> require prior authorization or substitution — document all attempts, alternatives offered, and the outcome in the narrative.</li>
+      <li><strong>Deprescribing</strong> is expected at admission. Every medication on the list should be reviewed for whether it serves a comfort or quality-of-life purpose at end of life. Preventive medications (statins, bisphosphonates, many diabetes medications) are rarely appropriate in hospice.</li>
+      <li><strong>Drug interactions with Z91.89:</strong> If you document a drug interaction concern, a care plan problem must be created using code Z91.89 with appropriate goal and interventions.</li>
+    </ul>
+
+    <p>For live medication coverage analysis, use the <strong>🧠 Clinical Checkers → Medication Coverage</strong> sub-tab.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 6 — RELATEDNESS
+══════════════════════════════════════ -->
+<div class="section" id="sec-rel">
+  <div class="section-hdr">
+    <div class="section-num">6</div>
+    <div class="section-bar">
+      <h2>🔗 Diagnosis Relatedness Tab</h2>
+      <p>42 CFR §418.202 — determining related vs. non-related diagnoses</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>This tab explains the most frequently misunderstood concept in hospice billing. The standard is intentionally broad: a diagnosis is <strong>presumed related</strong> unless the hospice physician documents in the record why it is not. Use this tab when you need to have the relatedness conversation with the MD.</p>
+
+    <div class="sub-gold">The 3 Questions — In Order</div>
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-content">
+          <div class="wf-title">Did this condition cause or contribute to the terminal diagnosis?</div>
+          <div class="wf-desc">If yes → Related. Example: HTN that caused CHF when CHF is the primary dx.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-content">
+          <div class="wf-title">Is this condition worsened or complicated by the terminal decline?</div>
+          <div class="wf-desc">If yes → Likely related. Example: constipation that developed because of opioid pain management.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-content">
+          <div class="wf-title">Does managing this condition affect symptom burden or quality of life in the terminal phase?</div>
+          <div class="wf-desc">If yes → Physician determines. Example: depression related to terminal anxiety burden.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert warning">
+      <span>⚠️</span>
+      <div><strong>Relatedness is a physician determination.</strong> Your role is to bring the clinical picture to the physician and document the outcome. The tool helps you have that conversation — it does not make the determination for you.</div>
+    </div>
+
+    <p>For live relatedness analysis, use the <strong>🧠 Clinical Checkers → Diagnosis Relatedness</strong> sub-tab.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 7 — CLINICAL CHECKERS
+══════════════════════════════════════ -->
+<div class="section" id="sec-checkers">
+  <div class="section-hdr">
+    <div class="section-num">7</div>
+    <div class="section-bar">
+      <h2>🧠 Clinical Checkers Tab</h2>
+      <p>AI-powered tools — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Clinical Checkers tab contains three AI-powered analysis tools organized as sub-tabs. Each one analyzes your input against CMS hospice benefit rules and returns detailed clinical guidance.</p>
+
+    <div class="sub-gold">Sub-Tab 1 — 💊 Medication Coverage Checker</div>
+    <p>Enter a medication name and the patient's active related diagnoses. The AI applies the local rule engine and CMS guidelines to determine likely coverage status.</p>
+    <ul class="blist">
+      <li>Enter the <strong>generic medication name</strong> (e.g. "furosemide") in the first field.</li>
+      <li>In the second field, list <strong>all diagnoses determined to be related</strong> — primary and all related conditions.</li>
+      <li>Brand name or additional detail (optional) helps with ambiguous generics.</li>
+      <li>Use the <strong>quick example chips</strong> to see how a real analysis looks before entering your own case.</li>
+    </ul>
+
+    <div class="sub-gold">Sub-Tab 2 — 🔗 Diagnosis Relatedness Checker</div>
+    <p>Enter a diagnosis to evaluate and the patient's primary hospice diagnosis. The AI walks through the relatedness framework and returns a verdict with physician documentation language.</p>
+    <ul class="blist">
+      <li>Add clinical context in the optional third field — this significantly improves accuracy.</li>
+      <li>Results are labeled: <strong>Likely Related</strong>, <strong>Likely Not Related</strong>, <strong>Physician Determination Required</strong>, or <strong>Needs Review</strong>.</li>
+      <li>The output includes suggested language for your physician conversation.</li>
+    </ul>
+
+    <div class="sub-gold">Sub-Tab 3 — ⚠️ Drug Interaction Parser</div>
+    <p>Paste the full drug/allergy interaction alert text from the red box in Firenote. The parser identifies Major and Moderate interactions, prioritizes them by severity, and generates care plan language.</p>
+    <ul class="blist">
+      <li>Copy the entire text from Firenote's "Drug/Allergy interactions" alert — do not filter it first.</li>
+      <li>Choose <strong>Summarized</strong> (default) for a priority-sorted list, or <strong>Full Detail</strong> for complete clinical analysis of each interaction.</li>
+      <li>If Major interactions are identified, a <strong>Z91.89 care plan problem</strong> will be required — the parser will flag this.</li>
+    </ul>
+
+    <div class="alert warning">
+      <span>⚠️</span>
+      <div><strong>Important:</strong> All three checkers provide guidance — not final determinations. Relatedness is always a physician determination. Coverage decisions require IDT review. Use results as a starting point for your clinical conversation, not a substitute for it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 8 — CARE PLAN BUILDER
+══════════════════════════════════════ -->
+<div class="section" id="sec-careplan">
+  <div class="section-hdr">
+    <div class="section-num">8</div>
+    <div class="section-bar">
+      <h2>📋 Care Plan Builder Tab</h2>
+      <p>AI-generated comfort-focused goals and structured interventions</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Care Plan Builder uses AI to generate a complete, CMS-compliant care plan entry — including a comfort-focused goal and at least one Assess, one Educate, and one Perform intervention — based on the diagnosis and patient details you provide. Output is ready to copy directly into Firenote.</p>
+
+    <div class="sub-gold">How to Use It</div>
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-content">
+          <div class="wf-title">Enter the Care Plan Problem / Diagnosis</div>
+          <div class="wf-desc">Be specific — include the symptom and the underlying diagnosis. Example: "Chronic pain related to end-stage lung cancer" or "Dyspnea related to CHF."</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-content">
+          <div class="wf-title">Enter the Primary Hospice Diagnosis</div>
+          <div class="wf-desc">This helps the AI align interventions and language to the clinical context.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-content">
+          <div class="wf-title">Add Patient Details (optional)</div>
+          <div class="wf-desc">Include functional status, PPS, caregiver situation, communication ability, and any relevant medications. The more you provide, the more specific and useful the output.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <div class="wf-content">
+          <div class="wf-title">Select Goals of Care Direction</div>
+          <div class="wf-desc">Choose from Comfort/Symptom Management (default), Family/Caregiver Support, Spiritual/Psychosocial, or Safety emphasis. This adjusts the output's intervention focus.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">5</div>
+        <div class="wf-content">
+          <div class="wf-title">Click "Generate Care Plan" — review, edit, copy</div>
+          <div class="wf-desc">Review the generated output. Edit any language that doesn't reflect your patient. Use the "Copy to Clipboard" button, then paste into Firenote.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert danger">
+      <span>🚨</span>
+      <div><strong>Always personalize AI output before entering it into Firenote.</strong> The nurse of record is responsible for all documented content. Generic AI output that does not reflect the actual patient is an audit risk. Review every line before saving.</div>
+    </div>
+
+    <div class="sub-gold">Required Care Plan Structure in Firenote</div>
+    <p>Every active care plan problem must include at minimum:</p>
+    <ul class="blist">
+      <li>One <strong>Assess</strong> intervention (e.g. assess pain level each visit)</li>
+      <li>One <strong>Educate</strong> intervention (e.g. educate patient/family on medication use)</li>
+      <li>One <strong>Perform</strong> intervention (e.g. administer ordered medications for symptom management)</li>
+    </ul>
+    <p>The Perform interventions must be marked as <strong>"Performed"</strong> at the end of the visit — this is what populates the Skilled Nursing Performed section. An incomplete SNP section means the visit has no documented clinical value.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 9 — NARRATIVE STRENGTHENER
+══════════════════════════════════════ -->
+<div class="section" id="sec-narrative">
+  <div class="section-hdr">
+    <div class="section-num">9</div>
+    <div class="section-bar">
+      <h2>✍️ Narrative Strengthener Tab</h2>
+      <p>HIPAA-safe — builds a Copilot prompt and opens it directly in Microsoft Copilot</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Narrative Strengthener does <em>not</em> send your data to any external AI service. Instead, it formats your draft notes into a structured, compliance-focused prompt, then opens that prompt directly in Microsoft Copilot — which runs within Luminos's existing HIPAA-covered Microsoft environment using your Luminos credentials.</p>
+
+    <div class="alert success">
+      <span>🛡️</span>
+      <div><strong>HIPAA-Safe:</strong> Your patient information never leaves your Luminos Microsoft environment. The tool only opens Copilot with your prepared prompt. You must be signed into Copilot with your <strong>Luminos Microsoft credentials</strong> for HIPAA coverage to apply.</div>
+    </div>
+
+    <div class="sub-gold">How to Use It</div>
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-content">
+          <div class="wf-title">Enter the Primary Hospice Diagnosis</div>
+          <div class="wf-desc">This structures the output around the correct clinical context.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-content">
+          <div class="wf-title">Paste your draft notes into the large text field</div>
+          <div class="wf-desc">Rough notes, shorthand, or even a partial narrative — the more clinical detail you include, the stronger Copilot's output will be. You may include patient details here, since this data goes to Copilot through your Luminos Microsoft login.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-content">
+          <div class="wf-title">Click "Build Copilot Prompt"</div>
+          <div class="wf-desc">The tool formats your notes into a structured, compliance-focused prompt with all required narrative elements specified.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <div class="wf-content">
+          <div class="wf-title">Click "Copy Prompt" then "Open Microsoft Copilot"</div>
+          <div class="wf-desc">Copilot opens in a new browser tab. Sign in with your Luminos Microsoft credentials. Paste the prompt. Copilot returns a strengthened, compliant narrative with an element checklist.</div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">5</div>
+        <div class="wf-content">
+          <div class="wf-title">Copy Copilot's output into Firenote and review</div>
+          <div class="wf-desc">Paste into the Nursing Narrative field. Review every line for accuracy. Then remember to also copy the narrative to the <strong>Verbal Certification page → "Nursing Narrative (RN)" tab</strong> to attach it to the CTI.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert warning">
+      <span>⚠️</span>
+      <div><strong>Required narrative elements:</strong> Primary diagnosis and related conditions · Secondary non-related conditions (comorbidities) · Evidence of decline (functional, nutritional, cognitive) · Objective data (PPS, weight/MAC, intake, ADLs) · Symptom burden · Current functional status · Depression screening result · Recent changes or hospitalizations.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 10 — ICD-10 REFERENCE
+══════════════════════════════════════ -->
+<div class="section" id="sec-icd">
+  <div class="section-hdr">
+    <div class="section-num">10</div>
+    <div class="section-bar">
+      <h2>🔎 ICD-10 Reference Tab</h2>
+      <p>200+ hospice-relevant codes across 15 categories — searchable and filterable</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The ICD-10 Reference is a searchable database of the most common ICD-10 codes used in hospice admissions, with documentation-specific information for each code.</p>
+
+    <div class="sub-gold">How to Use It</div>
+    <ul class="blist">
+      <li>Use the <strong>search bar</strong> to find by diagnosis name or code (e.g. "CHF", "I50", "dementia").</li>
+      <li>Use the <strong>category filter</strong> to browse by disease category (cardiac, neurological, cancer, etc.).</li>
+      <li>Each code entry includes: ICD-10 code, diagnosis name, hospice goal language, SNP interventions, and documentation notes.</li>
+    </ul>
+
+    <div class="sub-gold">What Each Code Entry Contains</div>
+    <table class="qtable">
+      <thead><tr><th>Field</th><th>What It Tells You</th></tr></thead>
+      <tbody>
+        <tr><td>ICD-10 Code</td><td>The code to enter in Firenote's diagnosis/problem list</td></tr>
+        <tr><td>Goal</td><td>Comfort-focused care plan goal language appropriate for this diagnosis</td></tr>
+        <tr><td>SNP Interventions</td><td>Skilled nursing performed interventions to include in the care plan</td></tr>
+        <tr><td>Documentation Notes</td><td>LCD requirements, common audit flags, and documentation tips specific to this code</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert tip">
+      <span>💡</span>
+      <div><strong>Always code to the highest level of specificity.</strong> For example, use I50.22 (chronic systolic CHF) rather than I50.9 (CHF, unspecified). Confirm codes are valid for the current fiscal year. When in doubt, ask the physician.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 11 — SAMPLE ADMISSION
+══════════════════════════════════════ -->
+<div class="section" id="sec-sample">
+  <div class="section-hdr">
+    <div class="section-num">11</div>
+    <div class="section-bar">
+      <h2>📄 Sample Admission Tab</h2>
+      <p>Fully annotated compliant admission note</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <p>The Sample Admission tab shows you what a complete, audit-ready hospice admission note looks like. It uses a realistic fictional patient and walks through every section of the documentation with color-coded annotation boxes explaining <em>why</em> each element is present and what it demonstrates.</p>
+
+    <div class="sub-gold">How to Use It</div>
+    <ul class="blist">
+      <li>Expand each card to read the sample documentation for that section.</li>
+      <li>Read the annotation boxes (gold-bordered) for clinical compliance notes and audit context.</li>
+      <li>Use this tab when you're unsure how a section should be worded, or as a model for newer nurses who haven't yet developed their narrative style.</li>
+      <li>Use the <strong>Print</strong> button to print the full sample admission for training or reference.</li>
+    </ul>
+
+    <div class="alert info">
+      <span>ℹ️</span>
+      <div>The sample patient is entirely fictional. All demographic and clinical details are invented for training purposes only. Do not enter sample content into Firenote — it must be replaced with actual patient information.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 12 — COMMON MISTAKES
+══════════════════════════════════════ -->
+<div class="section" id="sec-mistakes">
+  <div class="section-hdr">
+    <div class="section-num">12</div>
+    <div class="section-bar">
+      <h2>Common Mistakes to Avoid</h2>
+      <p>The most frequent documentation errors that create audit exposure</p>
+    </div>
+  </div>
+  <div class="section-body">
+    <ul class="mistake-list">
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Not documenting the depression screening in the narrative.</strong> Firenote has no dedicated field. This must be typed manually in the nursing narrative on every admission — even if the patient cannot participate. Skipping it is a consistent audit finding.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Not attaching the narrative to the CTI.</strong> After writing your nursing narrative, you must navigate to the Verbal Certification page → click "Nursing Narrative (RN)" tab → paste your full narrative there. Without this step, the physician does not have your clinical documentation when completing the attestation.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Care plan interventions not marked "Performed."</strong> Every Assess, Educate, and Perform intervention on the care plan must be marked "Performed" at the end of the visit. This is what creates the Skilled Nursing Performed section. An empty SNP means the visit has no documented clinical value.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Writing curative goals in the care plan.</strong> Goals must be comfort-focused. Phrases like "maintain blood pressure below 140/90" or "improve ambulation to independent" are inappropriate for hospice. Every goal should reflect end-of-life comfort and quality of life.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Failing to classify every diagnosis as Related or Non-Related.</strong> Every condition on the diagnosis list must be marked in Firenote. Unclassified diagnoses are flagged at audit. When uncertain, bring it to the physician and document the outcome.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Skipping the verbal certification or entering it late.</strong> Verbal certification must be obtained and documented within 48 hours of admission. Exception: transfer patients from another hospice do not need a new verbal certification.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Pasting AI-generated care plan content without reviewing it.</strong> AI output is a starting point. Every line must be reviewed for clinical accuracy and personalized to reflect the actual patient before entering into Firenote. Generic content that does not match the patient is an audit risk.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Missing QAPI entries for wounds or infections present on admission.</strong> Any wound, skin breakdown, or infection present at the time of admission must have a QAPI event entered. This protects Luminos from liability for conditions that existed before hospice enrollment.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Drug interactions without a Z91.89 care plan problem.</strong> If you document a significant drug interaction concern, a care plan problem using code Z91.89 must be created with appropriate goal and interventions.</div>
+      </li>
+      <li>
+        <span class="icon">🚫</span>
+        <div><strong>Using Copilot or other AI tools with personal identifiers outside of your Luminos Microsoft account.</strong> Patient names, DOB, addresses, and other PHI must never be entered into any AI tool outside the Luminos Microsoft environment. Use the Narrative Strengthener — it opens Copilot through your Luminos login, keeping data within the HIPAA-covered environment.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SECTION 13 — QUICK REFERENCE
+══════════════════════════════════════ -->
+<div class="section" id="sec-quickref">
+  <div class="section-hdr">
+    <div class="section-num">13</div>
+    <div class="section-bar">
+      <h2>Quick Reference Card</h2>
+      <p>Key rules and requirements at a glance</p>
+    </div>
+  </div>
+  <div class="section-body">
+
+    <div class="sub-gold">Key Requirements — Every Admission</div>
+    <table class="qtable">
+      <thead><tr><th>Item</th><th>Rule</th><th>Where in Firenote</th></tr></thead>
+      <tbody>
+        <tr><td>Depression Screening</td><td>Both PHQ-2 questions (or observational note if unable). Document result regardless of outcome.</td><td>Typed manually in Nursing Narrative</td></tr>
+        <tr><td>Verbal Certification</td><td>Within 48 hours. Transfer patients: not required (prior hospice certification carries over).</td><td>Verbal Certification page</td></tr>
+        <tr><td>Narrative → CTI</td><td>Full nursing narrative must be pasted into the "Nursing Narrative (RN)" tab on the Verbal Certification page.</td><td>Verbal Certification → RN tab</td></tr>
+        <tr><td>Relatedness Classification</td><td>Every diagnosis must be marked Related or Non-Related. Physician must document reason for Non-Related in the chart.</td><td>Diagnosis List</td></tr>
+        <tr><td>MAC Measurement</td><td>Bi-weekly per Luminos policy.</td><td>Assessment / Vitals</td></tr>
+        <tr><td>Symptom Impact Screening</td><td>Must be completed day-of admission. If not possible, document reason in narrative within 24 hours.</td><td>HOPE Section I</td></tr>
+        <tr><td>Care Plan Interventions</td><td>Minimum one Assess, one Educate, one Perform per problem. All Perform interventions must be marked "Performed."</td><td>Care Plan</td></tr>
+        <tr><td>QAPI Events</td><td>Required for any wound, skin breakdown, or infection present on admission.</td><td>QAPI section</td></tr>
+        <tr><td>IDG Coordination</td><td>Required IDG coordination statement must be documented.</td><td>Care Coordination section</td></tr>
+        <tr><td>Drug Interactions (Z91.89)</td><td>If significant drug interaction is documented, a care plan problem using Z91.89 is required.</td><td>Care Plan problem list</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-gold">Key Assessment Scale Reference</div>
+    <table class="qtable">
+      <thead><tr><th>Scale</th><th>What It Measures</th><th>Key Rule</th></tr></thead>
+      <tbody>
+        <tr><td>PPS</td><td>Palliative Performance Scale — overall functional status</td><td>Use the row that best represents the patient's current overall status across all 5 columns</td></tr>
+        <tr><td>FAST</td><td>Functional Assessment Staging Test — dementia progression</td><td>Validated for Alzheimer's; supported for all dementia types at Luminos with documentation of overall functional decline</td></tr>
+        <tr><td>PHQ-2</td><td>Depression screening — 2-question tool</td><td>Ask verbally if patient can participate. Positive screen requires full PHQ-9 follow-up and care plan entry.</td></tr>
+        <tr><td>HOPE Section I</td><td>Symptom impact screening at admission</td><td>Day-of requirement. Score comorbid conditions only for their effect on overall status, not as primary problems.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-gold">Which Tool to Use When</div>
+    <table class="qtable">
+      <thead><tr><th>Situation</th><th>Use This Tab</th></tr></thead>
+      <tbody>
+        <tr><td>Not sure what a Firenote field is asking for</td><td>📋 Assessment Walkthrough — expand the matching card</td></tr>
+        <tr><td>Building a care plan</td><td>📋 Care Plan Builder (AI) or 🔎 ICD-10 Reference (manual lookup)</td></tr>
+        <tr><td>Writing the nursing narrative</td><td>✍️ Narrative Strengthener → Microsoft Copilot</td></tr>
+        <tr><td>Unsure if a medication is covered</td><td>🧠 Clinical Checkers → Medication Coverage sub-tab</td></tr>
+        <tr><td>Unsure if a diagnosis is related</td><td>🧠 Clinical Checkers → Diagnosis Relatedness sub-tab</td></tr>
+        <tr><td>Drug interaction alert in Firenote</td><td>🧠 Clinical Checkers → Drug Interaction Parser sub-tab</td></tr>
+        <tr><td>Need the ICD-10 code for a diagnosis</td><td>🔎 ICD-10 Reference — search by name or code</td></tr>
+        <tr><td>About to sign the admission</td><td>✅ Admission Checklist — work through every item</td></tr>
+        <tr><td>Unsure how a section should be documented</td><td>📄 Sample Admission — find the matching section</td></tr>
+      </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <div class="alert tip">
+      <span>💡</span>
+      <div><strong>When in doubt — don't sign.</strong> Contact your Supervisor or Quality Assurance team before signing. It is always easier to correct documentation before the admission is signed than after. The tools in this application are designed to help you feel confident that what you're signing is accurate and complete.</div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<!-- ══ FOOTER ══ -->
+<div class="guide-footer">
+  <p>Luminos Hospice Admission Tools — User Guide &nbsp;|&nbsp; For clinical documentation use only</p>
+  <a href="https://luminosadmissiontools.netlify.app" target="_blank">luminosadmissiontools.netlify.app</a>
+</div>
+
+</div><!-- end page-wrap -->
+</div>
+</div><!-- end panel-guide -->
+
+<!-- ══════════════════════════════════════════════════════════════════
      PANEL 1 — WALKTHROUGH
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel active" id="panel-walkthrough">
+<div class="panel" id="panel-walkthrough">
 <div class="container">
 <div class="panel-search-wrap"><span class="panel-search-icon">🔍</span><input type="text" id="walkSearch" placeholder="Search the walkthrough... (e.g. pain, HOPE, bereavement, fall risk)"><button class="panel-search-clear" id="walkSearchClear" title="Clear">✕</button></div>
 <button class="print-btn" onclick="window.print()" style="margin-bottom:12px">🖨 Print This Section</button>
@@ -1209,6 +2476,23 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   </div></div>
 </div>
 
+<!-- SECTION 5 — AFTER ADMISSION -->
+<div id="cs5">
+  <div class="sec-hdr" onclick="toggleSec('cs5')">
+    <div class="sec-num">5</div>
+    <div class="sec-bar">
+      <h3>After Every Admission</h3><div class="ssub">Required notifications — admitted or not taken under care</div>
+      <span class="sec-badge" id="b_cs5">0 / 2</span><span class="sec-chevron">▼</span>
+    </div>
+  </div>
+  <div class="sec-body"><div class="sec-inner">
+    <div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">These two steps are required after <strong>every</strong> admission visit — regardless of whether the patient was admitted or not taken under care. Complete them before closing out.</div></div>
+    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs5')"><div class="chk-box"></div><div class="chk-text"><strong>Notify intake of admission status</strong><span class="note">Contact intake and report the outcome of the admission visit — either <strong>admitted</strong> (patient enrolled) or <strong>not taken under care</strong> (with reason). This is required after every visit regardless of outcome.</span></div><span class="tag req">REQ</span></div>
+    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs5')"><div class="chk-box"></div><div class="chk-text"><strong>Post brief narrative summary in your location's Admissions channel in Teams</strong><span class="note">Post a short summary of the admission in the Microsoft Teams Admissions channel for your location. Include patient initials or ID (no full names), admission outcome, primary diagnosis, and any immediate follow-up needs or flags for the team.</span></div><span class="tag req">REQ</span></div>
+    <div class="alert tip" style="margin-top:10px"><span>💡</span><div>These two steps keep the intake team informed and ensure the clinical team is immediately aware of new admissions or any visit that did not result in enrollment.</div></div>
+  </div></div>
+</div>
+
 </div><!-- end container -->
 <!-- Bottom bar -->
 <div class="bottom-bar visible" id="bottomBar">
@@ -1533,9 +2817,9 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   /* Hide chrome */
   header,.tab-bar,.progress-bar,.print-btn,.bottom-bar{display:none!important}
   /* Hide all panels by default */
-  #panel-walkthrough,#panel-checklist,#panel-icd,#panel-sample,#panel-meds,#panel-rel,#panel-checker,#panel-careplan,#panel-narrative{display:none!important}
+  #panel-guide,#panel-walkthrough,#panel-checklist,#panel-icd,#panel-sample,#panel-meds,#panel-rel,#panel-checker,#panel-careplan,#panel-narrative{display:none!important}
   /* Show only the active panel */
-  #panel-walkthrough.active,#panel-checklist.active,#panel-icd.active,#panel-sample.active,#panel-meds.active,#panel-rel.active,#panel-checker.active,#panel-careplan.active,#panel-narrative.active{display:block!important}
+  #panel-guide.active,#panel-walkthrough.active,#panel-checklist.active,#panel-icd.active,#panel-sample.active,#panel-meds.active,#panel-rel.active,#panel-checker.active,#panel-careplan.active,#panel-narrative.active{display:block!important}
   /* Expand all cards */
   .card-body{display:block!important}
   .sec-body{display:block!important}
@@ -2422,6 +3706,152 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
      JAVASCRIPT
 ══════════════════════════════════════════════════════════════════ -->
 <script>
+// ── Guide Search (scroll-to-match with next/prev) ─────────────────
+(function() {
+  var _originals = null;
+  var _allMarks = [];
+  var _currentMark = -1;
+  // Header height offset so sticky header doesn't cover the match
+  var SCROLL_OFFSET = 130;
+
+  function getSearchables() {
+    // Scope strictly to panel-guide so we don't touch other panels
+    var panel = document.getElementById('panel-guide');
+    if (!panel) return [];
+    return panel.querySelectorAll('.section-body, .tab-card-body, .wf-desc, .wf-title, .qtable td, .blist li, .mistake-list li, .alert, .wf-content');
+  }
+
+  function storeOriginals() {
+    if (_originals) return;
+    _originals = [];
+    getSearchables().forEach(function(el) {
+      _originals.push({ el: el, html: el.innerHTML });
+    });
+  }
+
+  function restoreOriginals() {
+    if (!_originals) return;
+    _originals.forEach(function(o) { o.el.innerHTML = o.html; });
+    _allMarks = [];
+    _currentMark = -1;
+  }
+
+  function scrollToMark(idx) {
+    if (!_allMarks.length) return;
+    // Remove active highlight from previous
+    _allMarks.forEach(function(m) {
+      m.style.background = '#fff3b0';
+      m.style.outline = '';
+    });
+    var mark = _allMarks[idx];
+    if (!mark) return;
+    mark.style.background = '#f97316';
+    mark.style.outline = '2px solid #c2410c';
+    // Scroll: account for sticky header
+    var rect = mark.getBoundingClientRect();
+    var scrollTop = window.pageYOffset + rect.top - SCROLL_OFFSET;
+    window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+    _currentMark = idx;
+    updateCounter();
+  }
+
+  function updateCounter() {
+    var countEl = document.getElementById('guideSearchCount');
+    if (!countEl) return;
+    if (_allMarks.length === 0) {
+      countEl.textContent = '';
+      return;
+    }
+    var cur = _currentMark >= 0 ? (_currentMark + 1) : 1;
+    countEl.innerHTML = cur + ' of ' + _allMarks.length + ' match' + (_allMarks.length !== 1 ? 'es' : '')
+      + ' &nbsp;<button onclick="guideSearchPrev()" style="padding:1px 8px;background:var(--navy);color:#fff;border:none;border-radius:3px;font-family:inherit;font-size:.75rem;cursor:pointer;margin-right:2px">&#8593; Prev</button>'
+      + '<button onclick="guideSearchNext()" style="padding:1px 8px;background:var(--navy);color:#fff;border:none;border-radius:3px;font-family:inherit;font-size:.75rem;cursor:pointer">&#8595; Next</button>';
+  }
+
+  window.guideSearchNext = function() {
+    if (!_allMarks.length) return;
+    var next = (_currentMark + 1) % _allMarks.length;
+    scrollToMark(next);
+  };
+
+  window.guideSearchPrev = function() {
+    if (!_allMarks.length) return;
+    var prev = (_currentMark - 1 + _allMarks.length) % _allMarks.length;
+    scrollToMark(prev);
+  };
+
+  window.guideSearchRun = function() {
+    storeOriginals();
+    var q = document.getElementById('guideSearch').value.trim();
+    var clearBtn = document.getElementById('guideSearchClear');
+    var countEl  = document.getElementById('guideSearchCount');
+    var noneEl   = document.getElementById('guideSearchNone');
+    var panel    = document.getElementById('panel-guide');
+
+    restoreOriginals();
+
+    if (!q) {
+      clearBtn.style.display = 'none';
+      if (countEl) countEl.innerHTML = '';
+      if (noneEl)  noneEl.style.display = 'none';
+      if (panel) panel.querySelectorAll('.section').forEach(function(s) { s.style.display = ''; });
+      return;
+    }
+
+    clearBtn.style.display = 'block';
+
+    var escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var re = new RegExp('(' + escaped + ')', 'gi');
+    var sectionsWithMatch = new Set();
+
+    _originals.forEach(function(o) {
+      // Test against plain text to avoid matching HTML tags
+      var plainText = o.el.textContent || '';
+      if (re.test(plainText)) {
+        var el = o.el;
+        while (el && !el.classList.contains('section')) el = el.parentElement;
+        if (el) sectionsWithMatch.add(el);
+        // Replace in innerHTML — wrap each match in a <mark>
+        o.el.innerHTML = o.html.replace(re, '<mark class="guide-search-highlight">$1</mark>');
+      }
+    });
+
+    // Show/hide sections
+    if (panel) panel.querySelectorAll('.section').forEach(function(s) {
+      s.style.display = sectionsWithMatch.has(s) ? '' : 'none';
+    });
+
+    // Collect all rendered marks within panel-guide
+    _allMarks = panel ? Array.from(panel.querySelectorAll('mark.guide-search-highlight')) : [];
+    _currentMark = -1;
+
+    if (_allMarks.length === 0) {
+      if (countEl) countEl.innerHTML = '';
+      if (noneEl)  noneEl.style.display = 'block';
+      if (panel) panel.querySelectorAll('.section').forEach(function(s) { s.style.display = ''; });
+    } else {
+      if (noneEl) noneEl.style.display = 'none';
+      // Auto-scroll to first match after a brief paint delay
+      setTimeout(function() { scrollToMark(0); }, 80);
+    }
+  };
+
+  window.guideSearchClear = function() {
+    document.getElementById('guideSearch').value = '';
+    window.guideSearchRun();
+    document.getElementById('guideSearch').focus();
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var inp = document.getElementById('guideSearch');
+    if (!inp) return;
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { window.guideSearchClear(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); window.guideSearchNext(); }
+    });
+  });
+})();
+
 // ── Tab switching ──────────────────────────────────────────────────
 function switchTab(name, btn) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -2446,8 +3876,8 @@ function toggleSec(id) {
 }
 
 // ── Checklist tracking ─────────────────────────────────────────────
-const totals = {cs0:8, cs1:7, cs2:25, cs3:12, cs4:9};
-const counts  = {cs0:0, cs1:0, cs2:0,  cs3:0,  cs4:0};
+const totals = {cs0:8, cs1:7, cs2:25, cs3:12, cs4:9, cs5:2};
+const counts  = {cs0:0, cs1:0, cs2:0,  cs3:0,  cs4:0,  cs5:0};
 const totalAll = Object.values(totals).reduce((a,b)=>a+b,0); // 54 total
 
 function totalDone() { return Object.values(counts).reduce((a,b)=>a+b,0); }
@@ -5969,31 +7399,103 @@ function clearPHIAlert(fieldId) {
 
 
 // ── CARE PLAN RENDERER ─────────────────────────────────────────────
+function cpCopyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+  });
+}
+
 function renderCarePlan(text) {
-  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const lines = html.split('\n');
-  const out = [];
+  // Split into named sections by ## headers
+  const sections = [];
+  let current = null;
+  const lines = text.split('\n');
   for (let i = 0; i < lines.length; i++) {
-    let l = lines[i];
+    const l = lines[i];
     if (l.startsWith('## ')) {
-      out.push('<div style="font-size:.72rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--border)">' + l.slice(3) + '</div>');
-    } else if (l.trim().startsWith('**ASSESS**')) {
-      const txt = l.replace(/\*\*ASSESS\*\*/,'').trim().replace(/^—\s*/,'');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:#eef3fb;border-radius:6px;border-left:3px solid var(--blue)"><span style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">ASSESS</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.trim().startsWith('**EDUCATE**')) {
-      const txt = l.replace(/\*\*EDUCATE\*\*/,'').trim().replace(/^—\s*/,'');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:var(--green-bg);border-radius:6px;border-left:3px solid var(--green)"><span style="font-size:.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">EDUCATE</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.trim().startsWith('**PERFORM**')) {
-      const txt = l.replace(/\*\*PERFORM\*\*/,'').trim().replace(/^—\s*/,'');
-      out.push('<div style="display:flex;gap:10px;align-items:flex-start;margin:7px 0;padding:8px 12px;background:var(--amber-bg);border-radius:6px;border-left:3px solid var(--gold)"><span style="font-size:.72rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">PERFORM</span><span style="font-size:.88rem;color:var(--text)">' + txt + '</span></div>');
-    } else if (l.trim() === '') {
-      out.push('<div style="margin-top:4px"></div>');
-    } else {
-      let ln = l.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
-      out.push('<p style="margin:3px 0;font-size:.9rem;color:var(--text)">' + ln + '</p>');
+      if (current) sections.push(current);
+      current = { title: l.slice(3).trim(), lines: [] };
+    } else if (current) {
+      current.lines.push(l);
     }
   }
+  if (current) sections.push(current);
+
+  const out = [];
+
+  sections.forEach(function(sec) {
+    // Build plain-text version of section content for copying
+    const plainLines = sec.lines.map(l => {
+      return l.replace(/\*\*([^*]+?)\*\*/g, '$1').trim();
+    }).filter(l => l.length > 0);
+    const plainText = sec.title + '\n' + plainLines.join('\n');
+
+    // Render section content HTML
+    const contentHtml = sec.lines.map(function(l) {
+      const lt = l.trim();
+      if (lt.startsWith('**ASSESS**')) {
+        const txt = lt.replace(/\*\*ASSESS\*\*/, '').replace(/^[\s—-]+/, '');
+        const plain = 'ASSESS — ' + txt;
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:#eef3fb;border-radius:6px;border-left:3px solid var(--blue)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">ASSESS</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
+          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + '</div>';
+      } else if (lt.startsWith('**EDUCATE**')) {
+        const txt = lt.replace(/\*\*EDUCATE\*\*/, '').replace(/^[\s—-]+/, '');
+        const plain = 'EDUCATE — ' + txt;
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--green-bg);border-radius:6px;border-left:3px solid var(--green)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">EDUCATE</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
+          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + '</div>';
+      } else if (lt.startsWith('**PERFORM**')) {
+        const txt = lt.replace(/\*\*PERFORM\*\*/, '').replace(/^[\s—-]+/, '');
+        const plain = 'PERFORM — ' + txt;
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg);border-radius:6px;border-left:3px solid var(--gold)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">PERFORM</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
+          + '<button onclick="cpCopyText(' + JSON.stringify(plain) + ',this)" style="margin-left:6px;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          + '</div>';
+      } else if (lt === '') {
+        return '<div style="margin-top:3px"></div>';
+      } else {
+        const ln = escHtml(l).replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+        return '<p style="margin:3px 0;font-size:.9rem;color:var(--text)">' + ln + '</p>';
+      }
+    }).join('');
+
+    // Section block with header + copy-section button
+    out.push(
+      '<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
+      + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.08em">' + escHtml(sec.title) + '</span>'
+      + '<button onclick="cpCopyText(' + JSON.stringify(plainText) + ',this)" style="padding:4px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Copy Section</button>'
+      + '</div>'
+      + '<div style="padding:10px 12px">' + contentHtml + '</div>'
+      + '</div>'
+    );
+  });
+
   return out.join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 
@@ -6567,7 +8069,7 @@ function clearDrugParser() {
     <div class="ai-output-wrap" id="cp-output-wrap">
       <div class="ai-output-label">Generated Care Plan — Review &amp; Edit Before Entering into Firenote</div>
       <div class="ai-output-box" id="cp-output"></div>
-      <button class="ai-copy-btn" onclick="copyOutput('cp-output', this)">📋 Copy to Clipboard</button>
+      <button class="ai-copy-btn" onclick="copyOutput('cp-output', this)">📋 Copy All</button>
       <div class="ai-disclaimer">⚠ AI-generated content requires nurse review before entry into Firenote. Personalize all details to reflect the actual patient. The nurse of record is responsible for all documented content.</div>
     </div>
 
@@ -6634,11 +8136,13 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
         </div>
       </div>
 
-      <div style="padding:12px 16px;background:#eef3fb;border:1px solid #bfdbfe;border-radius:8px;font-size:.83rem;color:#1e3a8a;line-height:1.6">
+      <div style="padding:12px 16px;background:#eef3fb;border:1px solid #bfdbfe;border-radius:8px;font-size:.83rem;color:#1e3a8a;line-height:1.6;margin-bottom:16px">
         <strong>How to use:</strong> Click <em>Copy Prompt</em> above, then click <em>Open Microsoft Copilot</em>. Sign in with your Luminos Microsoft credentials, paste the prompt, and Copilot will return a strengthened narrative with an element checklist. Copy the result into Firenote and review before saving.
       </div>
 
     </div>
+
+
 
   </div>
 </div>
