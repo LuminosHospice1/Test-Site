@@ -435,12 +435,11 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
 <div class="sub-navy">Code Status</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:6px">Enter code status: <strong>DNR</strong> or <strong>Full Code</strong>.</p>
-<div class="alert warning" style="margin-bottom:8px"><span>⚠</span><div><strong>If the patient is Full Code</strong>, a care plan must be entered addressing this:<br><br>
-<strong>Problem:</strong> Risk of Hospitalization due to Full Code Status — placed under the primary diagnosis<br><br>
-<strong>Interventions (use custom intervention option):</strong><br>
-• Assess for risk of hospitalization — Reason: Full code status<br>
-• Educate on the various code statuses and what they may look like if initiated at time of zero signs of life<br>
-• Confirm understanding of various code statuses and desires for EOL care
+<div class="alert warning" style="margin-bottom:8px"><span>⚠</span><div><strong>If the patient is Full Code</strong>, add the following interventions directly under the <em>primary diagnosis</em> care plan problem (do not create a separate problem for full code status):<br><br>
+<strong>Add these as custom interventions under the primary dx problem:</strong><br>
+• Assess for risk of hospitalization d/t full code status<br>
+• Educate patient/family on code statuses, what they look like at EOL, and confirm understanding<br>
+• Confirm patient/family wishes regarding EOL care
 </div></div>
 
 <div class="sub-navy">Safety Issues</div>
@@ -462,6 +461,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
 <div class="sub-gold">What to Enter</div>
 <ul class="blist"><li>Date and time that the admission visit starts</li><li>Mileage to the patient's location</li><li>Travel time</li><li>If the admission is during an on-call shift, mark "On Call"</li></ul>
+<div class="alert info" style="margin-bottom:8px"><span>📍</span><div><strong>Date and time of the visit must be entered in real time.</strong> This is required for emergency preparedness — entering it opens the encounter and allows the agency to determine where you are in the event of any emergency situation.</div></div>
 <div class="alert warning" style="margin-bottom:8px"><span>⏱</span><div><strong>Admission documentation is expected to be completed within 24 hours of the visit.</strong> Documentation not submitted within 24 hours creates compliance and billing risk.</div></div>
 <div class="alert info"><span>ℹ</span><div>Complete Visit Details before documenting any clinical content. Mileage and travel time are required for billing accuracy.</div></div>
 
@@ -830,6 +830,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div class="narr"><div class="narr-lbl">EXAMPLE</div><p>Dementia with behavioral disturbance (F02.81) can serve as the primary problem. Agitation (R45.1) and Anxiety (F41.9) can be grouped under the dementia problem — each will have their own entry due to coding requirements, but one set of goals and interventions may address all three.</p></div>
 <div class="sub-gold" style="margin-top:12px">Using AI (Microsoft Copilot) to Build Care Plan Goals &amp; Interventions</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Copilot can help you quickly generate appropriate, hospice-aligned goals and interventions for each diagnosis. Use the prompt below — paste it into Copilot and add the diagnosis and any relevant clinical details.</p>
+<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>Prefer a fully built care plan?</strong> Use the <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">📋 Care Plan Builder</a> tab — enter the diagnosis and it will generate a complete goal and structured Assess/Educate/Perform interventions ready to copy into Firenote.</div></div>
 <div class="narr">
   <div class="narr-lbl">COPILOT PROMPT — Copy, Fill In, and Use</div>
   <p>Use the following format: Patient will remain comfortable and free from [diagnosis]-related distress, as measured by patient report (if able), observed status, and trends in caregiver feedback by the end of the current benefit period.<br><br>Develop a hospice-appropriate goal and interventions for my hospice patient with the following diagnosis:<br><br>[Add diagnosis and any pertinent clinical details to help formulate the care plan goal and interventions]</p>
@@ -981,6 +982,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </div></div>
 
 <div class="sub-gold" style="margin-top:14px">Using AI (Microsoft Copilot) to Build Your Nursing Narrative</div>
+<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>For a streamlined experience</strong>, use the <a href="#" onclick="switchTab('narrative',document.querySelector('[onclick*=narrative]'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">✍️ Narrative Strengthener</a> tab — enter your draft notes and it builds a compliant Copilot prompt automatically, then opens directly in Microsoft Copilot.</div></div>
 <ul class="blist"><li>Copy your full assessment narrative from the "Review and Finish" section</li><li>Paste it into Copilot and use the prompt below</li><li>Review and edit as needed to ensure accuracy</li></ul>
 <div class="alert warning"><span>⚠</span><div><strong>Do NOT include any patient identifying information</strong> (name, DOB, address, etc.)<br>Ensure all diagnoses are added to the care plan list first so they pull into your assessment.<br>If diagnoses are missing, you will need to manually include them in the narrative.</div></div>
 <div class="narr"><div class="narr-lbl">COPILOT PROMPT — Copy and Use</div><p>Using the information below, generate a hospice admission nursing narrative.<br><br>Include: primary diagnosis, related and non-related conditions, evidence of decline (functional, nutritional, cognitive), objective data (PPS, weight/MAC, intake, ADLs), symptom burden, current functional status, and any recent changes or hospitalizations.<br><br>Write in a clear, clinical narrative style that supports hospice eligibility and can be used by a physician for attestation. Do not include any patient identifiers.</p></div>
@@ -2393,7 +2395,7 @@ Use these results as a starting point for your MD conversation, not as a final a
     <!-- DRUG INTERACTION PARSER -->
     <div id="drug-interactions" class="checker-section">
       <div class="checker-field">
-        <label>Paste Drug Interaction Alert from Firenote</label>
+        <label>Paste expanded drug interaction alerts from Firenote</label>
         <textarea id="dip-input" style="min-height:160px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="Paste the full Drug/Allergy interactions text from the red box in Firenote here...
 
 Example:
