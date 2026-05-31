@@ -1326,7 +1326,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <div class="wf-num">5</div>
         <div class="wf-content">
           <div class="wf-title">Click "Generate Care Plan" — review, edit, copy</div>
-          <div class="wf-desc">Review the generated output. Each section has its own <strong>📋 Copy Section</strong> button, and each individual intervention has a <strong>📋 Copy</strong> button — paste each one directly into the corresponding field in Firenote. Use <strong>📋 Copy All</strong> to copy the full output at once. Always edit any language that doesn't reflect your actual patient before saving.</div>
+          <div class="wf-desc">Review the generated output. The <strong>Goal</strong> section has a <strong>📋 Copy</strong> button, and each individual intervention has its own <strong>📋 Copy</strong> button — paste each one directly into the corresponding field in Firenote. Use <strong>📋 Copy All</strong> to copy the full output at once. Always edit any language that doesn't reflect your actual patient before saving.</div>
         </div>
       </div>
     </div>
@@ -7510,11 +7510,13 @@ function renderCarePlan(text) {
       }
     }).join('');
 
-    // Section block with header — no Copy Section button
+    // Section block — Goal section gets a copy button in the header; others just show the title
+    const isGoal = sec.title.toUpperCase() === 'GOAL';
     out.push(
       '<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
-      + '<div style="padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
       + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.08em">' + escHtml(sec.title) + '</span>'
+      + (isGoal ? makeCpBtn(plainLines.join(' '), '📋 Copy', 'padding:4px 12px;') : '')
       + '</div>'
       + '<div style="padding:10px 12px">' + contentHtml + '</div>'
       + '</div>'
