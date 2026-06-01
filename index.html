@@ -338,9 +338,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   </div>
   <div class="tab-bar">
     <div class="tab-inner">
-      <button class="tab-btn active" onclick="switchTab('guide',this)">📖 User Guide</button>
       <button class="tab-btn" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
-      <button class="tab-btn" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
+      <button class="tab-btn active" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
       <button class="tab-btn" onclick="switchTab('meds',this)">💊 Medication Coverage</button>
       <button class="tab-btn" onclick="switchTab('rel',this)">🔗 Diagnosis Relatedness</button>
       <button class="tab-btn" onclick="switchTab('checker',this)">🧠 Clinical Checkers</button>
@@ -348,6 +347,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <button class="tab-btn" onclick="switchTab('narrative',this)">✍️ Narrative Strengthener</button>
       <button class="tab-btn" onclick="switchTab('icd',this)">🔎 ICD-10 Reference</button>
       <button class="tab-btn" onclick="switchTab('sample',this)">📄 Sample Admission</button>
+      <button class="tab-btn" onclick="switchTab('guide',this)">📖 User Guide</button>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
@@ -851,7 +851,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   .qtable { font-size: .78rem; }
 }
 </style>
-<div class="panel active" id="panel-guide">
+<div class="panel" id="panel-guide">
 <div style="max-width:1080px;margin:0 auto">
 <div class="page-wrap">
 
@@ -2078,6 +2078,14 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <p style="font-size:.87rem;color:var(--text-mid);margin:6px 0">Each event type opens its own specific reporting tool that must be completed. The following QAPI events must also be reflected in the patient's care plan:</p>
 <ul class="blist"><li>Falls → Fall Risk Care Plan</li><li>Wound → Specific Care Plan per wound (includes wound orders, supplies, and interventions)</li><li>Infections</li></ul>
 
+<div style="margin-top:14px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Ready to work on the care plan or check drug interactions?</span>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[2]&&document.querySelectorAll('.checker-tab')[2].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🧠 Drug Interaction Parser</a>
+    <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Care Plan Builder</a>
+  </div>
+</div>
+
   </div></div>
 </div>
 <div class="card" id="w6">
@@ -2118,6 +2126,11 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Document how the patient transfers</strong><span class="note">e.g., stand-by assist, 1-person assist, mechanical lift, bed-bound/no transfer</span></div></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>No interventions requiring intake/output documentation</strong><span class="note">Unless specifically ordered by the physician</span></div></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Nothing ordered as PRN and no frequency ranges are allowed</strong></div></div>
+
+<div style="margin-top:14px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Need help building a care plan goal and interventions?</span>
+  <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Open Care Plan Builder</a>
+</div>
 
   </div></div>
 </div>
@@ -2326,7 +2339,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══════════════════════════════════════════════════════════════════
      PANEL 2 — CHECKLIST
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-checklist">
+<div class="panel active" id="panel-checklist">
 <div class="container">
 <div class="panel-search-wrap"><span class="panel-search-icon">🔍</span><input type="text" id="checkSearch" placeholder="Search the checklist... (e.g. medications, wound, QAPI, volunteer)"><button class="panel-search-clear" id="checkSearchClear" title="Clear">✕</button></div>
 <button class="print-btn" onclick="window.print()" style="margin-bottom:12px">🖨 Print This Section</button>
@@ -7633,6 +7646,57 @@ function clearCarePlan() {
   document.getElementById('cp-error').classList.remove('show');
 }
 
+const CP_PRESETS = {
+  dementia: {
+    problem: 'Cognitive decline and behavioral disturbance related to end-stage dementia',
+    primary: 'End-stage dementia (Senile degeneration of the brain / Alzheimer\'s disease)',
+    details: 'Non-verbal patient, unable to participate in assessment. FAST Stage 7. Bedbound, fully dependent for all ADLs. PPS 20–30%. Caregiver (family member) present and providing care at home. No consistent pain verbalization — using PAINAD for non-verbal pain assessment. Agitation and restlessness noted at times.',
+    goals: 'comfort'
+  },
+  chf: {
+    problem: 'Dyspnea and fluid retention related to end-stage congestive heart failure',
+    primary: 'End-stage congestive heart failure (HFrEF / HFpEF)',
+    details: 'Patient with progressive dyspnea at rest, bilateral lower extremity edema, orthopnea. PPS 40–50%. Activity severely limited. On diuretics and comfort-focused cardiac medications. Caregiver in home. Patient able to verbalize symptoms.',
+    goals: 'comfort'
+  },
+  copd: {
+    problem: 'Dyspnea and activity intolerance related to end-stage COPD',
+    primary: 'End-stage chronic obstructive pulmonary disease (COPD)',
+    details: 'Patient with severe dyspnea at rest and with minimal exertion. O2-dependent. PPS 30–40%. Using accessory muscles, pursed-lip breathing noted. Anxious at times related to air hunger. On bronchodilators and PRN nebulizer treatments. Lives with family caregiver.',
+    goals: 'comfort'
+  },
+  cancer: {
+    problem: 'Chronic pain related to end-stage cancer',
+    primary: 'End-stage cancer (specify primary site — e.g., lung adenocarcinoma, colon cancer)',
+    details: 'Patient with moderate to severe pain, currently managed with scheduled opioids and PRN breakthrough dosing. PPS 30–40%. Fatigue, weakness, and decreased oral intake noted. Caregiver present and managing medications. Patient able to verbalize pain — using 0–10 numeric pain scale.',
+    goals: 'comfort'
+  },
+  cva: {
+    problem: 'Functional decline and dysphagia related to end-stage CVA / stroke sequela',
+    primary: 'Sequela of cerebrovascular disease (CVA / stroke)',
+    details: 'Patient with significant neurological deficits following CVA. Hemiplegia/hemiparesis, dysphagia, and aphasia (if applicable). PPS 20–30%. Bedbound or very limited mobility, dependent for all ADLs. At risk for aspiration. Non-verbal or limited verbal communication. Caregiver managing all care.',
+    goals: 'comfort'
+  },
+  renal: {
+    problem: 'Uremic symptoms and fluid/electrolyte imbalance related to end-stage renal disease',
+    primary: 'End-stage renal disease (ESRD) — dialysis discontinued or patient declined',
+    details: 'Patient with end-stage renal disease, dialysis discontinued or declined. Uremic symptoms present including fatigue, nausea, decreased appetite, and altered mentation. PPS 30–40%. Edema present. Patient and family understand comfort-focused goals and have elected to forgo further renal replacement therapy.',
+    goals: 'comfort'
+  }
+};
+
+function cpQuickFill(key) {
+  const p = CP_PRESETS[key];
+  if (!p) return;
+  document.getElementById('cp-problem').value = p.problem;
+  document.getElementById('cp-primary-dx').value = p.primary;
+  document.getElementById('cp-details').value = p.details;
+  const sel = document.getElementById('cp-goals');
+  if (sel) sel.value = p.goals;
+  document.getElementById('cp-output-wrap').classList.remove('show');
+  document.getElementById('cp-error').classList.remove('show');
+}
+
 // ── NARRATIVE STRENGTHENER ─────────────────────────────────────────
 // ── NARRATIVE PROMPT BUILDER (Copilot) ────────────────────────────
 function buildNarrativePrompt() {
@@ -8194,6 +8258,19 @@ function clearDrugParser() {
     <p>Enter care plan details below — AI will generate a comfort-focused goal and structured Assess / Educate / Perform interventions</p>
   </div>
   <div class="ai-tool-body">
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:.78rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Quick Fill — Common Scenarios</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button type="button" onclick="cpQuickFill('dementia')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">🧠 End-Stage Dementia</button>
+        <button type="button" onclick="cpQuickFill('chf')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">❤️ End-Stage CHF</button>
+        <button type="button" onclick="cpQuickFill('copd')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">🫁 End-Stage COPD</button>
+        <button type="button" onclick="cpQuickFill('cancer')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">🎗️ Cancer Pain</button>
+        <button type="button" onclick="cpQuickFill('cva')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">🧩 CVA / Stroke</button>
+        <button type="button" onclick="cpQuickFill('renal')" style="padding:5px 11px;background:var(--row-alt);border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);cursor:pointer;transition:all .14s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--gold-pale)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--row-alt)'">🫘 End-Stage Renal</button>
+      </div>
+      <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Click any scenario to pre-fill the fields — edit as needed to match your patient</div>
+    </div>
 
     <div class="ai-field">
       <label>Care Plan Problem / Diagnosis</label>
