@@ -2031,8 +2031,51 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div style="margin-top:4px"></div>
 <div class="obs-row"><div>› Fall Risk <span class="req">★</span></div></div>
 <div class="sub-navy" style="margin-top:8px">Current Fall Risk Level</div>
-<ul class="blist"><li>Known High Risk / Known Moderate Risk / Known Low Risk — select supporting evidence for the identified risk level</li><li>"Assess Falls Risk" — selecting this option opens a fall risk assessment tool that will calculate a fall risk level for you</li></ul>
-<div class="alert info"><span>📝</span><div>Any identified fall risk must be included in the care plan. Common codes:<br>• History of falling: Z91.81 &nbsp;&nbsp;• Abnormalities of gait: R26.89 &nbsp;&nbsp;• Other specified risk factors: Z91.89<br>This may also be care planned under the primary diagnosis or other condition causing the elevated fall risk.</div></div>
+<p style="font-size:.87rem;color:var(--text-mid);margin-bottom:8px">Firenote requires you to select one option. Choose the one that best reflects your clinical assessment of this patient:</p>
+<table class="dtable"><thead><tr><th>Option</th><th>When to Use It</th></tr></thead><tbody>
+<tr><td><strong>Known High Risk</strong></td><td>You have already determined the patient is high risk based on history, current presentation, or prior documentation. Firenote will auto-generate a note that fall interventions should be included in the care plan. Select all supporting evidence that applies.</td></tr>
+<tr><td><strong>Known Moderate Risk</strong></td><td>You have already determined the patient is moderate risk. Firenote will auto-generate a note that fall interventions should be included in the care plan. Select all supporting evidence that applies.</td></tr>
+<tr><td><strong>Known Low Risk</strong></td><td>The patient has no significant fall risk factors at this time. Use only when your clinical assessment supports a genuinely low risk determination.</td></tr>
+<tr><td><strong>Assess Falls Risk</strong></td><td>Use this option when you need to work through the assessment to determine the risk level. Firenote will display the contributing factors you select — <strong>it will not calculate or assign a risk level for you.</strong> You must review the factors selected and apply your clinical judgment to determine and document the appropriate risk level in the narrative or care plan.</td></tr>
+</tbody></table>
+
+<div class="sub-navy" style="margin-top:14px">Clinical Guidance — Determining Fall Risk Level</div>
+<p style="font-size:.87rem;color:var(--text-mid);margin-bottom:8px">Use the following as a guide when the risk level is not already established. Base your determination on the total picture — more risk factors present generally indicates a higher risk level.</p>
+<table class="dtable"><thead><tr><th>Risk Level</th><th>Typical Indicators</th></tr></thead><tbody>
+<tr><td><strong style="color:var(--red)">High Risk</strong></td><td>
+  <ul class="blist" style="margin:0">
+    <li>Documented fall(s) in the last 3 months</li>
+    <li>Altered cognition / confusion / impaired awareness of environment</li>
+    <li>Two or more high-risk medications (opioids, anticonvulsants, antihypertensives, diuretics, hypnotics, laxatives, sedatives, psychotropics)</li>
+    <li>Requires assistance or supervision for mobility, transfer, or ambulation</li>
+    <li>Two or more tethered devices (IV, catheter, O2, etc.)</li>
+    <li>Unsteady gait</li>
+    <li>Multiple risk factors present in combination</li>
+  </ul>
+</td></tr>
+<tr><td><strong style="color:var(--gold)">Moderate Risk</strong></td><td>
+  <ul class="blist" style="margin:0">
+    <li>One high-risk medication present</li>
+    <li>One tethered device</li>
+    <li>Elimination issues (frequency/urgency or incontinence) without other major risk factors</li>
+    <li>Secondary diagnosis present that contributes to fall risk (e.g., neuropathy, weakness)</li>
+    <li>Visual or auditory impairment</li>
+    <li>Age 70+ with one or two additional contributing factors</li>
+  </ul>
+</td></tr>
+<tr><td><strong style="color:var(--green)">Low Risk</strong></td><td>
+  <ul class="blist" style="margin:0">
+    <li>No history of falls in the last 3 months</li>
+    <li>Cognition intact</li>
+    <li>Ambulates independently without assistive device</li>
+    <li>No high-risk medications</li>
+    <li>No tethered devices</li>
+    <li>Minimal or no contributing risk factors identified</li>
+  </ul>
+</td></tr>
+</tbody></table>
+
+<div class="alert info" style="margin-top:10px"><span>📝</span><div>Any identified fall risk (moderate or high) must be included in the care plan. Common codes:<br>• History of falling: Z91.81 &nbsp;&nbsp;• Abnormalities of gait: R26.89 &nbsp;&nbsp;• Other specified risk factors: Z91.89<br>This may also be care planned under the primary diagnosis or other condition causing the elevated fall risk.</div></div>
 
 <div style="margin-top:4px"></div>
 <div class="obs-row"><div>› Caregivers — Primary Caregiver Identification <span class="req">★</span></div></div>
