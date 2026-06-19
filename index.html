@@ -2143,14 +2143,43 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <ul class="blist"><li>The Primary Hospice Diagnosis</li><li>Any comorbid conditions the patient has that are being monitored, managed, or reported on by the hospice</li><li>Any active symptoms being treated, educated on, or affecting comfort and function</li><li>Any QAPI-related events such as falls, infections, wounds, etc.</li></ul>
 <div class="sub-gold" style="margin-top:12px">Care Plan Diagnosis / Problem List</div>
 <ul class="blist"><li>All diagnoses — related AND unrelated — must be added to the active problem list. These do NOT all require full care plans built out, but they must be listed.</li><li>Unrelated diagnoses must be marked "Not Related" if they are truly not related to the overall prognosis and decline of the patient's condition.</li><li>Medications (scheduled and PRN) may be linked to a problem without requiring a separate goal per medication.</li></ul>
+
+<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">Common mistake: assuming every diagnosis on the active problem list needs its own fully built-out care plan. <strong>It does not.</strong> Use the three-tiered approach below to decide what actually needs goals and interventions — this keeps care plans clinically meaningful instead of bloated or, just as risky, incomplete.</div></div>
+
+<div class="sub-gold" style="margin-top:14px">The Three-Tiered Approach to Diagnoses</div>
+<p style="font-size:.88rem;color:var(--text-mid);margin-bottom:10px">Every diagnosis still goes on the active problem list and gets a relatedness determination. After that, sort it into one of three tiers to decide whether it needs its own goals and interventions.</p>
+
+<table class="dtable"><thead><tr><th>Tier</th><th>What It Means</th><th>Examples</th></tr></thead><tbody>
+<tr><td><strong style="color:var(--navy)">1 — Standalone Care Plan Required</strong></td><td>Hospice is actively assessing, treating, educating on, or managing this condition. It needs its own goal and interventions.</td><td>Primary hospice diagnosis · Pain · Dyspnea · Constipation · Anxiety · Dysphagia · Seizures · Wounds/pressure injuries · Falls · Infections</td></tr>
+<tr><td><strong style="color:var(--gold)">2 — Addressed Under Another Problem</strong></td><td>Stays on the active problem list and keeps its relatedness/coding, but does not need its own goals or interventions because it's already adequately managed under another care-planned problem.</td><td>Edema → CHF · Pulmonary edema → CHF · Hypotension → Fall Risk · Muscle weakness → Fall Risk · Anxiety → Dementia · Weight loss → Protein Calorie Malnutrition · Neuropathy → Diabetes</td></tr>
+<tr><td><strong style="color:var(--text-lt)">3 — Diagnosis List Only</strong></td><td>Present but not currently causing symptoms, requiring interventions, or impacting comfort. List it, mark relatedness, link medications if applicable — nothing more.</td><td>Hyperlipidemia · Stable hypothyroidism · Osteoarthritis without pain · History of stroke without deficits · History of meningitis · Stable hypertension</td></tr>
+</tbody></table>
+
+<div class="alert info" style="margin-top:10px"><span>💡</span><div><strong>Rule of thumb (Tier 1):</strong> If nursing staff would routinely assess it, teach about it, or perform interventions for it, it probably needs its own care plan.</div></div>
+
+<div class="alert info" style="margin-top:8px;border-left:3px solid var(--gold)"><span>🫁</span><div><strong>Special rule — Oxygen Dependence (Z99.81):</strong> Give it its own care plan only when the patient requires <strong>continuous</strong> oxygen use. If oxygen is ordered PRN or used intermittently for symptom management, address it under another respiratory-related problem (CHF, COPD, or Dyspnea) instead of creating a separate intervention set.</div></div>
+
+<div class="sub-navy" style="margin-top:14px">Tier 2 &amp; 3 — What They Should and Should NOT Have</div>
+<table class="dtable"><thead><tr><th></th><th>Tier 2 (Addressed Under Another Problem)</th><th>Tier 3 (Diagnosis List Only)</th></tr></thead><tbody>
+<tr><td>✓ Should have</td><td>Active problem list entry · Relatedness marked · Coding retained · Medications linked if applicable</td><td>Active problem list entry · Relatedness marked · Medications linked if applicable</td></tr>
+<tr><td>✗ Should NOT have</td><td>Its own separate goal/intervention set (may have none if the EMR allows)</td><td>Goals · Interventions · Performed nursing documentation</td></tr>
+</tbody></table>
+
+<div class="sub-gold" style="margin-top:14px">Decision Aid — For Every Diagnosis, Ask:</div>
+<div class="narr"><div class="narr-lbl">"AM I DOING ANYTHING ABOUT THIS IN HOSPICE?"</div><p>
+<strong>YES</strong> → Build a care plan (Tier 1)<br>
+<strong>NO, but it's being addressed under another problem</strong> → Keep it on the problem list and document that it's managed elsewhere (Tier 2)<br>
+<strong>NO, and it's not affecting comfort or function</strong> → Keep it on the diagnosis list only (Tier 3)
+</p></div>
+
 <div class="sub-gold" style="margin-top:12px">Every "Active" Problem Must Include</div>
 <div class="sub-navy" style="margin-top:6px">At Least One Goal</div>
 <div class="alert info" style="margin-bottom:8px"><span>📝</span><div><strong>Goals should reflect hospice philosophy.</strong> Goals must be comfort-focused and aligned with the patient's end-of-life wishes — not curative, restorative, or rehabilitation-oriented. Ask yourself: "Does this goal reflect what matters most to this patient at end of life?" A goal like "Patient will be free from pain" is appropriate. A goal like "Patient will regain the ability to walk" is not.</div></div>
 <table class="dtable"><thead><tr><th>Goal Element</th><th>What to Include</th></tr></thead><tbody><tr><td><strong>Category</strong></td><td>Physical, Psychosocial, Spiritual, etc.</td></tr><tr><td><strong>Focus</strong></td><td>Pain control, skin integrity, symptom management, etc.</td></tr><tr><td><strong>Measurement</strong></td><td>Specific and observable — e.g., "patient reports pain ≤ 3/10"</td></tr><tr><td><strong>Duration</strong></td><td>Time-bound — e.g., "within 30 days" or "ongoing through episode of care"</td></tr></tbody></table>
 <div class="sub-navy" style="margin-top:10px">At Least 3 Interventions Per Problem</div>
 <ul class="blist"><li>Assess — Nurse will assess [symptom/condition] at each visit</li><li>Educate — Nurse will educate patient/caregiver on [topic]</li><li>Perform — Nurse will perform [specific skilled task or procedure]</li></ul>
-<div class="sub-gold" style="margin-top:12px">Grouping Diagnoses Under One Problem</div>
-<p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Not every diagnosis needs its own separate intervention set if it is clinically related to an existing problem.</p>
+<div class="sub-gold" style="margin-top:12px">Grouping Tier 1 Diagnoses Under One Problem</div>
+<p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Some Tier 1 diagnoses are clinically related enough to share one set of goals and interventions, even though each still gets its own entry on the problem list for coding purposes.</p>
 <div class="narr"><div class="narr-lbl">EXAMPLE</div><p>Dementia with behavioral disturbance (F02.81) can serve as the primary problem. Agitation (R45.1) and Anxiety (F41.9) can be grouped under the dementia problem — each will have their own entry due to coding requirements, but one set of goals and interventions may address all three.</p></div>
 <div class="sub-gold" style="margin-top:12px">Using AI (Microsoft Copilot) to Build Care Plan Goals &amp; Interventions</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Copilot can help you quickly generate appropriate, hospice-aligned goals and interventions for each diagnosis. Use the prompt below — paste it into Copilot and add the diagnosis and any relevant clinical details.</p>
@@ -2452,13 +2481,14 @@ Keep the Monitor For intervention active unless the medication causing the inter
       <div class="df-col">
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Admission order entered <em style="color:var(--text-lt);font-size:.8rem">(Care Plan → Primary Dx)</em></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Verbal certification documented</div></div>
-        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Diet order entered <em style="color:var(--text-lt);font-size:.8rem">(Care Plan → Primary Dx)</em></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Nutrition order entered <em style="color:var(--text-lt);font-size:.8rem">(Care Plan → Primary Dx)</em><span class="note">Called "Nutrition" in Firenote — not "Diet"</span></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">All DME added to care plan<span class="note">Include ALL DME — Hospice ordered, facility provided, and patient owned. Add under the related ICD care plan if applicable (e.g., oxygen equipment → oxygen/respiratory care plan). If not directly related to another ICD, add under primary diagnosis care plan.</span></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">All supplies added to care plan<span class="note">Include all supplies — adult briefs, wipes, chux, gloves, dressing supplies, etc. Add under the related ICD care plan if applicable. If not directly related to another ICD, add under primary diagnosis care plan.</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Allergies verified</div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Emergency contacts verified</div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Emergency safety level set <em style="color:var(--text-lt);font-size:.8rem">(Pt Info → Alert Tags)</em></div></div>
-        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">DNR order entered (if applicable)</div></div>
-        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">QAPI event — wound on admission</div></div>
-        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">QAPI event — infection on admission</div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">QAPI event — wound on admission<span class="note">A separate QAPI event is required for each individual wound. If the patient has three wounds, three separate QAPI events must be entered.</span></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">QAPI event — infection on admission<span class="note">A separate QAPI event is required for each individual infection. If the patient has both a UTI and a wound infection, two separate QAPI events must be entered.</span></div></div>
       </div>
       <div class="df-col">
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Primary hospice diagnosis entered and confirmed with MD</div></div>
@@ -3453,7 +3483,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
   </div>
 </div>
 
-<div class="alert info"><span>📋</span><div><strong>Per CMS:</strong> "The hospice is responsible for covering all drugs and biologicals related to the palliation and management of the terminal illness and related conditions, including drugs to manage pain and symptoms." (42 CFR §418.106)<br><br>When a TPE auditor reviews a hospice claim, they will look at every medication in the record and ask: is this covered by hospice, and is it documented why? <strong>Your documentation is the answer.</strong></div></div>
+<div class="alert info"><span>📋</span><div><strong>Per CMS:</strong> "The hospice is responsible for covering all drugs and biologicals related to the palliation and management of the terminal illness and related conditions, including drugs to manage pain and symptoms." (42 CFR §418.106)<br><br>When a TPE auditor reviews a hospice claim, they will look at every medication in the record and ask: is this covered by hospice, and if NOT, is the reason for non-coverage documented? <strong>Your documentation is the answer.</strong></div></div>
 
 </div></div><!-- end panel meds -->
 
