@@ -8371,13 +8371,15 @@ ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
-2. A SHORT reasoning for that tier — maximum 12 words, no full sentences needed
+2. A SHORT reasoning for that tier — maximum 8 words, fragment is fine (e.g. "Actively managed hospice symptom")
 3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). Only reference a parent that is actually in the list above.
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
 
-Separately, after reviewing the full list, identify up to 4 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, give a SHORT reasoning — maximum 15 words.
+In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
 
-Respond ONLY with valid JSON, no markdown, no preamble. Keep it compact — no extra whitespace or indentation, and keep every reasoning field short as instructed above, since the full problem list must fit completely within the response. In this exact format:
+Separately, after reviewing the full list, identify up to 3 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, give a SHORT reasoning — maximum 10 words.
+
+CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
   "items": [
     {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "confidence": "high"},
@@ -8395,7 +8397,7 @@ Respond ONLY with valid JSON, no markdown, no preamble. Keep it compact — no e
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt: prompt, max_tokens: 4000 })
+      body: JSON.stringify({ prompt: prompt, max_tokens: 6000 })
     });
     if (!resp.ok) {
       debugInfo = 'HTTP ' + resp.status + ' ' + resp.statusText;
@@ -8416,12 +8418,13 @@ Respond ONLY with valid JSON, no markdown, no preamble. Keep it compact — no e
           } catch(e) {
             // Truncated response — try to salvage complete items from the "items" array
             const salvaged = salvageTruncatedTierJson(clean);
+            const stopInfo = ' [stop_reason: ' + (data.stop_reason || 'unknown') + ', response chars: ' + clean.length + ', usage: ' + JSON.stringify(data.usage || {}) + ']';
             if (salvaged && salvaged.items && salvaged.items.length > 0) {
               attempt = salvaged;
               wasTruncated = true;
-              debugInfo = 'NOTE: response was truncated; showing ' + salvaged.items.length + ' fully-parsed item(s) only.';
+              debugInfo = 'NOTE: response was truncated; showing ' + salvaged.items.length + ' fully-parsed item(s) only.' + stopInfo;
             } else {
-              debugInfo = 'JSON parse failed: ' + e.message + ' — Raw text: ' + clean.slice(0, 500);
+              debugInfo = 'JSON parse failed: ' + e.message + stopInfo + ' — Raw text: ' + clean.slice(0, 500);
             }
           }
           if (attempt && !attempt.items) {
@@ -8444,10 +8447,10 @@ Respond ONLY with valid JSON, no markdown, no preamble. Keep it compact — no e
     return;
   }
 
-  renderTierResults(resultsEl, parsed, primaryDx, wasTruncated);
+  renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
 }
 
-function renderTierResults(container, data, primaryDx, wasTruncated) {
+function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) {
   container.innerHTML = '';
 
   const disclaimer = document.createElement('div');
@@ -8458,7 +8461,8 @@ function renderTierResults(container, data, primaryDx, wasTruncated) {
   if (wasTruncated) {
     const truncWarn = document.createElement('div');
     truncWarn.style.cssText = 'padding:10px 14px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:6px;font-size:.82rem;color:var(--red);margin-bottom:14px';
-    truncWarn.innerHTML = '<strong>⚠ Incomplete response.</strong> The AI response was cut off before finishing. Only the diagnoses shown below were fully processed — please verify the complete problem list was reviewed, and re-run if needed.';
+    truncWarn.innerHTML = '<strong>⚠ Incomplete response.</strong> The AI response was cut off before finishing. Only the diagnoses shown below were fully processed — please verify the complete problem list was reviewed, and re-run if needed.'
+      + (debugInfo ? '<div style="margin-top:8px;padding:6px 9px;background:#fff;border:1px dashed var(--red);border-radius:5px;font-family:monospace;font-size:.72rem;color:#7a1a1a">' + debugInfo.replace(/</g,'&lt;') + '</div>' : '');
     container.appendChild(truncWarn);
   }
 
