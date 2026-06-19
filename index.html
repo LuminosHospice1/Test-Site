@@ -8371,13 +8371,13 @@ ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
-2. A one-sentence reasoning for that tier
+2. A SHORT reasoning for that tier — maximum 12 words, no full sentences needed
 3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). Only reference a parent that is actually in the list above.
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
 
-Separately, after reviewing the full list, identify up to 4 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, briefly explain why it might be worth the nurse considering whether to add it.
+Separately, after reviewing the full list, identify up to 4 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, give a SHORT reasoning — maximum 15 words.
 
-Respond ONLY with valid JSON, no markdown, no preamble, in this exact format:
+Respond ONLY with valid JSON, no markdown, no preamble. Keep it compact — no extra whitespace or indentation, and keep every reasoning field short as instructed above, since the full problem list must fit completely within the response. In this exact format:
 {
   "items": [
     {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "confidence": "high"},
@@ -8390,21 +8390,47 @@ Respond ONLY with valid JSON, no markdown, no preamble, in this exact format:
 
   let parsed = null;
   let debugInfo = '';
+  let wasTruncated = false;
   try {
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
+      body: JSON.stringify({ prompt: prompt, max_tokens: 4000 })
     });
     if (!resp.ok) {
       debugInfo = 'HTTP ' + resp.status + ' ' + resp.statusText;
       try { const errBody = await resp.text(); debugInfo += ' — ' + errBody.slice(0, 300); } catch(e2) {}
     } else {
       const data = await resp.json();
-      const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
-      if (!rawText) debugInfo = 'Empty response from AI. Raw payload: ' + JSON.stringify(data).slice(0, 300);
-      const clean = rawText.replace(/```json|```/g, '').trim();
-      try { parsed = JSON.parse(clean); } catch(e) { debugInfo = 'JSON parse failed: ' + e.message + ' — Raw text: ' + clean.slice(0, 400); parsed = null; }
+      if (data.error) {
+        debugInfo = 'API error: ' + (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)).slice(0, 300);
+      } else {
+        const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+        if (!rawText) {
+          debugInfo = 'Empty/unexpected response shape. Raw payload: ' + JSON.stringify(data).slice(0, 400);
+        } else {
+          const clean = rawText.replace(/```json|```/g, '').trim();
+          let attempt = null;
+          try {
+            attempt = JSON.parse(clean);
+          } catch(e) {
+            // Truncated response — try to salvage complete items from the "items" array
+            const salvaged = salvageTruncatedTierJson(clean);
+            if (salvaged && salvaged.items && salvaged.items.length > 0) {
+              attempt = salvaged;
+              wasTruncated = true;
+              debugInfo = 'NOTE: response was truncated; showing ' + salvaged.items.length + ' fully-parsed item(s) only.';
+            } else {
+              debugInfo = 'JSON parse failed: ' + e.message + ' — Raw text: ' + clean.slice(0, 500);
+            }
+          }
+          if (attempt && !attempt.items) {
+            debugInfo = 'Parsed OK but missing "items" key. Keys found: ' + Object.keys(attempt).join(', ') + ' — Raw text: ' + clean.slice(0, 500);
+          } else if (attempt) {
+            parsed = attempt;
+          }
+        }
+      }
     }
   } catch(e) { debugInfo = 'Network/fetch error: ' + e.message; parsed = null; }
 
@@ -8413,21 +8439,28 @@ Respond ONLY with valid JSON, no markdown, no preamble, in this exact format:
 
   if (!parsed || !parsed.items) {
     resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ AI service unavailable.</strong> Unable to generate tier suggestions right now. Please apply the three-tier framework manually — see the Care Plan section of the Assessment Walkthrough (Card 6) for the full guide and decision aid.'
-      + (debugInfo ? '<div style="margin-top:10px;padding:8px 10px;background:#fff;border:1px dashed var(--red);border-radius:5px;font-family:monospace;font-size:.74rem;color:#7a1a1a;white-space:pre-wrap">DEBUG: ' + debugInfo.replace(/</g,'&lt;') + '</div>' : '')
+      + (debugInfo ? '<div style="margin-top:10px;padding:8px 10px;background:#fff;border:1px dashed var(--red);border-radius:5px;font-family:monospace;font-size:.74rem;color:#7a1a1a;white-space:pre-wrap">DEBUG: ' + debugInfo.replace(/</g,'&lt;') + '</div>' : '<div style="margin-top:10px;padding:8px 10px;background:#fff;border:1px dashed var(--red);border-radius:5px;font-family:monospace;font-size:.74rem;color:#7a1a1a">DEBUG: no error captured — investigate manually</div>')
       + '</div>';
     return;
   }
 
-  renderTierResults(resultsEl, parsed, primaryDx);
+  renderTierResults(resultsEl, parsed, primaryDx, wasTruncated);
 }
 
-function renderTierResults(container, data, primaryDx) {
+function renderTierResults(container, data, primaryDx, wasTruncated) {
   container.innerHTML = '';
 
   const disclaimer = document.createElement('div');
   disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
   disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> These tier suggestions are a starting point based on the diagnoses provided — not a final determination. Apply clinical judgment for this specific patient before building or skipping any care plan.';
   container.appendChild(disclaimer);
+
+  if (wasTruncated) {
+    const truncWarn = document.createElement('div');
+    truncWarn.style.cssText = 'padding:10px 14px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:6px;font-size:.82rem;color:var(--red);margin-bottom:14px';
+    truncWarn.innerHTML = '<strong>⚠ Incomplete response.</strong> The AI response was cut off before finishing. Only the diagnoses shown below were fully processed — please verify the complete problem list was reviewed, and re-run if needed.';
+    container.appendChild(truncWarn);
+  }
 
   const items = data.items || [];
   [1, 2, 3].forEach(function(tierNum) {
@@ -8508,6 +8541,59 @@ function renderTierResults(container, data, primaryDx) {
   });
 
   container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function salvageTruncatedTierJson(text) {
+  // Attempts to recover complete item objects from a truncated JSON response.
+  // Finds the "items": [ ... ] array and extracts only the complete {...} objects within it.
+  try {
+    const itemsMatch = text.match(/"items"\s*:\s*\[/);
+    if (!itemsMatch) return null;
+    const startIdx = itemsMatch.index + itemsMatch[0].length;
+    let depth = 0, objStart = -1;
+    const items = [];
+    for (let i = startIdx; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '{') { if (depth === 0) objStart = i; depth++; }
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0 && objStart !== -1) {
+          const objText = text.slice(objStart, i + 1);
+          try { items.push(JSON.parse(objText)); } catch(e) { /* skip incomplete/malformed object */ }
+          objStart = -1;
+        }
+      } else if (ch === ']' && depth === 0) {
+        break;
+      }
+    }
+    if (items.length === 0) return null;
+
+    // Try to also salvage the "missing" array if present and complete
+    let missing = [];
+    const missingMatch = text.match(/"missing"\s*:\s*\[/);
+    if (missingMatch) {
+      const mStart = missingMatch.index + missingMatch[0].length;
+      let mDepth = 0, mObjStart = -1;
+      for (let i = mStart; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '{') { if (mDepth === 0) mObjStart = i; mDepth++; }
+        else if (ch === '}') {
+          mDepth--;
+          if (mDepth === 0 && mObjStart !== -1) {
+            const objText = text.slice(mObjStart, i + 1);
+            try { missing.push(JSON.parse(objText)); } catch(e) {}
+            mObjStart = -1;
+          }
+        } else if (ch === ']' && mDepth === 0) {
+          break;
+        }
+      }
+    }
+
+    return { items: items, missing: missing };
+  } catch(e) {
+    return null;
+  }
 }
 
 function escapeHtml(str) {
