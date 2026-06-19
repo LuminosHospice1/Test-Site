@@ -8372,7 +8372,7 @@ ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
 2. A SHORT reasoning for that tier — maximum 8 words, fragment is fine (e.g. "Actively managed hospice symptom")
-3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). Only reference a parent that is actually in the list above.
+3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). CRITICAL — the parentProblem MUST be a diagnosis you are tiering as Tier 1 (a diagnosis that actually has its own care plan). NEVER set a Tier 2 item's parentProblem to another Tier 2 item — Tier 2 diagnoses have no goals/interventions of their own, so nesting one Tier 2 item under another would point the nurse to a care plan that doesn't exist. If the most clinically obvious parent is itself only Tier 2 (e.g., Weakness relates most directly to Cachexia, but Cachexia is itself Tier 2 under Anorexia), trace up the chain and use the Tier 1 diagnosis at the top of that chain as the parentProblem instead (e.g., use Anorexia, not Cachexia). If no Tier 1 diagnosis on the list is a reasonable parent, reclassify the item as Tier 1 itself rather than inventing an invalid parent.
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
 
 In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
@@ -8447,7 +8447,64 @@ CRITICAL: You must process every single diagnosis in the list above and include 
     return;
   }
 
+  fixInvalidTierParents(parsed);
   renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
+}
+
+function fixInvalidTierParents(data) {
+  // Safety net: a Tier 2 item's parentProblem must be a Tier 1 diagnosis (one that actually
+  // gets its own care plan). The AI can occasionally chain Tier 2 -> Tier 2 (e.g. Weakness
+  // under Cachexia, where Cachexia is itself only Tier 2 under Anorexia) — this walks any
+  // such chain up to the nearest real Tier 1 ancestor, or promotes the item to Tier 1 if
+  // no valid Tier 1 ancestor can be found.
+  if (!data || !data.items) return;
+
+  const norm = function(s) { return (s || '').trim().toLowerCase(); };
+  const byName = {};
+  data.items.forEach(function(it) { byName[norm(it.diagnosis)] = it; });
+
+  data.items.forEach(function(it) {
+    if (it.tier !== 2 || !it.parentProblem) return;
+
+    let chain = [it.diagnosis];
+    let current = it;
+    let resolved = null;
+    let guard = 0;
+
+    while (guard < 10) {
+      guard++;
+      const parentKey = norm(current.parentProblem);
+      const parentItem = byName[parentKey];
+
+      if (!parentItem) {
+        // Parent isn't in the list at all (e.g. AI referenced something not actually tiered) — bail to Tier 1
+        resolved = null;
+        break;
+      }
+      if (parentItem.tier === 1) {
+        resolved = parentItem.diagnosis;
+        break;
+      }
+      if (parentItem.tier === 2 && parentItem.parentProblem) {
+        chain.push(parentItem.diagnosis);
+        if (chain.indexOf(parentItem.parentProblem) !== -1) { resolved = null; break; } // circular reference guard
+        current = parentItem;
+        continue;
+      }
+      // Parent is Tier 2 with no further parent, or Tier 3 — chain doesn't resolve to a Tier 1
+      resolved = null;
+      break;
+    }
+
+    if (resolved) {
+      it.parentProblem = resolved;
+    } else {
+      // No valid Tier 1 ancestor found — promote this item to Tier 1 rather than leave a broken pointer
+      it.tier = 1;
+      it.parentProblem = null;
+      it.reasoning = (it.reasoning ? it.reasoning + ' ' : '') + '(Auto-promoted: no valid Tier 1 parent found)';
+    }
+  });
 }
 
 function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) {
