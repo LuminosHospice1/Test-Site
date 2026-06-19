@@ -8335,12 +8335,12 @@ function cpQuickFillDirect(problem, primary, details) {
 }
 
 async function runTierChecker() {
-  const primaryDx = document.getElementById('tier-primary').value.trim();
+  const primaryDx = cleanDiagnosisLine(document.getElementById('tier-primary').value.trim());
   const raw = document.getElementById('tier-input').value.trim();
   if (!primaryDx) { alert('Please enter the primary hospice diagnosis first.'); return; }
   if (!raw) { alert('Please paste the active problem list first.'); return; }
 
-  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return !isJunkProblemListLine(l); }).map(function(l) { return cleanDiagnosisLine(l); }).filter(function(l) { return l.length > 0; });
   if (lines.length === 0) { alert('No diagnoses found in the pasted list.'); return; }
 
   const btn = document.getElementById('tier-parse-btn');
@@ -8377,7 +8377,7 @@ For each diagnosis on the list, determine:
 
 In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
 
-Separately, after reviewing the full list, identify up to 3 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, give a SHORT reasoning — maximum 10 words.
+Separately, after reviewing the full list, identify up to 3 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, give a SHORT reasoning — maximum 10 words — and your best-estimate ICD-10 code (the nurse will verify against the Luminos formulary; if you are not confident in a specific code, return null instead of guessing).
 
 CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
@@ -8386,7 +8386,7 @@ CRITICAL: You must process every single diagnosis in the list above and include 
     {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "confidence": "high"}
   ],
   "missing": [
-    {"suggestion": "Dyspnea", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
+    {"suggestion": "Dyspnea", "icd10": "R06.00", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
   ]
 }`;
 
@@ -8529,10 +8529,17 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     data.missing.forEach(function(m) {
       const row = document.createElement('div');
       row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text)';
-      row.innerHTML = '<strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>'
+      const codeBadge = m.icd10
+        ? '<span style="font-family:monospace;font-size:.74rem;background:var(--row-alt);border:1px solid var(--border);color:var(--navy);padding:1px 7px;border-radius:4px;margin-left:7px;font-weight:700">' + escapeHtml(m.icd10) + '</span>'
+        : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed — verify in ICD-10 Reference</span>';
+      row.innerHTML = '<strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
         + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div>';
       missWrap.appendChild(row);
     });
+    const codeNote = document.createElement('div');
+    codeNote.style.cssText = 'padding:7px 14px;font-size:.74rem;color:var(--text-lt);font-style:italic;background:var(--row-alt)';
+    codeNote.textContent = 'ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote.';
+    missWrap.appendChild(codeNote);
     container.appendChild(missWrap);
   }
 
@@ -8598,6 +8605,37 @@ function salvageTruncatedTierJson(text) {
   } catch(e) {
     return null;
   }
+}
+
+function cleanDiagnosisLine(line) {
+  // Strips EMR copy/paste artifacts so the raw pasted text becomes a clean diagnosis name:
+  //  - Markdown-style links: "([related](https://...))" -> "related"
+  //  - Trailing relatedness/role tags: (Related), (Unrelated), (Not Related), (Primary), (Secondary)
+  //  - Same tags without parens: "- Related", "— Primary", etc.
+  if (!line) return line;
+  let cleaned = line;
+
+  // Convert markdown links [text](url) down to just the text first
+  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+  // Strip trailing parenthetical tags — run twice to catch any double-wrapped parens left behind
+  const tagPattern = /\s*\(\s*(not\s+related|unrelated|related|primary|secondary)\s*\)\s*$/i;
+  cleaned = cleaned.replace(tagPattern, '');
+  cleaned = cleaned.replace(tagPattern, '');
+
+  // Strip trailing non-parenthetical forms: "- Related", "— Unrelated", "  Primary"
+  cleaned = cleaned.replace(/\s*[-–—]?\s*(not\s+related|unrelated|related|primary|secondary)\s*$/i, '');
+
+  return cleaned.trim();
+}
+
+function isJunkProblemListLine(line) {
+  // Filters out stray bullet/placeholder lines that EMR copy/paste sometimes leaves behind
+  // (e.g. lone "*" or "-" lines between diagnosis entries) so they aren't treated as diagnoses.
+  const t = (line || '').trim();
+  if (t.length === 0) return true;
+  if (/^[*\-•]+$/.test(t)) return true;
+  return false;
 }
 
 function escapeHtml(str) {
