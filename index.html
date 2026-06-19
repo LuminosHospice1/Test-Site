@@ -2200,6 +2200,11 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Nothing ordered as PRN and no frequency ranges are allowed</strong></div></div>
 
 <div style="margin-top:14px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Not sure which diagnoses need their own care plan?</span>
+  <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[3]&&document.querySelectorAll('.checker-tab')[3].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🗂️ Problem List Tiering</a>
+</div>
+
+<div style="margin-top:10px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
   <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Need help building a care plan goal and interventions?</span>
   <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Open Care Plan Builder</a>
 </div>
@@ -3658,13 +3663,14 @@ Use these results as a starting point for your MD conversation, not as a final a
 
 <div class="checker-wrap">
   <div class="checker-header">
-    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness &amp; Drug Interaction Parser</h2>
+    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser &amp; Problem List Tiering</h2>
     <p>Enter medication and/or diagnosis details below — AI will apply CMS hospice benefit rules to provide guidance</p>
   </div>
   <div class="checker-tabs">
     <button class="checker-tab active" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
     <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
     <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
+    <button class="checker-tab" onclick="switchCheckerTab('tier-check', this)">🗂️ Problem List Tiering</button>
   </div>
   <div class="checker-body">
 
@@ -3803,6 +3809,36 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
         <button class="ai-clear-btn" onclick="clearDrugParser()" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="dip-results" style="display:none;margin-top:20px"></div>
+    </div>
+
+    <div id="tier-check" class="checker-section">
+      <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🗂️</span><div>
+        <strong>How this works:</strong> Paste the active problem list, identify the primary hospice diagnosis, and AI will suggest a tier (1, 2, or 3) for each diagnosis using the three-tier framework from the Care Plan walkthrough — plus flag any commonly-related diagnoses that may be missing from the list. <strong>These are suggestions for nurse review, not final care plan decisions.</strong>
+      </div></div>
+
+      <div class="checker-field">
+        <label>Primary Hospice Diagnosis <span style="color:#c0392b">*</span></label>
+        <input type="text" id="tier-primary" placeholder="e.g. End-stage congestive heart failure">
+      </div>
+
+      <div class="checker-field">
+        <label>Paste the Active Problem List</label>
+        <textarea id="tier-input" style="min-height:160px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="Paste the active problem list from Firenote, one diagnosis per line...
+
+Example:
+Congestive heart failure
+Edema
+Hypertension
+Hyperlipidemia
+Generalized weakness
+Chronic pain"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <button class="checker-btn" id="tier-parse-btn" onclick="runTierChecker()">🗂️ Suggest Tiers</button>
+        <button class="ai-clear-btn" onclick="clearTierChecker()" style="padding:10px 18px">✕ Clear</button>
+      </div>
+      <div id="tier-results" style="display:none;margin-top:20px"></div>
     </div>
 
 </div></div><!-- end panel checker -->
@@ -8273,6 +8309,212 @@ function clearDrugParser() {
     if (el) el.value = '';
   });
   const res = document.getElementById('dip-results');
+  if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+}
+
+// ── PROBLEM LIST TIERING CHECKER ───────────────────────────────────
+const TIER_CONFIG = {
+  1: { color: '#1a2744', bg: '#eef1f6', label: 'Tier 1 — Standalone Care Plan Required' },
+  2: { color: '#7a4200', bg: '#fef3c7', label: 'Tier 2 — Addressed Under Another Problem' },
+  3: { color: '#5a6472', bg: '#f1f3f5', label: 'Tier 3 — Diagnosis List Only' }
+};
+
+function cpQuickFillDirect(problem, primary, details) {
+  document.getElementById('cp-problem').value = problem;
+  document.getElementById('cp-primary-dx').value = primary;
+  document.getElementById('cp-details').value = details;
+  const sel = document.getElementById('cp-goals');
+  if (sel) sel.value = 'comfort';
+  document.getElementById('cp-output-wrap').classList.remove('show');
+  document.getElementById('cp-error').classList.remove('show');
+  switchTab('careplan', document.querySelector('[onclick*=careplan]'));
+  setTimeout(function() {
+    const el = document.getElementById('cp-problem');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 150);
+}
+
+async function runTierChecker() {
+  const primaryDx = document.getElementById('tier-primary').value.trim();
+  const raw = document.getElementById('tier-input').value.trim();
+  if (!primaryDx) { alert('Please enter the primary hospice diagnosis first.'); return; }
+  if (!raw) { alert('Please paste the active problem list first.'); return; }
+
+  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  if (lines.length === 0) { alert('No diagnoses found in the pasted list.'); return; }
+
+  const btn = document.getElementById('tier-parse-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Analyzing...';
+  btn.disabled = true;
+
+  const resultsEl = document.getElementById('tier-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--navy);font-size:.88rem;font-style:italic">Applying the three-tier framework to each diagnosis...</div>';
+
+  const prompt = `You are a hospice clinical documentation expert helping a nurse decide which diagnoses on a patient's active problem list need a fully built care plan (goal + interventions), versus which can be addressed under another problem, versus which are diagnosis-list-only.
+
+Use this exact three-tier framework:
+
+TIER 1 — Standalone Care Plan Required: Hospice is actively assessing, treating, educating on, or managing this condition. Rule of thumb: if nursing staff would routinely assess it, teach about it, or perform interventions for it, it probably needs its own care plan. The primary hospice diagnosis is always Tier 1. Common Tier 1 examples: pain, dyspnea, constipation, anxiety, dysphagia, seizures, wounds/pressure injuries, falls, infections.
+
+TIER 2 — Addressed Under Another Problem: Stays on the problem list with its own coding/relatedness, but does not need its own goals/interventions because it is adequately managed under another care-planned (Tier 1) problem already on the list. Common examples: Edema → CHF, Pulmonary edema → CHF, Hypotension → Fall Risk, Muscle weakness → Fall Risk, Anxiety → Dementia, Weight loss → Protein Calorie Malnutrition, Neuropathy → Diabetes.
+
+TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
+
+SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
+
+The patient's PRIMARY HOSPICE DIAGNOSIS is: ${primaryDx}
+
+The ACTIVE PROBLEM LIST is:
+${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
+
+For each diagnosis on the list, determine:
+1. The most appropriate tier (1, 2, or 3)
+2. A one-sentence reasoning for that tier
+3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). Only reference a parent that is actually in the list above.
+4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
+
+Separately, after reviewing the full list, identify up to 4 commonly-related diagnoses or conditions that are NOT on this list but are often clinically associated with diagnoses that ARE on the list (e.g., if CHF is present but dyspnea is not listed, that may be worth considering). For each, briefly explain why it might be worth the nurse considering whether to add it.
+
+Respond ONLY with valid JSON, no markdown, no preamble, in this exact format:
+{
+  "items": [
+    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "confidence": "high"},
+    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "confidence": "high"}
+  ],
+  "missing": [
+    {"suggestion": "Dyspnea", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
+  ]
+}`;
+
+  let parsed = null;
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      try { parsed = JSON.parse(clean); } catch(e) { parsed = null; }
+    }
+  } catch(e) { parsed = null; }
+
+  btn.textContent = origText;
+  btn.disabled = false;
+
+  if (!parsed || !parsed.items) {
+    resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ AI service unavailable.</strong> Unable to generate tier suggestions right now. Please apply the three-tier framework manually — see the Care Plan section of the Assessment Walkthrough (Card 6) for the full guide and decision aid.</div>';
+    return;
+  }
+
+  renderTierResults(resultsEl, parsed, primaryDx);
+}
+
+function renderTierResults(container, data, primaryDx) {
+  container.innerHTML = '';
+
+  const disclaimer = document.createElement('div');
+  disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
+  disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> These tier suggestions are a starting point based on the diagnoses provided — not a final determination. Apply clinical judgment for this specific patient before building or skipping any care plan.';
+  container.appendChild(disclaimer);
+
+  const items = data.items || [];
+  [1, 2, 3].forEach(function(tierNum) {
+    const cfg = TIER_CONFIG[tierNum];
+    const tierItems = items.filter(function(it) { return it.tier === tierNum; });
+    if (tierItems.length === 0) return;
+
+    const groupWrap = document.createElement('div');
+    groupWrap.style.cssText = 'margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden';
+
+    const groupHdr = document.createElement('div');
+    groupHdr.style.cssText = 'padding:9px 14px;background:' + cfg.bg + ';border-bottom:1px solid var(--border);font-size:.78rem;font-weight:700;color:' + cfg.color + ';text-transform:uppercase;letter-spacing:.05em';
+    groupHdr.textContent = cfg.label + ' (' + tierItems.length + ')';
+    groupWrap.appendChild(groupHdr);
+
+    tierItems.forEach(function(it) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
+
+      const isPrimary = it.diagnosis.toLowerCase().trim() === primaryDx.toLowerCase().trim();
+      let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+      html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(it.diagnosis) + '</strong>';
+      if (isPrimary) html += ' <span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">PRIMARY</span>';
+      if (it.confidence === 'low') html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
+      html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
+      if (tierNum === 2 && it.parentProblem) {
+        html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.83rem"><em>Suggested under: <strong>' + escapeHtml(it.parentProblem) + '</strong></em></div>';
+      }
+      html += '</div>';
+
+      if (tierNum === 1) {
+        html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+      }
+      html += '</div>';
+
+      if (isPrimary && tierNum === 1) {
+        html += '<div style="margin-top:8px;padding:8px 11px;background:#eef3fb;border:1px solid #bfdbfe;border-radius:6px;font-size:.8rem;color:#1e3a8a;line-height:1.6">'
+          + '<strong>📌 Don\'t forget — required under the primary diagnosis problem:</strong><ul style="margin:5px 0 0 18px;padding:0">'
+          + '<li>Admission order entered</li>'
+          + '<li>Nutrition order entered (called "Nutrition" in Firenote, not "Diet")</li>'
+          + '<li>Intervention: responsible party for medication administration identified, documented, and education assessed</li>'
+          + '<li>Intervention: patient/caregiver verbalized understanding of medications — mark Performed</li>'
+          + '<li>All DME (hospice-ordered, facility-provided, and patient-owned) and all supplies not tied to another diagnosis</li>'
+          + '</ul></div>';
+      }
+
+      row.innerHTML = html;
+      groupWrap.appendChild(row);
+    });
+
+    container.appendChild(groupWrap);
+  });
+
+  // Missing / commonly-related suggestions
+  if (data.missing && data.missing.length > 0) {
+    const missWrap = document.createElement('div');
+    missWrap.style.cssText = 'margin-top:6px;border:1px dashed var(--gold);border-radius:8px;overflow:hidden';
+    const missHdr = document.createElement('div');
+    missHdr.style.cssText = 'padding:9px 14px;background:var(--gold-pale);border-bottom:1px dashed var(--gold);font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
+    missHdr.textContent = '💡 Consider Adding to the Problem List (' + data.missing.length + ')';
+    missWrap.appendChild(missHdr);
+    data.missing.forEach(function(m) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text)';
+      row.innerHTML = '<strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>'
+        + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div>';
+      missWrap.appendChild(row);
+    });
+    container.appendChild(missWrap);
+  }
+
+  // Wire up "Build Care Plan" buttons
+  container.querySelectorAll('.tier-cp-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      const dx = b.getAttribute('data-dx');
+      cpQuickFillDirect(dx, primaryDx, '');
+    });
+  });
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+function clearTierChecker() {
+  ['tier-primary','tier-input'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const res = document.getElementById('tier-results');
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
 }
 
