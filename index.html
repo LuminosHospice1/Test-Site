@@ -8389,25 +8389,32 @@ Respond ONLY with valid JSON, no markdown, no preamble, in this exact format:
 }`;
 
   let parsed = null;
+  let debugInfo = '';
   try {
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
     });
-    if (resp.ok) {
+    if (!resp.ok) {
+      debugInfo = 'HTTP ' + resp.status + ' ' + resp.statusText;
+      try { const errBody = await resp.text(); debugInfo += ' — ' + errBody.slice(0, 300); } catch(e2) {}
+    } else {
       const data = await resp.json();
       const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      if (!rawText) debugInfo = 'Empty response from AI. Raw payload: ' + JSON.stringify(data).slice(0, 300);
       const clean = rawText.replace(/```json|```/g, '').trim();
-      try { parsed = JSON.parse(clean); } catch(e) { parsed = null; }
+      try { parsed = JSON.parse(clean); } catch(e) { debugInfo = 'JSON parse failed: ' + e.message + ' — Raw text: ' + clean.slice(0, 400); parsed = null; }
     }
-  } catch(e) { parsed = null; }
+  } catch(e) { debugInfo = 'Network/fetch error: ' + e.message; parsed = null; }
 
   btn.textContent = origText;
   btn.disabled = false;
 
   if (!parsed || !parsed.items) {
-    resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ AI service unavailable.</strong> Unable to generate tier suggestions right now. Please apply the three-tier framework manually — see the Care Plan section of the Assessment Walkthrough (Card 6) for the full guide and decision aid.</div>';
+    resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ AI service unavailable.</strong> Unable to generate tier suggestions right now. Please apply the three-tier framework manually — see the Care Plan section of the Assessment Walkthrough (Card 6) for the full guide and decision aid.'
+      + (debugInfo ? '<div style="margin-top:10px;padding:8px 10px;background:#fff;border:1px dashed var(--red);border-radius:5px;font-family:monospace;font-size:.74rem;color:#7a1a1a;white-space:pre-wrap">DEBUG: ' + debugInfo.replace(/</g,'&lt;') + '</div>' : '')
+      + '</div>';
     return;
   }
 
