@@ -60,7 +60,7 @@ exports.handler = async function (event, context) {
   try {
     const requestBody = {
       model: 'claude-haiku-4-5',
-      max_tokens: Math.min(max_tokens, 1000), // cap at 2000 for cost control
+      max_tokens: Math.min(max_tokens, 4000), // cap at 4000 for cost control
       messages: [{ role: 'user', content: prompt }]
     };
 
