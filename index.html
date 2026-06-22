@@ -8373,6 +8373,8 @@ For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
 2. A SHORT reasoning for that tier — maximum 8 words, fragment is fine (e.g. "Actively managed hospice symptom")
 3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). CRITICAL — the parentProblem MUST be a diagnosis you are tiering as Tier 1 (a diagnosis that actually has its own care plan). NEVER set a Tier 2 item's parentProblem to another Tier 2 item — Tier 2 diagnoses have no goals/interventions of their own, so nesting one Tier 2 item under another would point the nurse to a care plan that doesn't exist. If the most clinically obvious parent is itself only Tier 2 (e.g., Weakness relates most directly to Cachexia, but Cachexia is itself Tier 2 under Anorexia), trace up the chain and use the Tier 1 diagnosis at the top of that chain as the parentProblem instead (e.g., use Anorexia, not Cachexia). If no Tier 1 diagnosis on the list is a reasonable parent, reclassify the item as Tier 1 itself rather than inventing an invalid parent.
+   - parentRationale: 1 short sentence (max 12 words) explaining WHY this diagnosis is addressed under that parent (e.g. "Caused by hepatic metastasis; managed within liver cancer interventions")
+   - parentWhat: 1 short phrase (max 10 words) stating what specifically should be noted or addressed (e.g. "Monitor for worsening; comfort positioning and skin care")
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
 
 In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
@@ -8382,8 +8384,8 @@ Separately, after reviewing the full list, identify up to 3 commonly-related dia
 CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
   "items": [
-    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "confidence": "high"},
-    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "confidence": "high"}
+    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "confidence": "high"},
+    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "confidence": "high"}
   ],
   "missing": [
     {"suggestion": "Dyspnea", "icd10": "R06.00", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
@@ -8548,7 +8550,11 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       if (it.confidence === 'low') html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
-        html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.83rem"><em>Suggested under: <strong>' + escapeHtml(it.parentProblem) + '</strong></em></div>';
+        html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
+          + '<div style="color:var(--navy);font-weight:600;margin-bottom:2px">Addressed under: <strong>' + escapeHtml(it.parentProblem) + '</strong></div>'
+          + (it.parentRationale ? '<div style="color:var(--text-mid);margin-top:2px"><em>Why: ' + escapeHtml(it.parentRationale) + '</em></div>' : '')
+          + (it.parentWhat ? '<div style="color:var(--navy);margin-top:3px">📌 What to address: ' + escapeHtml(it.parentWhat) + '</div>' : '')
+          + '</div>';
       }
       html += '</div>';
 
