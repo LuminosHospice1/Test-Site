@@ -8370,6 +8370,20 @@ async function runTierChecker() {
   const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return !isJunkProblemListLine(l); }).map(function(l) { return cleanDiagnosisLine(l); }).filter(function(l) { return l.length > 0; });
   if (lines.length === 0) { alert('No diagnoses found in the pasted list.'); return; }
 
+  // Fuzzy check: does the primary DX appear to match anything in the pasted list?
+  const primaryMatch = fuzzyMatchPrimaryDx(primaryDx, lines);
+  if (!primaryMatch.found) {
+    const proceed = confirm(
+      '⚠ Warning: The primary diagnosis you entered:\n\n"' + primaryDx + '"\n\n'
+      + 'does not appear to match any diagnosis in the pasted problem list. '
+      + (primaryMatch.closest ? 'Closest match found: "' + primaryMatch.closest + '"\n\n' : '\n')
+      + 'This may mean the primary diagnosis is missing from the list, or the wording is different. '
+      + 'The AI may not correctly identify it as the primary diagnosis.\n\n'
+      + 'Click OK to continue anyway, or Cancel to go back and check.'
+    );
+    if (!proceed) return;
+  }
+
   const btn = document.getElementById('tier-parse-btn');
   const origText = btn.textContent;
   btn.textContent = '⏳ Analyzing...';
@@ -8902,6 +8916,85 @@ function isJunkProblemListLine(line) {
   if (t.length === 0) return true;
   if (/^[*\-•]+$/.test(t)) return true;
   return false;
+}
+
+function fuzzyMatchPrimaryDx(primaryDx, lines) {
+  // Checks whether the primary DX field value appears to match any line in the pasted list.
+  // Uses normalization, word overlap, and common clinical abbreviation/synonym expansion.
+
+  const norm = function(s) {
+    return (s || '').toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Expand common clinical abbreviations and synonyms before comparing
+  const expandAbbrevs = function(s) {
+    return s
+      .replace(/\bcopd\b/gi, 'chronic obstructive pulmonary disease')
+      .replace(/\bchf\b/gi, 'congestive heart failure')
+      .replace(/\bcva\b/gi, 'cerebrovascular accident stroke')
+      .replace(/\bcad\b/gi, 'coronary artery disease')
+      .replace(/\bafib\b|a\.fib\b/gi, 'atrial fibrillation')
+      .replace(/\besrd\b/gi, 'end stage renal disease')
+      .replace(/\bdm\b/gi, 'diabetes mellitus')
+      .replace(/\bca\b/gi, 'cancer malignant neoplasm')
+      .replace(/\bmets?\b/gi, 'metastatic metastasis')
+      .replace(/\bpancreatic cancer\b/gi, 'malignant neoplasm pancreas')
+      .replace(/\blung cancer\b/gi, 'malignant neoplasm lung')
+      .replace(/\bbreast cancer\b/gi, 'malignant neoplasm breast')
+      .replace(/\bcolon cancer\b/gi, 'malignant neoplasm colon')
+      .replace(/\bprostate cancer\b/gi, 'malignant neoplasm prostate')
+      .replace(/\bheart failure\b/gi, 'cardiac failure congestive')
+      .replace(/\bdementia\b/gi, 'dementia cognitive decline')
+      .replace(/\balzheimer[s]?\b/gi, 'alzheimer dementia cognitive')
+      .replace(/\bparkinson[s]?\b/gi, 'parkinson disease')
+      .replace(/\bend.?stage\b/gi, 'terminal advanced')
+      .replace(/\brespiratory failure\b/gi, 'respiratory failure pulmonary');
+  };
+
+  const stopwords = new Set(['of','the','and','with','without','in','on','at','to','a','an',
+    'or','for','not','by','due','other','specified','unspecified','nos','nec','type','stage',
+    'end','related','chronic','acute','primary','secondary','history','status','terminal',
+    'advanced','disease','disorder','syndrome','condition','failure']);
+
+  const meaningful = function(s) {
+    return norm(expandAbbrevs(s)).split(' ').filter(function(w) {
+      return w.length > 2 && !stopwords.has(w) && !/^\d/.test(w);
+    });
+  };
+
+  const normPrimary = norm(expandAbbrevs(primaryDx));
+  const primaryWords = meaningful(primaryDx);
+
+  let bestScore = 0;
+  let closest = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const normLine = norm(expandAbbrevs(line));
+    const lineWords = meaningful(line);
+
+    // Strategy 1: exact after normalization
+    if (normLine === normPrimary) return { found: true, closest: line };
+
+    // Strategy 2: containment after normalization
+    if (normLine.includes(normPrimary) || normPrimary.includes(normLine)) {
+      return { found: true, closest: line };
+    }
+
+    // Strategy 3: word overlap — score is overlap / smaller set size (bidirectional)
+    const overlap = primaryWords.filter(function(w) { return lineWords.indexOf(w) !== -1; }).length;
+    const minLen = Math.min(primaryWords.length, lineWords.length);
+    const score = minLen > 0 ? overlap / minLen : 0;
+    if (score > bestScore) { bestScore = score; closest = line; }
+  }
+
+  // Match if 40%+ of the smaller word set overlaps (more lenient than before)
+  if (bestScore >= 0.4) return { found: true, closest: closest };
+
+  return { found: false, closest: closest };
 }
 
 function escapeHtml(str) {
