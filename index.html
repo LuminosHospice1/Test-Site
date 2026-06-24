@@ -9243,6 +9243,7 @@ function resolveIcdOption(idx, code, label) {
       + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(icdLookupResults[idx].diagnosis) + '</span>'
       + '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(label) + '</span>'
       + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Resolved</span>'
+      + '<button onclick="reopenIcdOption(' + idx + ')" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✎ Change</button>'
       + '</div>';
   }
 
@@ -9280,6 +9281,53 @@ function confirmIcdOther(idx) {
   const label = descEl.value.trim();
   if (!code || !label) return;
   resolveIcdOption(idx, code, label + ' (manually entered)');
+}
+
+function reopenIcdOption(idx) {
+  const item = icdLookupResults[idx];
+  if (!item) return;
+
+  // Mark as needing clarification again
+  item.needsClarification = true;
+
+  // Rebuild the clarification row in place
+  const row = document.getElementById('icd-row-' + idx);
+  if (!row) return;
+
+  let optHtml = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Clarification needed</span>'
+    + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+    + '</div>'
+    + '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">Select the most accurate option for this patient:</div>';
+
+  (item.options || []).forEach(function(opt) {
+    optHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+      + '<input type="radio" name="icd-opt-' + idx + '" value="' + escapeHtml(opt.code) + '" data-label="' + escapeHtml(opt.label) + '" data-idx="' + idx + '" onchange="resolveIcdOption(' + idx + ', this.value, this.dataset.label)">'
+      + '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(opt.code) + '</span>'
+      + '<span>' + escapeHtml(opt.label) + '</span>'
+      + '</label>';
+  });
+
+  optHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+    + '<input type="radio" name="icd-opt-' + idx + '" value="__other__" data-idx="' + idx + '" onchange="showIcdOtherInput(' + idx + ')">'
+    + '<span style="color:var(--text-mid);font-style:italic">Other — enter code manually</span>'
+    + '</label>'
+    + '<div id="icd-other-' + idx + '" style="display:none;margin-top:6px;margin-left:24px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px">'
+    + '<div style="font-size:.78rem;color:var(--text-mid);margin-bottom:6px">Look up the correct code in the <strong>ICD-10 Reference</strong> tab, then enter it below:</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
+    + '<div><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">ICD-10 Code</div>'
+    + '<input type="text" id="icd-other-code-' + idx + '" placeholder="e.g. I48.11" maxlength="10" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();checkIcdOtherReady(' + idx + ')"></div>'
+    + '<div style="flex:1;min-width:180px"><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">Description</div>'
+    + '<input type="text" id="icd-other-desc-' + idx + '" placeholder="e.g. Paroxysmal atrial fibrillation" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.85rem" oninput="checkIcdOtherReady(' + idx + ')"></div>'
+    + '<div style="padding-top:18px"><button id="icd-other-confirm-' + idx + '" disabled onclick="confirmIcdOther(' + idx + ')" style="padding:5px 13px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;opacity:.4">Use This Code</button></div>'
+    + '</div></div>'
+    + '</div>';
+
+  row.innerHTML = optHtml;
+
+  // Update send button state since this item is now unresolved again
+  const container = document.getElementById('icd-lookup-results');
+  updateIcdSendButton(container);
 }
 
 function updateIcdSendButton(container) {
