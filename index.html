@@ -9146,6 +9146,7 @@ function clearTierChecker() {
 // ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
 
 let icdLookupResults = []; // stores resolved items for Send to Tier Checker
+let icdPrimaryIdx = -1; // index of the item marked as primary diagnosis
 let tierCurrentData = null; // stores last tier result for re-run with additions
 let tierCurrentPrimaryDx = ''; // stores primary dx for re-run
 let tierQueuedAdditions = new Map(); // stores "Consider Adding" suggestions queued for re-analysis: suggestion -> {suggestion, icd10}
@@ -9221,6 +9222,7 @@ Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace. Exa
   }
 
   icdLookupResults = parsed.results;
+  icdPrimaryIdx = -1;
   renderIcdLookupResults(resultsEl);
 }
 
@@ -9242,10 +9244,13 @@ function renderIcdLookupResults(container) {
     row.id = 'icd-row-' + idx;
 
     if (!item.needsClarification) {
-      row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between">'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1">'
         + '<span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700;flex-shrink:0">' + escapeHtml(item.code || '') + '</span>'
         + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
         + (item.description ? '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(item.description) + '</span>' : '')
+        + '</div>'
+        + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
         + '</div>';
     } else {
       let optHtml = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">Select the most accurate option for this patient:</div>';
@@ -9274,9 +9279,12 @@ function renderIcdLookupResults(container) {
 
       optHtml += '</div>';
 
-      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">'
         + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Clarification needed</span>'
         + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+        + '</div>'
+        + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
         + '</div>' + optHtml;
     }
 
@@ -9293,13 +9301,21 @@ function resolveIcdOption(idx, code, label) {
 
   const row = document.getElementById('icd-row-' + idx);
   if (row) {
-    row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+    row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1">'
       + '<span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700;flex-shrink:0">' + escapeHtml(code) + '</span>'
       + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(icdLookupResults[idx].diagnosis) + '</span>'
       + '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(label) + '</span>'
       + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Resolved</span>'
       + '<button onclick="reopenIcdOption(' + idx + ')" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✎ Change</button>'
+      + '</div>'
+      + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
       + '</div>';
+    // Re-apply primary highlight if this was already marked
+    if (icdPrimaryIdx === idx) {
+      row.style.background = '#f0f4fa';
+      row.style.borderLeft = '3px solid var(--navy)';
+    }
   }
 
   const container = document.getElementById('icd-lookup-results');
@@ -9349,9 +9365,12 @@ function reopenIcdOption(idx) {
   const row = document.getElementById('icd-row-' + idx);
   if (!row) return;
 
-  let optHtml = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+  let optHtml = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">'
     + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Clarification needed</span>'
     + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+    + '</div>'
+    + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
     + '</div>'
     + '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">Select the most accurate option for this patient:</div>';
 
@@ -9398,7 +9417,10 @@ function updateIcdSendButton(container) {
   }
 
   if (allResolved) {
-    sendBtn.textContent = '🗂️ Send to Problem List Tiering →';
+    const hasPrimary = icdPrimaryIdx >= 0;
+    sendBtn.textContent = hasPrimary
+      ? '🗂️ Send to Problem List Tiering → (Primary: ' + icdLookupResults[icdPrimaryIdx].diagnosis.slice(0, 30) + (icdLookupResults[icdPrimaryIdx].diagnosis.length > 30 ? '…' : '') + ')'
+      : '🗂️ Send to Problem List Tiering → (no primary marked — will need to enter manually)';
     sendBtn.disabled = false;
     sendBtn.style.opacity = '1';
   } else {
@@ -9411,10 +9433,12 @@ function updateIcdSendButton(container) {
 
 function sendIcdToTierChecker() {
   const diagList = icdLookupResults.map(function(r) {
-    // Only prepend code if the diagnosis text doesn't already start with it
     const diagAlreadyHasCode = r.code && r.diagnosis.trim().toUpperCase().startsWith(r.code.trim().toUpperCase());
     return (r.code && !diagAlreadyHasCode ? r.code + ' ' : '') + r.diagnosis;
   }).join('\n');
+
+  // If a primary was marked, pre-populate the Primary Hospice Diagnosis field
+  const primaryItem = icdPrimaryIdx >= 0 ? icdLookupResults[icdPrimaryIdx] : null;
 
   switchTab('checker', document.querySelector('[onclick*=checker]'));
   setTimeout(function() {
@@ -9423,8 +9447,53 @@ function sendIcdToTierChecker() {
     setTimeout(function() {
       const input = document.getElementById('tier-input');
       if (input) { input.value = diagList; input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+      if (primaryItem) {
+        const primaryField = document.getElementById('tier-primary');
+        if (primaryField) {
+          const diagAlreadyHasCode = primaryItem.code && primaryItem.diagnosis.trim().toUpperCase().startsWith(primaryItem.code.trim().toUpperCase());
+          primaryField.value = (primaryItem.code && !diagAlreadyHasCode ? primaryItem.code + ' ' : '') + primaryItem.diagnosis;
+        }
+      }
     }, 150);
   }, 200);
+}
+
+function icdPrimaryBtnHtml(idx) {
+  if (icdPrimaryIdx === idx) {
+    return '<span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 8px;border-radius:10px;font-weight:700">⭐ PRIMARY</span>'
+      + '<button onclick="markIcdPrimary(-1)" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✕ Unmark</button>';
+  }
+  return '<button onclick="markIcdPrimary(' + idx + ')" style="font-size:.75rem;color:var(--navy);background:var(--row-alt);border:1px solid var(--border);border-radius:5px;padding:2px 9px;cursor:pointer;font-family:inherit;font-weight:600">☆ Mark as Primary</button>';
+}
+
+function markIcdPrimary(idx) {
+  icdPrimaryIdx = idx;
+  // Re-render all rows to update button states without full re-render
+  icdLookupResults.forEach(function(item, i) {
+    refreshIcdRowPrimaryBtn(i);
+  });
+  // Update send button label to reflect new primary
+  const container = document.getElementById('icd-lookup-results');
+  if (container) updateIcdSendButton(container);
+}
+
+function refreshIcdRowPrimaryBtn(idx) {
+  const row = document.getElementById('icd-row-' + idx);
+  if (!row) return;
+  // Replace just the primary btn section within the row
+  const existing = row.querySelector('.icd-primary-btn-wrap');
+  if (existing) {
+    existing.innerHTML = icdPrimaryBtnHtml(idx);
+  }
+  // Update row border highlight
+  if (icdPrimaryIdx === idx) {
+    row.style.background = '#f0f4fa';
+    row.style.borderLeft = '3px solid var(--navy)';
+  } else {
+    row.style.background = '';
+    row.style.borderLeft = '';
+  }
 }
 
 function clearIcdLookup() {
@@ -9433,6 +9502,7 @@ function clearIcdLookup() {
   const res = document.getElementById('icd-lookup-results');
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
   icdLookupResults = [];
+  icdPrimaryIdx = -1;
 }
 
 </script>
