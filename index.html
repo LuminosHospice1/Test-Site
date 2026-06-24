@@ -3663,7 +3663,7 @@ Use these results as a starting point for your MD conversation, not as a final a
 
 <div class="checker-wrap">
   <div class="checker-header">
-    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser &amp; Problem List Tiering</h2>
+    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser, Problem List Tiering &amp; ICD-10 Code Lookup</h2>
     <p>Enter medication and/or diagnosis details below — AI will apply CMS hospice benefit rules to provide guidance</p>
   </div>
   <div class="checker-tabs">
@@ -3671,6 +3671,7 @@ Use these results as a starting point for your MD conversation, not as a final a
     <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
     <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
     <button class="checker-tab" onclick="switchCheckerTab('tier-check', this)">🗂️ Problem List Tiering</button>
+    <button class="checker-tab" onclick="switchCheckerTab('icd-lookup', this)">🔎 ICD-10 Code Lookup</button>
   </div>
   <div class="checker-body">
 
@@ -3839,6 +3840,32 @@ Chronic pain"></textarea>
         <button class="ai-clear-btn" onclick="clearTierChecker()" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="tier-results" style="display:none;margin-top:20px"></div>
+    </div>
+
+    <div id="icd-lookup" class="checker-section">
+      <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🔎</span><div>
+        <strong>How this works:</strong> Type or paste a list of diagnoses — one per line. Be as specific as possible (include site, type, laterality, chronicity where relevant). The tool will return the best-match ICD-10 code for each, flag any that need clarification, and let you send the full coded list directly to the Problem List Tiering tool.
+      </div></div>
+
+      <div class="checker-field">
+        <label>Diagnosis List <span style="color:#c0392b">*</span></label>
+        <textarea id="icd-lookup-input" style="min-height:180px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="Type diagnoses one per line — be specific:
+
+Example:
+End-stage congestive heart failure
+Type 2 diabetes mellitus without complications
+Chronic pain related to pancreatic cancer
+Pathological fracture right femur due to metastatic disease
+Unspecified dementia with behavioral disturbance
+Dependence on supplemental oxygen (continuous use)"></textarea>
+        <div style="font-size:.75rem;color:var(--text-lt);margin-top:5px;font-style:italic">Tip: include site (left/right), type (primary/secondary), and cause where known — this helps the AI return the most specific code possible</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <button class="checker-btn" id="icd-lookup-btn" onclick="runIcdLookup()">🔎 Look Up Codes</button>
+        <button class="ai-clear-btn" onclick="clearIcdLookup()" style="padding:10px 18px">✕ Clear</button>
+      </div>
+      <div id="icd-lookup-results" style="display:none;margin-top:20px"></div>
     </div>
 
 </div></div><!-- end panel checker -->
@@ -8360,6 +8387,21 @@ TIER 1 — Standalone Care Plan Required: Hospice is actively assessing, treatin
 
 TIER 2 — Addressed Under Another Problem: Stays on the problem list with its own coding/relatedness, but does not need its own goals/interventions because it is adequately managed under another care-planned (Tier 1) problem already on the list. Common examples: Edema → CHF, Pulmonary edema → CHF, Hypotension → Fall Risk, Muscle weakness → Fall Risk, Anxiety → Dementia, Weight loss → Protein Calorie Malnutrition, Neuropathy → Diabetes.
 
+SYMPTOM ROUTING — A key use case for Tier 2 is routing symptoms to their causing diagnosis when that diagnosis is already on the list and being care planned. Use the following clusters as guidance. When routing a symptom to Tier 2 under its causing diagnosis, set the "associatedSymptom" field to true so the nurse knows to consider a standalone care plan if the symptom is severe enough to warrant independent nursing assessment and intervention.
+
+Dementia/Alzheimer's/Cognitive decline → agitation, behavioral disturbance, hallucinations, delusions, wandering, sleep disturbance, sundowning, combativeness, confusion, mood changes
+COPD/Chronic respiratory disease → dyspnea, air hunger, anxiety (if respiratory in origin), chronic cough, activity intolerance, hypoxia
+CHF/Congestive heart failure → edema (peripheral/pulmonary), dyspnea (if cardiac origin), fatigue, orthopnea, activity intolerance, fluid retention
+Cancer (any primary or metastatic) → pain at metastatic sites, fatigue, cachexia, anorexia, nausea, weakness, malignant effusions, malignant ascites, hypercalcemia
+End-stage renal disease → uremic symptoms, nausea, fatigue, pruritus, edema, altered mentation, electrolyte imbalance
+Liver failure/Hepatic disease → jaundice, ascites, encephalopathy, coagulopathy, pruritus, fatigue
+Stroke/CVA/Neurological disease → dysphagia, aphasia, hemiplegia, hemiparesis, spasticity, depression (post-stroke), fall risk, incontinence
+Diabetes → peripheral neuropathy, poor wound healing, hypoglycemia
+Parkinson's disease → tremor, rigidity, dysphagia, falls, constipation, depression, dementia symptoms
+Anxiety disorder (primary) → insomnia, somatic complaints — BUT if anxiety appears secondary to a disease process (air hunger from COPD, existential distress), route it under that cause
+
+IMPORTANT: If a symptom is severe, frequently assessed, or likely to require its own distinct nursing interventions beyond the parent care plan, tier it Tier 1 instead. Being "associated" does not automatically make a symptom Tier 2.
+
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
@@ -8384,8 +8426,8 @@ Separately, after reviewing the full list, identify up to 3 commonly-related dia
 CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
   "items": [
-    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "confidence": "high"},
-    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "confidence": "high"}
+    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high"},
+    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high"}
   ],
   "missing": [
     {"suggestion": "Dyspnea", "icd10": "R06.00", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
@@ -8547,13 +8589,16 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
       html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(it.diagnosis) + '</strong>';
       if (isPrimary) html += ' <span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">PRIMARY</span>';
-      if (it.confidence === 'low') html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
+      if (it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
+      if (it.confidence === 'low' && !it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
+      if (it.confidence === 'low' && it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ REVIEW</span>';
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
         html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
           + '<div style="color:var(--navy);font-weight:600;margin-bottom:2px">Addressed under: <strong>' + escapeHtml(it.parentProblem) + '</strong></div>'
           + (it.parentRationale ? '<div style="color:var(--text-mid);margin-top:2px"><em>Why: ' + escapeHtml(it.parentRationale) + '</em></div>' : '')
           + (it.parentWhat ? '<div style="color:var(--navy);margin-top:3px">📌 What to address: ' + escapeHtml(it.parentWhat) + '</div>' : '')
+          + (it.associatedSymptom ? '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>' : '')
           + '</div>';
       }
       html += '</div>';
@@ -8714,6 +8759,195 @@ function clearTierChecker() {
   });
   const res = document.getElementById('tier-results');
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+}
+
+// ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
+
+let icdLookupResults = []; // stores resolved items for Send to Tier Checker
+
+async function runIcdLookup() {
+  const raw = document.getElementById('icd-lookup-input').value.trim();
+  if (!raw) { alert('Please enter at least one diagnosis.'); return; }
+
+  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  if (lines.length === 0) { alert('No diagnoses found.'); return; }
+
+  const btn = document.getElementById('icd-lookup-btn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Looking up codes...';
+  btn.disabled = true;
+
+  const resultsEl = document.getElementById('icd-lookup-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--navy);font-size:.88rem;font-style:italic">Looking up ICD-10 codes...</div>';
+
+  const prompt = `You are a hospice clinical coding expert. For each diagnosis listed below, return the most specific ICD-10-CM code possible.
+
+Rules:
+- Return the MOST SPECIFIC code available given the information provided.
+- If a diagnosis is too vague to code specifically (e.g. "fracture" with no site, "cancer" with no type/site, "diabetes" with no type), mark it as "needsClarification": true and provide 2-4 specific options the nurse can choose from, each with a code and a label.
+- If a diagnosis clearly maps to one specific code with high confidence, return that code and set "needsClarification": false.
+- If a diagnosis could reasonably map to 2-3 codes depending on specifics the nurse would know (e.g. type 1 vs type 2 diabetes, right vs left laterality), set "needsClarification": true and list the options.
+- Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
+- For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
+
+Diagnoses to code:
+${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
+
+Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace. Exact format:
+{"results":[
+  {"diagnosis":"exact diagnosis text","code":"I50.9","description":"Heart failure, unspecified","needsClarification":false,"options":null},
+  {"diagnosis":"exact diagnosis text","code":null,"description":null,"needsClarification":true,"options":[
+    {"code":"E11.9","label":"Type 2 diabetes mellitus without complications"},
+    {"code":"E10.9","label":"Type 1 diabetes mellitus without complications"}
+  ]}
+]}`;
+
+  let parsed = null;
+  let errMsg = '';
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 4000 })
+    });
+    if (!resp.ok) {
+      errMsg = 'HTTP ' + resp.status;
+    } else {
+      const data = await resp.json();
+      if (data.error) {
+        errMsg = 'API error: ' + (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)).slice(0, 200);
+      } else {
+        const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+        const clean = rawText.replace(/```json|```/g, '').trim();
+        try { parsed = JSON.parse(clean); } catch(e) { errMsg = 'Parse error: ' + e.message; }
+      }
+    }
+  } catch(e) { errMsg = 'Network error: ' + e.message; }
+
+  btn.textContent = origText;
+  btn.disabled = false;
+
+  if (!parsed || !parsed.results) {
+    resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
+    return;
+  }
+
+  icdLookupResults = parsed.results;
+  renderIcdLookupResults(resultsEl);
+}
+
+function renderIcdLookupResults(container) {
+  container.innerHTML = '';
+
+  const disclaimer = document.createElement('div');
+  disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
+  disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote. Resolve any clarification items below before sending to the Tier Checker.';
+  container.appendChild(disclaimer);
+
+  const listWrap = document.createElement('div');
+  listWrap.style.cssText = 'border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px';
+  container.appendChild(listWrap);
+
+  icdLookupResults.forEach(function(item, idx) {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem';
+    row.id = 'icd-row-' + idx;
+
+    if (!item.needsClarification) {
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        + '<span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700;flex-shrink:0">' + escapeHtml(item.code || '') + '</span>'
+        + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+        + (item.description ? '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(item.description) + '</span>' : '')
+        + '</div>';
+    } else {
+      let optHtml = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">Select the most accurate option for this patient:</div>';
+      (item.options || []).forEach(function(opt, oi) {
+        optHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+          + '<input type="radio" name="icd-opt-' + idx + '" value="' + escapeHtml(opt.code) + '" data-label="' + escapeHtml(opt.label) + '" data-idx="' + idx + '" onchange="resolveIcdOption(' + idx + ', this.value, this.dataset.label)">'
+          + '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(opt.code) + '</span>'
+          + '<span>' + escapeHtml(opt.label) + '</span>'
+          + '</label>';
+      });
+      optHtml += '</div>';
+
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Clarification needed</span>'
+        + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+        + '</div>' + optHtml;
+    }
+
+    listWrap.appendChild(row);
+  });
+
+  updateIcdSendButton(container);
+}
+
+function resolveIcdOption(idx, code, label) {
+  icdLookupResults[idx].code = code;
+  icdLookupResults[idx].description = label;
+  icdLookupResults[idx].needsClarification = false;
+
+  const row = document.getElementById('icd-row-' + idx);
+  if (row) {
+    row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      + '<span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700;flex-shrink:0">' + escapeHtml(code) + '</span>'
+      + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(icdLookupResults[idx].diagnosis) + '</span>'
+      + '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(label) + '</span>'
+      + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Resolved</span>'
+      + '</div>';
+  }
+
+  const container = document.getElementById('icd-lookup-results');
+  updateIcdSendButton(container);
+}
+
+function updateIcdSendButton(container) {
+  let sendBtn = document.getElementById('icd-send-tier-btn');
+  const allResolved = icdLookupResults.every(function(r) { return !r.needsClarification; });
+
+  if (!sendBtn) {
+    sendBtn = document.createElement('button');
+    sendBtn.id = 'icd-send-tier-btn';
+    sendBtn.style.cssText = 'display:block;width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:4px';
+    sendBtn.onclick = sendIcdToTierChecker;
+    container.appendChild(sendBtn);
+  }
+
+  if (allResolved) {
+    sendBtn.textContent = '🗂️ Send to Problem List Tiering →';
+    sendBtn.disabled = false;
+    sendBtn.style.opacity = '1';
+  } else {
+    const remaining = icdLookupResults.filter(function(r) { return r.needsClarification; }).length;
+    sendBtn.textContent = '🗂️ Resolve ' + remaining + ' item' + (remaining > 1 ? 's' : '') + ' above to send to Tiering';
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = '0.5';
+  }
+}
+
+function sendIcdToTierChecker() {
+  const diagList = icdLookupResults.map(function(r) {
+    return (r.code ? r.code + ' ' : '') + r.diagnosis;
+  }).join('\n');
+
+  switchTab('checker', document.querySelector('[onclick*=checker]'));
+  setTimeout(function() {
+    const tabs = document.querySelectorAll('.checker-tab');
+    tabs.forEach(function(t) { if (t.textContent.includes('Problem List Tiering')) t.click(); });
+    setTimeout(function() {
+      const input = document.getElementById('tier-input');
+      if (input) { input.value = diagList; input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }, 150);
+  }, 200);
+}
+
+function clearIcdLookup() {
+  const input = document.getElementById('icd-lookup-input');
+  if (input) input.value = '';
+  const res = document.getElementById('icd-lookup-results');
+  if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+  icdLookupResults = [];
 }
 
 </script>
