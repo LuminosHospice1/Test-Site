@@ -8436,6 +8436,12 @@ DIAGNOSIS SUBSUMPTION — A second type of Tier 2 relationship exists when one d
 
 ABSOLUTE RULE — PRIMARY DIAGNOSIS: The patient's primary hospice diagnosis is ALWAYS Tier 1, without exception. No other logic, subsumption rule, or symptom routing overrides this. Even if the primary diagnosis is a manifestation of something else, it remains Tier 1 because it is the hospice-qualifying diagnosis and will always require its own goals and interventions.
 
+REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diagnosis (or any Tier 1 diagnosis) is a neurocognitive/neurodegenerative condition — including but not limited to Alzheimer's disease (G30.x), senile degeneration of the brain (G31.1), Lewy body dementia (G31.83), Parkinson's disease dementia (G31.83 or G20), frontotemporal dementia (G31.09), vascular dementia, or any other primary dementia — ICD-10 coding requires a companion F-code documenting the associated behavioral/psychological manifestation. Common F-codes: F02.x (dementia in other diseases), F03.x (unspecified dementia), F06.x (other mental disorders due to brain damage).
+
+If an F-code companion IS present on the list: tier it as Tier 2 under the neurocognitive primary diagnosis. Set associatedSymptom to false (it is a required coding companion, not a symptom). Do NOT give it a standalone care plan.
+
+If an F-code companion is NOT present on the list: add it to the "missing" array and mark it as required (set "required": true in the missing item). The reasoning should explain that ICD-10 requires an F-code companion for this diagnosis for proper coding and compliance, and suggest the appropriate F-code (e.g. F02.81 for dementia in Alzheimer's with behavioral disturbance, or F03.90 for unspecified dementia without behavioral disturbance).
+
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
@@ -8469,7 +8475,8 @@ CRITICAL: You must process every single diagnosis in the list above and include 
     {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high"}
   ],
   "missing": [
-    {"suggestion": "Dyspnea", "icd10": "R06.00", "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."}
+    {"suggestion": "Dyspnea", "icd10": "R06.00", "required": false, "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."},
+    {"suggestion": "F02.81 Dementia in Alzheimer's disease with behavioral disturbance", "icd10": "F02.81", "required": true, "reasoning": "ICD-10 requires a companion F-code for Alzheimer's disease diagnoses to document behavioral/psychological manifestation. Required for proper coding and compliance."}
   ]
 }`;
 
@@ -8686,36 +8693,73 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
 
   // Missing / commonly-related suggestions
   if (data.missing && data.missing.length > 0) {
+    // Separate required from optional
+    const requiredItems = data.missing.filter(function(m) { return m.required; });
+    const optionalItems = data.missing.filter(function(m) { return !m.required; });
+
     const missWrap = document.createElement('div');
     missWrap.id = 'tier-missing-wrap';
-    missWrap.style.cssText = 'margin-top:6px;border:1px dashed var(--gold);border-radius:8px;overflow:hidden';
-    const missHdr = document.createElement('div');
-    missHdr.style.cssText = 'padding:9px 14px;background:var(--gold-pale);border-bottom:1px dashed var(--gold);font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
-    missHdr.textContent = '💡 Consider Adding to the Problem List (' + data.missing.length + ')';
-    missWrap.appendChild(missHdr);
+    missWrap.style.cssText = 'margin-top:6px;border-radius:8px;overflow:hidden';
 
-    data.missing.forEach(function(m, mi) {
-      const row = document.createElement('div');
-      row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap';
-      row.id = 'tier-missing-row-' + mi;
-      const codeBadge = m.icd10
-        ? '<span style="font-family:monospace;font-size:.74rem;background:var(--row-alt);border:1px solid var(--border);color:var(--navy);padding:1px 7px;border-radius:4px;margin-left:7px;font-weight:700">' + escapeHtml(m.icd10) + '</span>'
-        : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed</span>';
-      row.innerHTML = '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
-        + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
-        + '<button class="tier-queue-btn" data-mi="' + mi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(m.icd10 || '').replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
-      missWrap.appendChild(row);
-    });
+    // Required section (F-codes, compliance requirements)
+    if (requiredItems.length > 0) {
+      const reqSection = document.createElement('div');
+      reqSection.style.cssText = 'border:2px solid #c0392b;border-radius:8px;overflow:hidden;margin-bottom:8px';
+      const reqHdr = document.createElement('div');
+      reqHdr.style.cssText = 'padding:9px 14px;background:#fdf0ef;border-bottom:1px solid #e8b4b0;font-size:.78rem;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.05em';
+      reqHdr.textContent = '⚠ Required — Missing Companion Code (' + requiredItems.length + ')';
+      reqSection.appendChild(reqHdr);
+
+      requiredItems.forEach(function(m, mi) {
+        const globalMi = data.missing.indexOf(m);
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:10px 14px;border-bottom:1px solid #f5c6c2;font-size:.86rem;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff8f7';
+        row.id = 'tier-missing-row-' + globalMi;
+        const codeBadge = m.icd10
+          ? '<span style="font-family:monospace;font-size:.74rem;background:#fdf0ef;border:1px solid #e8b4b0;color:#c0392b;padding:1px 7px;border-radius:4px;margin-left:7px;font-weight:700">' + escapeHtml(m.icd10) + '</span>'
+          : '';
+        row.innerHTML = '<div style="flex:1;min-width:200px"><strong style="color:#c0392b">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
+          + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
+          + '<button class="tier-queue-btn" data-mi="' + globalMi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(m.icd10 || '').replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:#fdf0ef;color:#c0392b;border:1px solid #e8b4b0;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
+        reqSection.appendChild(row);
+      });
+      missWrap.appendChild(reqSection);
+    }
+
+    // Optional suggestions section
+    if (optionalItems.length > 0) {
+      const optSection = document.createElement('div');
+      optSection.style.cssText = 'border:1px dashed var(--gold);border-radius:8px;overflow:hidden';
+      const optHdr = document.createElement('div');
+      optHdr.style.cssText = 'padding:9px 14px;background:var(--gold-pale);border-bottom:1px dashed var(--gold);font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
+      optHdr.textContent = '💡 Consider Adding to the Problem List (' + optionalItems.length + ')';
+      optSection.appendChild(optHdr);
+
+      optionalItems.forEach(function(m, mi) {
+        const globalMi = data.missing.indexOf(m);
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap';
+        row.id = 'tier-missing-row-' + globalMi;
+        const codeBadge = m.icd10
+          ? '<span style="font-family:monospace;font-size:.74rem;background:var(--row-alt);border:1px solid var(--border);color:var(--navy);padding:1px 7px;border-radius:4px;margin-left:7px;font-weight:700">' + escapeHtml(m.icd10) + '</span>'
+          : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed</span>';
+        row.innerHTML = '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
+          + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
+          + '<button class="tier-queue-btn" data-mi="' + globalMi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(m.icd10 || '').replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
+        optSection.appendChild(row);
+      });
+      missWrap.appendChild(optSection);
+    }
 
     const reAnalyzeBar = document.createElement('div');
     reAnalyzeBar.id = 'tier-reanalyze-bar';
-    reAnalyzeBar.style.cssText = 'padding:10px 14px;background:var(--gold-pale);display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+    reAnalyzeBar.style.cssText = 'padding:10px 14px;background:var(--gold-pale);display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;border:1px solid rgba(201,151,44,.3);border-radius:6px';
     reAnalyzeBar.innerHTML = '<span id="tier-queue-label" style="font-size:.82rem;font-weight:600;color:var(--navy)"></span>'
       + '<button onclick="reRunTierWithAdditions()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">🔄 Re-Analyze with Additions</button>';
     missWrap.appendChild(reAnalyzeBar);
 
     const codeNote = document.createElement('div');
-    codeNote.style.cssText = 'padding:7px 14px;font-size:.74rem;color:var(--text-lt);font-style:italic;background:var(--row-alt)';
+    codeNote.style.cssText = 'padding:7px 14px;font-size:.74rem;color:var(--text-lt);font-style:italic;background:var(--row-alt);margin-top:8px;border-radius:0 0 6px 6px';
     codeNote.textContent = 'ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote.';
     missWrap.appendChild(codeNote);
     container.appendChild(missWrap);
@@ -9030,6 +9074,10 @@ function fuzzyMatchPrimaryDx(primaryDx, lines) {
       .replace(/\bcolon cancer\b/gi, 'malignant neoplasm colon')
       .replace(/\bprostate cancer\b/gi, 'malignant neoplasm prostate')
       .replace(/\bheart failure\b/gi, 'cardiac failure congestive')
+      .replace(/\bsenile degeneration of (the )?brain\b/gi, 'dementia senile degeneration brain G31')
+      .replace(/\blewy body\b/gi, 'lewy body dementia neurodegenerative')
+      .replace(/\bfrontotemporal\b/gi, 'frontotemporal dementia')
+      .replace(/\bvascular dementia\b/gi, 'vascular dementia cognitive decline')
       .replace(/\bdementia\b/gi, 'dementia cognitive decline')
       .replace(/\balzheimer[s]?\b/gi, 'alzheimer dementia cognitive')
       .replace(/\bparkinson[s]?\b/gi, 'parkinson disease')
@@ -9128,6 +9176,7 @@ Rules:
 - If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
 - Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
 - For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
+- NEUROCOGNITIVE DIAGNOSES: "Senile degeneration of the brain" = G31.1 (not Alzheimer's). "Alzheimer's disease" = G30.x. "Lewy body dementia" = G31.83. "Frontotemporal dementia" = G31.09. "Vascular dementia" = F01.x. Always require a companion F-code (F02.x or F03.x) — flag this as needsClarification and offer F02.81 (with behavioral disturbance) and F03.90 (without) as options so the nurse can select the correct behavioral manifestation.
 
 Diagnoses to code:
 ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
