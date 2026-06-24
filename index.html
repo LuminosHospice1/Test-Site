@@ -8533,7 +8533,7 @@ CRITICAL: You must process every single diagnosis in the list above and include 
   fixInvalidTierParents(parsed);
   tierCurrentData = parsed;
   tierCurrentPrimaryDx = primaryDx;
-  tierQueuedAdditions = new Set();
+  tierQueuedAdditions = new Map();
   renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
 }
 
@@ -8703,7 +8703,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
         : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed</span>';
       row.innerHTML = '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
         + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
-        + '<button class="tier-queue-btn" data-mi="' + mi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
+        + '<button class="tier-queue-btn" data-mi="' + mi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(m.icd10 || '').replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
       missWrap.appendChild(row);
     });
 
@@ -8739,7 +8739,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   // Wire up "Add to Problem List" queue buttons
   container.querySelectorAll('.tier-queue-btn').forEach(function(b) {
     b.addEventListener('click', function() {
-      toggleTierQueueItem(b, b.getAttribute('data-suggestion'), b.getAttribute('data-mi'));
+      toggleTierQueueItem(b, b.getAttribute('data-suggestion'), b.getAttribute('data-mi'), b.getAttribute('data-icd10') || '');
     });
   });
 
@@ -8872,7 +8872,7 @@ function promoteTierItem(dx, container, primaryDx) {
   newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function toggleTierQueueItem(btn, suggestion, mi) {
+function toggleTierQueueItem(btn, suggestion, mi, icd10) {
   const isQueued = tierQueuedAdditions.has(suggestion);
   if (isQueued) {
     tierQueuedAdditions.delete(suggestion);
@@ -8881,7 +8881,7 @@ function toggleTierQueueItem(btn, suggestion, mi) {
     btn.style.color = 'var(--navy)';
     btn.style.borderColor = 'var(--border)';
   } else {
-    tierQueuedAdditions.add(suggestion);
+    tierQueuedAdditions.set(suggestion, { suggestion: suggestion, icd10: icd10 || '' });
     btn.textContent = '✓ Queued';
     btn.style.background = '#d4edda';
     btn.style.color = '#155724';
@@ -8893,7 +8893,7 @@ function toggleTierQueueItem(btn, suggestion, mi) {
   if (bar && label) {
     if (tierQueuedAdditions.size > 0) {
       bar.style.display = 'flex';
-      const names = Array.from(tierQueuedAdditions);
+      const names = Array.from(tierQueuedAdditions.keys());
       label.textContent = tierQueuedAdditions.size + ' addition' + (tierQueuedAdditions.size > 1 ? 's' : '') + ' queued: ' + names.join(', ');
     } else {
       bar.style.display = 'none';
@@ -8904,16 +8904,16 @@ function toggleTierQueueItem(btn, suggestion, mi) {
 async function reRunTierWithAdditions() {
   if (!tierCurrentData || tierQueuedAdditions.size === 0) return;
 
-  // Merge queued additions into the existing input
   const currentLines = tierCurrentData.items.map(function(it) { return it.diagnosis; });
-  const additions = Array.from(tierQueuedAdditions);
+  const additions = Array.from(tierQueuedAdditions.values()).map(function(item) {
+    return (item.icd10 ? item.icd10 + ' ' : '') + item.suggestion;
+  });
   const combined = currentLines.concat(additions);
 
-  // Update the tier input textarea and re-run
   const input = document.getElementById('tier-input');
   if (input) input.value = combined.join('\n');
 
-  tierQueuedAdditions = new Set();
+  tierQueuedAdditions = new Map();
   await runTierChecker();
 }
 
@@ -9100,7 +9100,7 @@ function clearTierChecker() {
 let icdLookupResults = []; // stores resolved items for Send to Tier Checker
 let tierCurrentData = null; // stores last tier result for re-run with additions
 let tierCurrentPrimaryDx = ''; // stores primary dx for re-run
-let tierQueuedAdditions = new Set(); // stores "Consider Adding" suggestions queued for re-analysis
+let tierQueuedAdditions = new Map(); // stores "Consider Adding" suggestions queued for re-analysis: suggestion -> {suggestion, icd10}
 
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
@@ -9362,7 +9362,9 @@ function updateIcdSendButton(container) {
 
 function sendIcdToTierChecker() {
   const diagList = icdLookupResults.map(function(r) {
-    return (r.code ? r.code + ' ' : '') + r.diagnosis;
+    // Only prepend code if the diagnosis text doesn't already start with it
+    const diagAlreadyHasCode = r.code && r.diagnosis.trim().toUpperCase().startsWith(r.code.trim().toUpperCase());
+    return (r.code && !diagAlreadyHasCode ? r.code + ' ' : '') + r.diagnosis;
   }).join('\n');
 
   switchTab('checker', document.querySelector('[onclick*=checker]'));
