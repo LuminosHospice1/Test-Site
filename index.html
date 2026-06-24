@@ -8661,6 +8661,16 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       row.innerHTML = html;
       row.setAttribute('data-tier', tierNum);
       row.setAttribute('data-dx-key', it.diagnosis);
+
+      // Active vs. historical check — append notice for diagnoses that may be historical
+      if (isActiveHistoricalTrigger(it.diagnosis)) {
+        const notice = document.createElement('div');
+        notice.style.cssText = 'margin-top:7px;padding:7px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap';
+        notice.innerHTML = '<div style="font-size:.79rem;color:#7a4200"><strong>⚠ Verify:</strong> Is this currently <strong>active</strong>, or is it a historical/resolved condition? If historical, use a "History of" code instead — it would not require a care plan.</div>'
+          + '<button class="tier-history-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:4px 11px;background:#fff3b0;color:#7a4200;border:1px solid #ffe082;border-radius:5px;font-family:inherit;font-size:.76rem;font-weight:700;cursor:pointer;white-space:nowrap">📋 Convert to History of &amp; Re-run</button>';
+        row.appendChild(notice);
+      }
+
       groupWrap.appendChild(row);
     });
 
@@ -8727,7 +8737,74 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     });
   });
 
+  // Wire up "Convert to History of & Re-run" buttons
+  container.querySelectorAll('.tier-history-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      convertToHistoryOf(b.getAttribute('data-dx'));
+    });
+  });
+
   container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function isActiveHistoricalTrigger(diagnosis) {
+  // Returns true if this diagnosis is the type that could be active OR historical,
+  // and the distinction materially affects whether a care plan is needed.
+  // Explicitly skip anything that already says "history of" / "personal history" / "status post".
+  if (!diagnosis) return false;
+  const lower = diagnosis.toLowerCase();
+
+  // Skip if already coded as historical
+  if (/history of|personal history|status post|h\/o\b|hx of|resolved|healed|remote/.test(lower)) return false;
+
+  // Trigger categories — conditions that are often historical in hospice but coded as active
+  const triggers = [
+    // Infections
+    /\binfection\b/, /\bsepsis\b/, /\bsepticemia\b/, /\bpneumonia\b/, /\bcellulitis\b/,
+    /\butis?\b|\burinary tract infection\b/, /\b(c\.?\s*diff|clostridium)\b/,
+    /\bosteomyelitis\b/, /\babscess\b/, /\bbacteremia\b/, /\bmeningitis\b/,
+    /\bencephalitis\b/, /\bperitonitis\b/, /\bempyema\b/, /\bwound infection\b/,
+    // Wounds & skin
+    /\bwound\b/, /\bulcer\b/, /\bpressure (injury|ulcer|sore)\b/, /\bdecubitus\b/,
+    /\blaceration\b/, /\babrasion\b/, /\bsurgical wound\b/, /\bstoma\b/,
+    // Fractures
+    /\bfracture\b/, /\bfx\b/,
+    // Strokes / neurological events
+    /\bstroke\b/, /\bcva\b/, /\btia\b/, /\bcerebrovascular accident\b/,
+    /\binfarct(ion)?\b/, /\bischemic attack\b/,
+    // Cardiac events
+    /\bmyocardial infarction\b|\bmi\b|\bheart attack\b/, /\bcardiac arrest\b/,
+    // Cancer / malignancy — flag if it's a prior or secondary that could be historical
+    /\bmalignant neoplasm\b/, /\bcarcinoma\b/, /\blymphoma\b/, /\bleukemia\b/,
+    /\bmetasta(sis|tic|ses)\b/,
+    // Surgical / procedural history
+    /\bamputation\b/, /\bsurgery\b|\bsurgical\b/, /\bresection\b/, /\bbypass\b/,
+    /\btransplant\b/, /\bimplant\b/,
+    // DVT / PE
+    /\bdeep vein thrombosis\b|\bdvt\b/, /\bpulmonary embolism\b|\bpe\b/,
+    /\bthrombosis\b/, /\bembolism\b/
+  ];
+
+  return triggers.some(function(pattern) { return pattern.test(lower); });
+}
+
+async function convertToHistoryOf(dx) {
+  if (!tierCurrentData) return;
+
+  // Replace the diagnosis in the current input list with "History of [dx]"
+  const historyDx = 'History of ' + dx.replace(/^(history of\s+)/i, '');
+
+  // Update in tierCurrentData items
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (item) item.diagnosis = historyDx;
+
+  // Rebuild the input textarea with updated list
+  const updatedLines = tierCurrentData.items.map(function(it) { return it.diagnosis; });
+  const input = document.getElementById('tier-input');
+  if (input) input.value = updatedLines.join('\n');
+
+  // Re-run the full analysis
+  await runTierChecker();
 }
 
 function promoteTierItem(dx, container, primaryDx) {
