@@ -1326,7 +1326,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <div class="wf-num">5</div>
         <div class="wf-content">
           <div class="wf-title">Click "Generate Care Plan" — review, edit, copy</div>
-          <div class="wf-desc">Review the generated output. The <strong>Goal</strong> section has a <strong>📋 Copy</strong> button, and each individual intervention has its own <strong>📋 Copy</strong> button — paste each one directly into the corresponding field in Firenote. Use <strong>📋 Copy All</strong> to copy the full output at once. Always edit any language that doesn't reflect your actual patient before saving.</div>
+          <div class="wf-desc">Review the generated output. The <strong>Goal</strong> section has a <strong>📋 Copy</strong> button, and each individual intervention has its own <strong>📋 Copy</strong> button — paste each one directly into the corresponding field in Firenote. Always edit any language that doesn't reflect your actual patient before saving.</div>
         </div>
       </div>
     </div>
@@ -3820,6 +3820,12 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
       <div class="checker-field">
         <label>Primary Hospice Diagnosis <span style="color:#c0392b">*</span></label>
         <input type="text" id="tier-primary" placeholder="e.g. End-stage congestive heart failure">
+      </div>
+
+      <div class="checker-field">
+        <label>Patient Details <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(optional — carries over to Care Plan Builder)</span></label>
+        <textarea id="tier-patient-details" style="min-height:60px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="e.g. PPS 40%, lives with son, incontinent, non-verbal"></textarea>
+        <div style="font-size:.75rem;color:var(--text-lt);margin-top:4px;font-style:italic">Include functional status, caregiver situation, current medications, communication ability — anything clinically relevant</div>
       </div>
 
       <div class="checker-field">
@@ -8719,7 +8725,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   container.querySelectorAll('.tier-cp-btn').forEach(function(b) {
     b.addEventListener('click', function() {
       const dx = b.getAttribute('data-dx');
-      cpQuickFillDirect(dx, primaryDx, '');
+      cpQuickFillDirect(dx, primaryDx, (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : ''));
     });
   });
 
@@ -8852,7 +8858,7 @@ function promoteTierItem(dx, container, primaryDx) {
   newRow.innerHTML = html;
 
   newRow.querySelector('.tier-cp-btn').addEventListener('click', function() {
-    cpQuickFillDirect(dx, tierCurrentPrimaryDx, '');
+    cpQuickFillDirect(dx, tierCurrentPrimaryDx, (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : ''));
   });
 
   if (tier1Group) {
@@ -9081,7 +9087,7 @@ function escapeHtml(str) {
 }
 
 function clearTierChecker() {
-  ['tier-primary','tier-input'].forEach(function(id) {
+  ['tier-primary','tier-input','tier-patient-details'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -9488,7 +9494,7 @@ function clearIcdLookup() {
     <div class="ai-output-wrap" id="cp-output-wrap">
       <div class="ai-output-label">Generated Care Plan — Review &amp; Edit Before Entering into Firenote</div>
       <div class="ai-output-box" id="cp-output"></div>
-      <button class="ai-copy-btn" onclick="copyOutput('cp-output', this)">📋 Copy All</button>
+      
       <div class="ai-disclaimer">⚠ AI-generated content requires nurse review before entry into Firenote. Personalize all details to reflect the actual patient. The nurse of record is responsible for all documented content.</div>
     </div>
 
