@@ -8785,9 +8785,10 @@ async function runIcdLookup() {
 
 Rules:
 - Return the MOST SPECIFIC code available given the information provided.
-- If a diagnosis is too vague to code specifically (e.g. "fracture" with no site, "cancer" with no type/site, "diabetes" with no type), mark it as "needsClarification": true and provide 2-4 specific options the nurse can choose from, each with a code and a label.
-- If a diagnosis clearly maps to one specific code with high confidence, return that code and set "needsClarification": false.
-- If a diagnosis could reasonably map to 2-3 codes depending on specifics the nurse would know (e.g. type 1 vs type 2 diabetes, right vs left laterality), set "needsClarification": true and list the options.
+- If a diagnosis is too vague to code specifically (e.g. "fracture" with no site, "cancer" with no type/site, "diabetes" with no type), mark it as "needsClarification": true and provide options the nurse can choose from, each with a code and a label.
+- LATERALITY IS REQUIRED: When a diagnosis involves a body part that has laterality in ICD-10 (lung, kidney, limb, breast, eye, hip, knee, etc.), you MUST include separate options for Left, Right, and Unspecified — do not collapse these into "unspecified" only. For lung cancer, include left lung, right lung, and unspecified lung variants. Combine laterality WITH site/lobe specificity where both apply (e.g. "upper lobe, right lung" AND "upper lobe, left lung" as distinct options).
+- If a diagnosis clearly maps to one specific code with high confidence AND laterality is already specified in the input, return that single code and set "needsClarification": false.
+- If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
 - Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
 - For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
 
