@@ -8541,6 +8541,13 @@ CRITICAL: You must process every single diagnosis in the list above and include 
   tierCurrentData = parsed;
   tierCurrentPrimaryDx = primaryDx;
   tierQueuedAdditions = new Map();
+
+  // Lock all items from this initial run — they won't be re-tiered on subsequent re-runs
+  tierLockedItems = new Map();
+  parsed.items.forEach(function(it) {
+    tierLockedItems.set(it.diagnosis.toLowerCase().trim(), it);
+  });
+
   renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
 }
 
@@ -8658,6 +8665,12 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       if (tierNum === 2) {
         html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
       }
+      if (tierNum === 3) {
+        html += '<div style="display:flex;gap:6px;flex-shrink:0">'
+          + '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Tier 1</button>'
+          + '<button class="tier-promote-tier2-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">→ Tier 2</button>'
+          + '</div>';
+      }
       html += '</div>';
 
       if (isPrimary && tierNum === 1) {
@@ -8773,10 +8786,17 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     });
   });
 
-  // Wire up "Move to Tier 1" buttons (Tier 2)
+  // Wire up "Move to Tier 1" buttons (Tier 2 and Tier 3)
   container.querySelectorAll('.tier-promote-btn').forEach(function(b) {
     b.addEventListener('click', function() {
       promoteTierItem(b.getAttribute('data-dx'), container, primaryDx);
+    });
+  });
+
+  // Wire up "Move to Tier 2" buttons (Tier 3 only)
+  container.querySelectorAll('.tier-promote-tier2-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      promoteTier3toTier2(b.getAttribute('data-dx'), container);
     });
   });
 
@@ -8836,6 +8856,64 @@ function isActiveHistoricalTrigger(diagnosis) {
   ];
 
   return triggers.some(function(pattern) { return pattern.test(lower); });
+}
+
+function promoteTier3toTier2(dx, container) {
+  if (!tierCurrentData) return;
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (!item) return;
+
+  // Update data
+  item.tier = 2;
+  item.parentProblem = null;
+  item.parentRationale = null;
+  item.parentWhat = null;
+  item.associatedSymptom = false;
+
+  // Find Tier 2 and Tier 3 groups
+  const tier2Group = container.querySelector('[data-tier-group="2"]');
+  const tier3Group = container.querySelector('[data-tier-group="3"]');
+
+  // Remove from Tier 3
+  const oldRow = container.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  if (oldRow) oldRow.remove();
+
+  // Update Tier 3 count
+  if (tier3Group) {
+    const remaining = tier3Group.querySelectorAll('[data-tier="3"]').length;
+    const hdr = tier3Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[3].label + ' (' + remaining + ')';
+    if (remaining === 0) tier3Group.style.display = 'none';
+  }
+
+  // Build new Tier 2 row
+  const newRow = document.createElement('div');
+  newRow.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
+  newRow.setAttribute('data-tier', 2);
+  newRow.setAttribute('data-dx-key', dx);
+
+  newRow.innerHTML = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+    + '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>'
+    + ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">→ Moved to Tier 2</span>'
+    + '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Promoted by nurse — assign a parent care plan below</div>'
+    + '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem;color:var(--text-mid);font-style:italic">No parent assigned yet — review and confirm which Tier 1 care plan this should be addressed under</div>'
+    + '</div>'
+    + '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>'
+    + '</div>';
+
+  newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
+    promoteTierItem(dx, container, tierCurrentPrimaryDx);
+  });
+
+  if (tier2Group) {
+    tier2Group.appendChild(newRow);
+    const count = tier2Group.querySelectorAll('[data-tier="2"]').length;
+    const hdr = tier2Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[2].label + ' (' + count + ')';
+    tier2Group.style.display = '';
+  }
+
+  newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function convertToHistoryOf(dx) {
@@ -8948,17 +9026,108 @@ function toggleTierQueueItem(btn, suggestion, mi, icd10) {
 async function reRunTierWithAdditions() {
   if (!tierCurrentData || tierQueuedAdditions.size === 0) return;
 
-  const currentLines = tierCurrentData.items.map(function(it) { return it.diagnosis; });
-  const additions = Array.from(tierQueuedAdditions.values()).map(function(item) {
+  const additions = Array.from(tierQueuedAdditions.values());
+  const additionLines = additions.map(function(item) {
     return (item.icd10 ? item.icd10 + ' ' : '') + item.suggestion;
   });
-  const combined = currentLines.concat(additions);
 
-  const input = document.getElementById('tier-input');
-  if (input) input.value = combined.join('\n');
+  const btn = document.getElementById('tier-parse-btn');
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Analyzing additions...'; btn.disabled = true; }
+
+  const resultsEl = document.getElementById('tier-results');
+  if (resultsEl) {
+    const notice = document.createElement('div');
+    notice.id = 'tier-rerun-notice';
+    notice.style.cssText = 'padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:var(--navy);margin-bottom:10px';
+    notice.textContent = '⏳ Analyzing ' + additionLines.length + ' new addition' + (additionLines.length > 1 ? 's' : '') + '…';
+    resultsEl.insertBefore(notice, resultsEl.firstChild);
+  }
+
+  // Build prompt for new additions only, but give the AI context of existing Tier 1 items
+  const tier1Context = tierCurrentData.items
+    .filter(function(it) { return it.tier === 1; })
+    .map(function(it) { return '- ' + it.diagnosis + ' (already Tier 1)'; })
+    .join('\n');
+
+  const primaryDx = tierCurrentPrimaryDx;
+  const prompt = `You are a hospice clinical documentation expert helping a nurse tier diagnoses for care planning using the three-tier framework.
+
+The following diagnoses are ALREADY CONFIRMED as Tier 1 (standalone care plans exist for them). Use this as context when tiering the new additions:
+${tier1Context}
+
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx}
+
+NEW DIAGNOSES TO TIER (only tier these, do not re-tier the confirmed ones above):
+${additionLines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
+
+${buildTierFrameworkSummary()}
+
+For each NEW diagnosis, determine tier (1/2/3), short reasoning (max 8 words), parentProblem if Tier 2 (must be one of the already-confirmed Tier 1 items or another new item you tier as Tier 1), parentRationale (max 12 words), parentWhat (max 10 words), associatedSymptom (true/false), confidence (high/low).
+
+Respond ONLY with valid JSON, no markdown, no extra whitespace:
+{"items":[
+  {"diagnosis":"exact text","tier":2,"reasoning":"...","parentProblem":"Confirmed Tier 1 diagnosis","parentRationale":"...","parentWhat":"...","associatedSymptom":false,"confidence":"high"}
+],"missing":[]}`;
+
+  let newParsed = null;
+  let errMsg = '';
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 3000 })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      try { newParsed = JSON.parse(clean); } catch(e) {
+        const salvaged = salvageTruncatedTierJson(clean);
+        if (salvaged && salvaged.items && salvaged.items.length > 0) newParsed = salvaged;
+        else errMsg = 'Parse error: ' + e.message;
+      }
+    } else { errMsg = 'HTTP ' + resp.status; }
+  } catch(e) { errMsg = 'Network error: ' + e.message; }
+
+  if (btn) { btn.textContent = origText; btn.disabled = false; }
+
+  // Remove loading notice
+  const notice = document.getElementById('tier-rerun-notice');
+  if (notice) notice.remove();
+
+  if (!newParsed || !newParsed.items) {
+    if (resultsEl) {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'padding:10px 14px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:6px;font-size:.82rem;color:var(--red);margin-bottom:10px';
+      errDiv.innerHTML = '<strong>⚠ Could not tier additions.</strong> ' + (errMsg || 'Unexpected error.') + ' Please add them manually.';
+      resultsEl.insertBefore(errDiv, resultsEl.firstChild);
+    }
+    tierQueuedAdditions = new Map();
+    return;
+  }
+
+  // Merge new items into existing data, preserving all locked items exactly
+  fixInvalidTierParents(newParsed);
+  newParsed.items.forEach(function(it) {
+    tierCurrentData.items.push(it);
+    // Also lock these new items so a future re-run doesn't re-tier them
+    tierLockedItems.set(it.diagnosis.toLowerCase().trim(), it);
+  });
 
   tierQueuedAdditions = new Map();
-  await runTierChecker();
+
+  // Re-render the full combined results
+  renderTierResults(resultsEl, tierCurrentData, primaryDx, false, '');
+}
+
+function buildTierFrameworkSummary() {
+  return `TIER 1: Standalone care plan required — hospice actively assessing, treating, or managing.
+TIER 2: Addressed under another Tier 1 problem — stays on list, no separate goals/interventions.
+TIER 3: Diagnosis list only — present but not causing symptoms or requiring intervention.
+Route symptoms to Tier 2 under their causing diagnosis (e.g. agitation → dementia, edema → CHF).
+Set associatedSymptom: true when routing a symptom under its causing diagnosis.
+The primary hospice diagnosis is ALWAYS Tier 1.`;
 }
 
 function salvageTruncatedTierJson(text) {
@@ -9141,6 +9310,7 @@ function clearTierChecker() {
   });
   const res = document.getElementById('tier-results');
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+  tierLockedItems = new Map();
 }
 
 // ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
@@ -9150,6 +9320,7 @@ let icdPrimaryIdx = -1; // index of the item marked as primary diagnosis
 let tierCurrentData = null; // stores last tier result for re-run with additions
 let tierCurrentPrimaryDx = ''; // stores primary dx for re-run
 let tierQueuedAdditions = new Map(); // stores "Consider Adding" suggestions queued for re-analysis: suggestion -> {suggestion, icd10}
+let tierLockedItems = new Map(); // diagnosis -> item object; locked after initial analysis, never re-tiered
 
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
