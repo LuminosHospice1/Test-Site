@@ -8426,7 +8426,7 @@ DIAGNOSIS SUBSUMPTION — A second type of Tier 2 relationship exists when one d
 - Chronic respiratory failure / Acute-on-chronic respiratory failure → COPD or primary respiratory diagnosis
 - Uremia / Uremic encephalopathy → End-stage renal disease
 - Hepatic encephalopathy / Hepatic coma → Liver failure or hepatic disease
-- Malnutrition / Protein-calorie malnutrition → Cancer, cachexia, or anorexia (whichever is Tier 1)
+- Malnutrition / Protein-calorie malnutrition → Can be Tier 1 itself when it is actively being assessed and managed (e.g. nutrition interventions, feeding strategies, weight monitoring). When Protein Calorie Malnutrition IS Tier 1, then: Weight loss, Muscle wasting, Cachexia, and Anorexia → Tier 2 under Protein Calorie Malnutrition. Do NOT route Protein Calorie Malnutrition itself to Tier 2 under dementia or cancer unless it truly requires no independent nursing management.
 - Hyponatremia / Electrolyte imbalance → CHF, ESRD, or liver failure (whichever is Tier 1)
 - Pleural effusion (malignant) → Primary cancer diagnosis
 - Malignant ascites → Primary cancer diagnosis
@@ -8638,16 +8638,16 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
       html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(it.diagnosis) + '</strong>';
       if (isPrimary) html += ' <span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 7px;border-radius:10px;font-weight:700">PRIMARY</span>';
-      if (it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
+      if (it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
       if (it.confidence === 'low' && !it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
-      if (it.confidence === 'low' && it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ REVIEW</span>';
+      if (it.confidence === 'low' && it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ REVIEW</span>';
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
         html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
           + '<div style="color:var(--navy);font-weight:600;margin-bottom:2px">Addressed under: <strong>' + escapeHtml(it.parentProblem) + '</strong></div>'
           + (it.parentRationale ? '<div style="color:var(--text-mid);margin-top:2px"><em>Why: ' + escapeHtml(it.parentRationale) + '</em></div>' : '')
           + (it.parentWhat ? '<div style="color:var(--navy);margin-top:3px">📌 What to address: ' + escapeHtml(it.parentWhat) + '</div>' : '')
-          + (it.associatedSymptom ? '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>' : '')
+          + (it.associatedSymptom && tierNum === 2 ? '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>' : '')
           + '</div>';
       }
       html += '</div>';
