@@ -8402,6 +8402,20 @@ Anxiety disorder (primary) → insomnia, somatic complaints — BUT if anxiety a
 
 IMPORTANT: If a symptom is severe, frequently assessed, or likely to require its own distinct nursing interventions beyond the parent care plan, tier it Tier 1 instead. Being "associated" does not automatically make a symptom Tier 2.
 
+DIAGNOSIS SUBSUMPTION — A second type of Tier 2 relationship exists when one diagnosis is a direct complication, advanced manifestation, or specific subtype of another diagnosis already on the list that is being care planned. In these cases, the more specific/downstream diagnosis can be addressed under the broader one. Set "associatedSymptom" to false for these (they are not symptoms — they are related conditions). Common examples:
+- Chronic respiratory failure / Acute-on-chronic respiratory failure → COPD or primary respiratory diagnosis
+- Uremia / Uremic encephalopathy → End-stage renal disease
+- Hepatic encephalopathy / Hepatic coma → Liver failure or hepatic disease
+- Malnutrition / Protein-calorie malnutrition → Cancer, cachexia, or anorexia (whichever is Tier 1)
+- Hyponatremia / Electrolyte imbalance → CHF, ESRD, or liver failure (whichever is Tier 1)
+- Pleural effusion (malignant) → Primary cancer diagnosis
+- Malignant ascites → Primary cancer diagnosis
+- Pathological fracture → Metastatic cancer or primary bone disease
+- Anemia of chronic disease → Cancer, ESRD, or chronic inflammatory condition (whichever is Tier 1)
+- Secondary hypertension → Primary causing condition
+
+ABSOLUTE RULE — PRIMARY DIAGNOSIS: The patient's primary hospice diagnosis is ALWAYS Tier 1, without exception. No other logic, subsumption rule, or symptom routing overrides this. Even if the primary diagnosis is a manifestation of something else, it remains Tier 1 because it is the hospice-qualifying diagnosis and will always require its own goals and interventions.
+
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
@@ -8414,7 +8428,12 @@ ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
 2. A SHORT reasoning for that tier — maximum 8 words, fragment is fine (e.g. "Actively managed hospice symptom")
-3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). CRITICAL — the parentProblem MUST be a diagnosis you are tiering as Tier 1 (a diagnosis that actually has its own care plan). NEVER set a Tier 2 item's parentProblem to another Tier 2 item — Tier 2 diagnoses have no goals/interventions of their own, so nesting one Tier 2 item under another would point the nurse to a care plan that doesn't exist. If the most clinically obvious parent is itself only Tier 2 (e.g., Weakness relates most directly to Cachexia, but Cachexia is itself Tier 2 under Anorexia), trace up the chain and use the Tier 1 diagnosis at the top of that chain as the parentProblem instead (e.g., use Anorexia, not Cachexia). If no Tier 1 diagnosis on the list is a reasonable parent, reclassify the item as Tier 1 itself rather than inventing an invalid parent.
+3. If Tier 2: which problem on THIS list it should be addressed under (parentProblem field). CRITICAL rules for parentProblem:
+   - It MUST be a diagnosis you are tiering as Tier 1 (one that actually has its own care plan)
+   - It MUST be the EXACT text of a single diagnosis from the list above — copy it verbatim, do not combine, concatenate, or summarize multiple diagnoses into one string
+   - NEVER set a Tier 2 item's parentProblem to another Tier 2 item
+   - If the most clinically obvious parent is itself only Tier 2 (e.g. Weakness → Cachexia → Anorexia), trace up the chain and use the Tier 1 diagnosis at the top
+   - If no Tier 1 diagnosis on the list is a reasonable parent, reclassify the item as Tier 1 itself rather than inventing an invalid parent
    - parentRationale: 1 short sentence (max 12 words) explaining WHY this diagnosis is addressed under that parent (e.g. "Caused by hepatic metastasis; managed within liver cancer interventions")
    - parentWhat: 1 short phrase (max 10 words) stating what specifically should be noted or addressed (e.g. "Monitor for worsening; comfort positioning and skin care")
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
@@ -8492,6 +8511,9 @@ CRITICAL: You must process every single diagnosis in the list above and include 
   }
 
   fixInvalidTierParents(parsed);
+  tierCurrentData = parsed;
+  tierCurrentPrimaryDx = primaryDx;
+  tierQueuedAdditions = new Set();
   renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
 }
 
@@ -8606,6 +8628,9 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       if (tierNum === 1) {
         html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
       }
+      if (tierNum === 2) {
+        html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+      }
       html += '</div>';
 
       if (isPrimary && tierNum === 1) {
@@ -8620,30 +8645,45 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       }
 
       row.innerHTML = html;
+      row.setAttribute('data-tier', tierNum);
+      row.setAttribute('data-dx-key', it.diagnosis);
       groupWrap.appendChild(row);
     });
 
+    groupWrap.setAttribute('data-tier-group', tierNum);
     container.appendChild(groupWrap);
   });
 
   // Missing / commonly-related suggestions
   if (data.missing && data.missing.length > 0) {
     const missWrap = document.createElement('div');
+    missWrap.id = 'tier-missing-wrap';
     missWrap.style.cssText = 'margin-top:6px;border:1px dashed var(--gold);border-radius:8px;overflow:hidden';
     const missHdr = document.createElement('div');
     missHdr.style.cssText = 'padding:9px 14px;background:var(--gold-pale);border-bottom:1px dashed var(--gold);font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
     missHdr.textContent = '💡 Consider Adding to the Problem List (' + data.missing.length + ')';
     missWrap.appendChild(missHdr);
-    data.missing.forEach(function(m) {
+
+    data.missing.forEach(function(m, mi) {
       const row = document.createElement('div');
-      row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text)';
+      row.style.cssText = 'padding:10px 14px;border-bottom:1px dashed var(--border);font-size:.86rem;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap';
+      row.id = 'tier-missing-row-' + mi;
       const codeBadge = m.icd10
         ? '<span style="font-family:monospace;font-size:.74rem;background:var(--row-alt);border:1px solid var(--border);color:var(--navy);padding:1px 7px;border-radius:4px;margin-left:7px;font-weight:700">' + escapeHtml(m.icd10) + '</span>'
-        : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed — verify in ICD-10 Reference</span>';
-      row.innerHTML = '<strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
-        + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div>';
+        : '<span style="font-size:.7rem;color:var(--text-lt);margin-left:7px;font-style:italic">code not confirmed</span>';
+      row.innerHTML = '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(m.suggestion) + '</strong>' + codeBadge
+        + '<div style="color:var(--text-mid);margin-top:3px;font-size:.84rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
+        + '<button class="tier-queue-btn" data-mi="' + mi + '" data-suggestion="' + escapeHtml(m.suggestion).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
       missWrap.appendChild(row);
     });
+
+    const reAnalyzeBar = document.createElement('div');
+    reAnalyzeBar.id = 'tier-reanalyze-bar';
+    reAnalyzeBar.style.cssText = 'padding:10px 14px;background:var(--gold-pale);display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+    reAnalyzeBar.innerHTML = '<span id="tier-queue-label" style="font-size:.82rem;font-weight:600;color:var(--navy)"></span>'
+      + '<button onclick="reRunTierWithAdditions()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">🔄 Re-Analyze with Additions</button>';
+    missWrap.appendChild(reAnalyzeBar);
+
     const codeNote = document.createElement('div');
     codeNote.style.cssText = 'padding:7px 14px;font-size:.74rem;color:var(--text-lt);font-style:italic;background:var(--row-alt)';
     codeNote.textContent = 'ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote.';
@@ -8651,7 +8691,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     container.appendChild(missWrap);
   }
 
-  // Wire up "Build Care Plan" buttons
+  // Wire up "Build Care Plan" buttons (Tier 1)
   container.querySelectorAll('.tier-cp-btn').forEach(function(b) {
     b.addEventListener('click', function() {
       const dx = b.getAttribute('data-dx');
@@ -8659,7 +8699,125 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     });
   });
 
+  // Wire up "Move to Tier 1" buttons (Tier 2)
+  container.querySelectorAll('.tier-promote-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      promoteTierItem(b.getAttribute('data-dx'), container, primaryDx);
+    });
+  });
+
+  // Wire up "Add to Problem List" queue buttons
+  container.querySelectorAll('.tier-queue-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      toggleTierQueueItem(b, b.getAttribute('data-suggestion'), b.getAttribute('data-mi'));
+    });
+  });
+
   container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function promoteTierItem(dx, container, primaryDx) {
+  // Find the item in current data, promote it to Tier 1, move its card visually
+  if (!tierCurrentData) return;
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (!item) return;
+
+  // Update data
+  item.tier = 1;
+  item.parentProblem = null;
+  item.parentRationale = null;
+  item.parentWhat = null;
+  item.associatedSymptom = false;
+
+  // Find or create Tier 1 group in DOM
+  let tier1Group = container.querySelector('[data-tier-group="1"]');
+  const tier2Group = container.querySelector('[data-tier-group="2"]');
+
+  // Remove card from Tier 2 group
+  const oldRow = container.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  if (oldRow) oldRow.remove();
+
+  // Update Tier 2 group header count
+  if (tier2Group) {
+    const remaining = tier2Group.querySelectorAll('[data-tier="2"]').length;
+    const hdr = tier2Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[2].label + ' (' + remaining + ')';
+    if (remaining === 0) tier2Group.style.display = 'none';
+  }
+
+  // Build new Tier 1 row
+  const newRow = document.createElement('div');
+  newRow.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
+  newRow.setAttribute('data-tier', 1);
+  newRow.setAttribute('data-dx-key', dx);
+
+  let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">⬆ Promoted to Tier 1</span>';
+  html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Promoted by nurse — requires standalone care plan</div>';
+  html += '</div>';
+  html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+  html += '</div>';
+  newRow.innerHTML = html;
+
+  newRow.querySelector('.tier-cp-btn').addEventListener('click', function() {
+    cpQuickFillDirect(dx, tierCurrentPrimaryDx, '');
+  });
+
+  if (tier1Group) {
+    tier1Group.appendChild(newRow);
+    // Update Tier 1 header count
+    const count = tier1Group.querySelectorAll('[data-tier="1"]').length;
+    const hdr = tier1Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[1].label + ' (' + count + ')';
+  }
+
+  newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function toggleTierQueueItem(btn, suggestion, mi) {
+  const isQueued = tierQueuedAdditions.has(suggestion);
+  if (isQueued) {
+    tierQueuedAdditions.delete(suggestion);
+    btn.textContent = '+ Add to Problem List';
+    btn.style.background = 'var(--row-alt)';
+    btn.style.color = 'var(--navy)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    tierQueuedAdditions.add(suggestion);
+    btn.textContent = '✓ Queued';
+    btn.style.background = '#d4edda';
+    btn.style.color = '#155724';
+    btn.style.borderColor = '#a8d5b5';
+  }
+
+  const bar = document.getElementById('tier-reanalyze-bar');
+  const label = document.getElementById('tier-queue-label');
+  if (bar && label) {
+    if (tierQueuedAdditions.size > 0) {
+      bar.style.display = 'flex';
+      const names = Array.from(tierQueuedAdditions);
+      label.textContent = tierQueuedAdditions.size + ' addition' + (tierQueuedAdditions.size > 1 ? 's' : '') + ' queued: ' + names.join(', ');
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+}
+
+async function reRunTierWithAdditions() {
+  if (!tierCurrentData || tierQueuedAdditions.size === 0) return;
+
+  // Merge queued additions into the existing input
+  const currentLines = tierCurrentData.items.map(function(it) { return it.diagnosis; });
+  const additions = Array.from(tierQueuedAdditions);
+  const combined = currentLines.concat(additions);
+
+  // Update the tier input textarea and re-run
+  const input = document.getElementById('tier-input');
+  if (input) input.value = combined.join('\n');
+
+  tierQueuedAdditions = new Set();
+  await runTierChecker();
 }
 
 function salvageTruncatedTierJson(text) {
@@ -8764,6 +8922,9 @@ function clearTierChecker() {
 // ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
 
 let icdLookupResults = []; // stores resolved items for Send to Tier Checker
+let tierCurrentData = null; // stores last tier result for re-run with additions
+let tierCurrentPrimaryDx = ''; // stores primary dx for re-run
+let tierQueuedAdditions = new Set(); // stores "Consider Adding" suggestions queued for re-analysis
 
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
