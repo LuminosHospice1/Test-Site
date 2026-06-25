@@ -8436,11 +8436,21 @@ DIAGNOSIS SUBSUMPTION — A second type of Tier 2 relationship exists when one d
 
 ABSOLUTE RULE — PRIMARY DIAGNOSIS: The patient's primary hospice diagnosis is ALWAYS Tier 1, without exception. No other logic, subsumption rule, or symptom routing overrides this. Even if the primary diagnosis is a manifestation of something else, it remains Tier 1 because it is the hospice-qualifying diagnosis and will always require its own goals and interventions.
 
-REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diagnosis (or any Tier 1 diagnosis) is a neurocognitive/neurodegenerative condition — including but not limited to Alzheimer's disease (G30.x), senile degeneration of the brain (G31.1), Lewy body dementia (G31.83), Parkinson's disease dementia (G31.83 or G20), frontotemporal dementia (G31.09), vascular dementia, or any other primary dementia — ICD-10 coding requires a companion F-code documenting the associated behavioral/psychological manifestation. Common F-codes: F02.x (dementia in other diseases), F03.x (unspecified dementia), F06.x (other mental disorders due to brain damage).
+REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diagnosis (or any Tier 1 diagnosis) is a neurocognitive/neurodegenerative condition — including but not limited to Alzheimer's disease (G30.x), senile degeneration of the brain (G31.1), Lewy body dementia (G31.83), Parkinson's disease dementia (G31.83 or G20), frontotemporal dementia (G31.09), vascular dementia, or any other primary dementia — ICD-10 coding requires a companion F-code documenting the associated behavioral/psychological manifestation.
+
+CRITICAL — use the CORRECT F-code companion based on the specific G-code diagnosis. Do NOT use F02.x for non-Alzheimer's diagnoses:
+- G30.x (Alzheimer's disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
+- G31.1 (Senile degeneration of the brain) → F03.91 (with behavioral disturbance) or F03.90 (without behavioral disturbance). Do NOT suggest F02.x for G31.1 — that is Alzheimer's-specific.
+- G31.83 (Lewy body disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
+- G31.09 (Frontotemporal dementia) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
+- G31.0x (other frontotemporal) → F02.81 or F02.80
+- F01.x (Vascular dementia) — already an F-code, no companion needed
+- G20 (Parkinson's disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
+- Unspecified dementia → F03.91 (with behavioral disturbance) or F03.90 (without behavioral disturbance)
 
 If an F-code companion IS present on the list: tier it as Tier 2 under the neurocognitive primary diagnosis. Set associatedSymptom to false (it is a required coding companion, not a symptom). Do NOT give it a standalone care plan.
 
-If an F-code companion is NOT present on the list: add it to the "missing" array and mark it as required (set "required": true in the missing item). The reasoning should explain that ICD-10 requires an F-code companion for this diagnosis for proper coding and compliance, and suggest the appropriate F-code (e.g. F02.81 for dementia in Alzheimer's with behavioral disturbance, or F03.90 for unspecified dementia without behavioral disturbance).
+If an F-code companion is NOT present on the list: add it to the "missing" array and mark it as required (set "required": true in the missing item). The suggestion and icd10 fields must reflect the CORRECT F-code for the specific G-code diagnosis as listed above — never suggest F02.x for a G31.1 diagnosis.
 
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
@@ -8660,7 +8670,12 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       html += '</div>';
 
       if (tierNum === 1) {
-        html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+        html += '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">';
+        html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+        if (!isPrimary) {
+          html += '<button class="tier-assoc-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:6px 11px;background:#e8f4fd;color:#1a6a9a;border:1px solid #b3d9f5;border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">🔗 Associated Symptom</button>';
+        }
+        html += '</div>';
       }
       if (tierNum === 2) {
         html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
@@ -8793,6 +8808,13 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
     });
   });
 
+  // Wire up "Associated Symptom" buttons (Tier 1 → Tier 2)
+  container.querySelectorAll('.tier-assoc-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      showAssocSymptomDropdown(b.getAttribute('data-dx'), b, container, primaryDx);
+    });
+  });
+
   // Wire up "Move to Tier 2" buttons (Tier 3 only)
   container.querySelectorAll('.tier-promote-tier2-btn').forEach(function(b) {
     b.addEventListener('click', function() {
@@ -8856,6 +8878,151 @@ function isActiveHistoricalTrigger(diagnosis) {
   ];
 
   return triggers.some(function(pattern) { return pattern.test(lower); });
+}
+
+function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
+  // Remove any existing dropdown
+  const existing = document.getElementById('assoc-dropdown-wrap');
+  if (existing) existing.remove();
+
+  // Build list of current Tier 1 diagnoses (excluding this one) as parent options
+  const tier1Options = (tierCurrentData ? tierCurrentData.items : [])
+    .filter(function(it) { return it.tier === 1 && it.diagnosis !== dx; })
+    .map(function(it) { return it.diagnosis; });
+
+  if (tier1Options.length === 0) {
+    alert('No other Tier 1 diagnoses available to assign as parent. Add at least one other Tier 1 care plan first.');
+    return;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.id = 'assoc-dropdown-wrap';
+  wrap.style.cssText = 'position:absolute;z-index:999;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:12px 14px;min-width:320px;max-width:420px';
+
+  let optionsHtml = '<div style="font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:8px">Select the parent Tier 1 care plan this symptom will be addressed under:</div>';
+  optionsHtml += '<select id="assoc-parent-select" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;margin-bottom:10px">';
+  tier1Options.forEach(function(opt) {
+    optionsHtml += '<option value="' + escapeHtml(opt).replace(/"/g,'&quot;') + '">' + escapeHtml(opt) + '</option>';
+  });
+  optionsHtml += '</select>';
+  optionsHtml += '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    + '<button onclick="document.getElementById(\'assoc-dropdown-wrap\').remove()" style="padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.8rem;cursor:pointer">Cancel</button>'
+    + '<button onclick="demoteToAssocSymptom(' + JSON.stringify(dx) + ', document.getElementById(\'assoc-parent-select\').value, document.getElementById(\'assoc-dropdown-wrap\').closest(\'[id=tier-results]\') || document.getElementById(\'tier-results\'))" style="padding:5px 12px;background:#1a6a9a;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer">🔗 Confirm as Associated Symptom</button>'
+    + '</div>';
+
+  wrap.innerHTML = optionsHtml;
+
+  // Position near the button
+  const btnRect = btn.getBoundingClientRect();
+  const resultsEl = document.getElementById('tier-results');
+  const resultsRect = resultsEl.getBoundingClientRect();
+  wrap.style.top = (btnRect.bottom - resultsRect.top + resultsEl.scrollTop + 4) + 'px';
+  wrap.style.right = '10px';
+  wrap.style.position = 'absolute';
+
+  resultsEl.style.position = 'relative';
+  resultsEl.appendChild(wrap);
+
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('click', function closeDropdown(e) {
+      if (!wrap.contains(e.target) && e.target !== btn) {
+        wrap.remove();
+        document.removeEventListener('click', closeDropdown);
+      }
+    });
+  }, 50);
+}
+
+function demoteToAssocSymptom(dx, parentDx, container) {
+  // Remove dropdown
+  const dropdown = document.getElementById('assoc-dropdown-wrap');
+  if (dropdown) dropdown.remove();
+
+  if (!tierCurrentData || !parentDx) return;
+
+  // Update data
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (!item) return;
+  item.tier = 2;
+  item.parentProblem = parentDx;
+  item.parentRationale = 'Identified by nurse as associated symptom of this condition';
+  item.parentWhat = 'Address within the parent care plan interventions';
+  item.associatedSymptom = true;
+  item.confidence = 'high';
+
+  // Also update in locked items if present
+  const lockKey = dx.toLowerCase().trim();
+  if (tierLockedItems.has(lockKey)) {
+    tierLockedItems.set(lockKey, item);
+  }
+
+  // Find Tier 1 and Tier 2 groups
+  const resultsEl = container || document.getElementById('tier-results');
+  const tier1Group = resultsEl.querySelector('[data-tier-group="1"]');
+  const tier2Group = resultsEl.querySelector('[data-tier-group="2"]');
+
+  // Remove from Tier 1
+  const oldRow = resultsEl.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  if (oldRow) oldRow.remove();
+
+  // Update Tier 1 count
+  if (tier1Group) {
+    const remaining = tier1Group.querySelectorAll('[data-tier="1"]').length;
+    const hdr = tier1Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[1].label + ' (' + remaining + ')';
+  }
+
+  // Build new Tier 2 row
+  const newRow = document.createElement('div');
+  newRow.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
+  newRow.setAttribute('data-tier', 2);
+  newRow.setAttribute('data-dx-key', dx);
+
+  let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
+  html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved to Tier 2 by nurse</div>';
+  html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
+    + '<div style="color:var(--navy);font-weight:600;margin-bottom:2px">Addressed under: <strong>' + escapeHtml(parentDx) + '</strong></div>'
+    + '<div style="color:var(--text-mid);font-size:.8rem;font-style:italic">Why: Identified by nurse as associated symptom of this condition</div>'
+    + '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>'
+    + '</div>';
+  html += '</div>';
+  html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 11px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+  html += '</div>';
+  newRow.innerHTML = html;
+
+  newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
+    promoteTierItem(dx, resultsEl, tierCurrentPrimaryDx);
+  });
+
+  // Add to Tier 2 group or create one
+  if (tier2Group) {
+    tier2Group.appendChild(newRow);
+    const count = tier2Group.querySelectorAll('[data-tier="2"]').length;
+    const hdr = tier2Group.querySelector('div:first-child');
+    if (hdr) hdr.textContent = TIER_CONFIG[2].label + ' (' + count + ')';
+  } else {
+    // Create Tier 2 group if none exists
+    const cfg = TIER_CONFIG[2];
+    const groupWrap = document.createElement('div');
+    groupWrap.style.cssText = 'margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden';
+    groupWrap.setAttribute('data-tier-group', 2);
+    const groupHdr = document.createElement('div');
+    groupHdr.style.cssText = 'padding:9px 14px;background:' + cfg.bg + ';border-bottom:1px solid var(--border);font-size:.78rem;font-weight:700;color:' + cfg.color + ';text-transform:uppercase;letter-spacing:.05em';
+    groupHdr.textContent = cfg.label + ' (1)';
+    groupWrap.appendChild(groupHdr);
+    groupWrap.appendChild(newRow);
+    // Insert after Tier 1 group
+    if (tier1Group && tier1Group.nextSibling) {
+      resultsEl.insertBefore(groupWrap, tier1Group.nextSibling);
+    } else {
+      resultsEl.appendChild(groupWrap);
+    }
+  }
+
+  newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function promoteTier3toTier2(dx, container) {
@@ -9348,7 +9515,13 @@ Rules:
 - If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
 - Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
 - For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
-- NEUROCOGNITIVE DIAGNOSES: "Senile degeneration of the brain" = G31.1 (not Alzheimer's). "Alzheimer's disease" = G30.x. "Lewy body dementia" = G31.83. "Frontotemporal dementia" = G31.09. "Vascular dementia" = F01.x. Always require a companion F-code (F02.x or F03.x) — flag this as needsClarification and offer F02.81 (with behavioral disturbance) and F03.90 (without) as options so the nurse can select the correct behavioral manifestation.
+- NEUROCOGNITIVE DIAGNOSES: "Senile degeneration of the brain" = G31.1 (not Alzheimer's). "Alzheimer's disease" = G30.x. "Lewy body dementia" = G31.83. "Frontotemporal dementia" = G31.09. "Vascular dementia" = F01.x. Each requires a companion F-code — flag as needsClarification and offer the correct options based on the specific diagnosis:
+  * G30.x (Alzheimer's) → offer F02.80 (without behavioral disturbance) and F02.81 (with behavioral disturbance)
+  * G31.1 (Senile degeneration of brain) → offer F03.90 (without behavioral disturbance) and F03.91 (with behavioral disturbance). Do NOT offer F02.x for G31.1.
+  * G31.83 (Lewy body) → offer F02.80 and F02.81
+  * G31.09 (Frontotemporal) → offer F02.80 and F02.81
+  * G20 (Parkinson's) → offer F02.80 and F02.81
+  * Unspecified dementia → offer F03.90 and F03.91
 
 Diagnoses to code:
 ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
