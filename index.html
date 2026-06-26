@@ -8738,6 +8738,7 @@ For each diagnosis on the list, determine:
    - parentRationale: 1 short sentence (max 12 words) explaining WHY this diagnosis is addressed under that parent (e.g. "Caused by hepatic metastasis; managed within liver cancer interventions")
    - parentWhat: 1 short phrase (max 10 words) stating what specifically should be noted or addressed (e.g. "Monitor for worsening; comfort positioning and skin care")
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
+5. hospiceRelatedness: "related", "unrelated", or "uncertain". Use hospice MAC/LCD standards — a diagnosis is RELATED if it contributes to the terminal prognosis, symptom burden, functional decline, or treatment complexity of the primary hospice diagnosis. It is UNRELATED if it is a completely separate condition that does not affect the terminal prognosis or care. Use "uncertain" when the relationship depends on clinical details not available in the list. Max 8-word rationale in relatednessReason field.
 
 In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
 
@@ -8746,8 +8747,8 @@ Separately, after reviewing the full list, identify up to 3 commonly-related dia
 CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
   "items": [
-    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high"},
-    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high"}
+    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Primary terminal diagnosis"},
+    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Directly caused by terminal cardiac condition"}
   ],
   "missing": [
     {"suggestion": "Dyspnea", "icd10": "R06.00", "required": false, "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."},
@@ -8886,9 +8887,23 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   container.innerHTML = '';
 
   const disclaimer = document.createElement('div');
-  disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
+  disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:8px';
   disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> These tier suggestions are a starting point based on the diagnoses provided — not a final determination. Apply clinical judgment for this specific patient before building or skipping any care plan.';
   container.appendChild(disclaimer);
+
+  // Build All Tier 1 Care Plans button
+  const buildAllBtn = document.createElement('button');
+  buildAllBtn.id = 'build-all-tier1-btn';
+  buildAllBtn.style.cssText = 'display:block;width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:14px';
+  buildAllBtn.innerHTML = '✨ Build All Tier 1 Care Plans';
+  buildAllBtn.addEventListener('click', function() { buildAllTier1CarePlans(data, primaryDx, container); });
+  container.appendChild(buildAllBtn);
+
+  // Care plan output area (populated by buildAllTier1CarePlans)
+  const allCpWrap = document.createElement('div');
+  allCpWrap.id = 'all-tier1-cp-wrap';
+  allCpWrap.style.cssText = 'display:none;margin-bottom:16px';
+  container.appendChild(allCpWrap);
 
   if (wasTruncated) {
     const truncWarn = document.createElement('div');
@@ -8923,6 +8938,14 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       if (it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
       if (it.confidence === 'low' && !it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
       if (it.confidence === 'low' && it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ REVIEW</span>';
+      // Hospice relatedness badge
+      if (it.hospiceRelatedness === 'related') {
+        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Contributes to terminal prognosis or symptom burden') + '" style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #a8d5b5;cursor:help">✓ Related</span>';
+      } else if (it.hospiceRelatedness === 'unrelated') {
+        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Does not contribute to terminal prognosis') + '" style="font-size:.7rem;background:#f1f3f5;color:#5a6472;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #d0d5dd;cursor:help">✗ Unrelated</span>';
+      } else if (it.hospiceRelatedness === 'uncertain') {
+        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Relatedness depends on clinical context') + '" style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #ffe082;cursor:help">? Verify</span>';
+      }
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
         html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
@@ -9022,6 +9045,34 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
 
       requiredItems.forEach(function(m, mi) {
         const globalMi = data.missing.indexOf(m);
+
+        // If suggestion contains multiple F-codes (e.g. "F03.91 ... or F03.90"), split into separate rows
+        const fCodeMatches = m.suggestion.match(/F\d{2}\.\d{1,2}/g);
+        if (fCodeMatches && fCodeMatches.length >= 2) {
+          const labels = {
+            'F02.80': 'Dementia in disease classified elsewhere — without behavioral disturbance',
+            'F02.81': 'Dementia in disease classified elsewhere — with behavioral disturbance',
+            'F03.90': 'Unspecified dementia — without behavioral disturbance',
+            'F03.91': 'Unspecified dementia — with behavioral disturbance'
+          };
+          const hdrRow = document.createElement('div');
+          hdrRow.style.cssText = 'padding:8px 14px;background:#fdf0ef;border-bottom:1px solid #f5c6c2;font-size:.82rem;color:#c0392b;font-weight:600';
+          hdrRow.textContent = 'Select the appropriate companion F-code for this patient:';
+          reqSection.appendChild(hdrRow);
+          fCodeMatches.forEach(function(code) {
+            const optRow = document.createElement('div');
+            optRow.style.cssText = 'padding:9px 14px;border-bottom:1px solid #f5c6c2;font-size:.86rem;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff8f7';
+            const label = labels[code] || 'Companion F-code';
+            const codeBadge = '<span style="font-family:monospace;font-size:.74rem;background:#fdf0ef;border:1px solid #e8b4b0;color:#c0392b;padding:1px 7px;border-radius:4px;margin-right:8px;font-weight:700">' + escapeHtml(code) + '</span>';
+            optRow.innerHTML = '<div style="flex:1">' + codeBadge + '<strong style="color:#c0392b">' + escapeHtml(label) + '</strong>'
+              + '<div style="color:var(--text-mid);margin-top:2px;font-size:.82rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
+              + '<button class="tier-queue-btn" data-mi="' + globalMi + '-' + code + '" data-suggestion="' + escapeHtml(code + ' ' + label).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(code) + '" style="flex-shrink:0;padding:5px 12px;background:#fdf0ef;color:#c0392b;border:1px solid #e8b4b0;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
+            reqSection.appendChild(optRow);
+          });
+          return;
+        }
+
+        // Single item — render normally
         const row = document.createElement('div');
         row.style.cssText = 'padding:10px 14px;border-bottom:1px solid #f5c6c2;font-size:.86rem;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff8f7';
         row.id = 'tier-missing-row-' + globalMi;
@@ -9183,11 +9234,7 @@ function isActiveHistoricalTrigger(diagnosis) {
 }
 
 function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
-  // Remove any existing dropdown
-  const existing = document.getElementById('assoc-dropdown-wrap');
-  if (existing) existing.remove();
-
-  // Build list of current Tier 1 diagnoses (excluding this one) as parent options
+  // Build list of current Tier 1 diagnoses (excluding this one)
   const tier1Options = (tierCurrentData ? tierCurrentData.items : [])
     .filter(function(it) { return it.tier === 1 && it.diagnosis !== dx; })
     .map(function(it) { return it.diagnosis; });
@@ -9197,14 +9244,19 @@ function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
     return;
   }
 
-  const wrap = document.createElement('div');
-  wrap.id = 'assoc-dropdown-wrap';
-  wrap.style.cssText = 'position:fixed;z-index:9998;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:14px 16px;min-width:320px;max-width:440px';
+  // Reuse the existing modal overlay pattern — populate and show it
+  var modal = document.getElementById('assoc-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'assoc-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box"><div class="modal-header"><span style="font-size:1.1rem">🔗</span><h3>Move to Tier 2 — Associated Symptom</h3></div><div class="modal-body"><p>Select the Tier 1 care plan this symptom will be addressed under:</p><select id="assoc-modal-select" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;margin-bottom:0"></select></div><div class="modal-footer"><button class="modal-cancel-btn" id="assoc-modal-cancel">Cancel</button><button class="modal-confirm-btn" id="assoc-modal-confirm" style="background:#1a6a9a">🔗 Confirm as Associated Symptom</button></div></div>';
+    document.body.appendChild(modal);
+  }
 
-  // Build select options
-  const select = document.createElement('select');
-  select.id = 'assoc-parent-select';
-  select.style.cssText = 'width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;margin-bottom:10px';
+  // Populate select
+  const select = document.getElementById('assoc-modal-select');
+  select.innerHTML = '';
   tier1Options.forEach(function(opt) {
     const o = document.createElement('option');
     o.value = opt;
@@ -9212,51 +9264,26 @@ function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
     select.appendChild(o);
   });
 
-  const label = document.createElement('div');
-  label.style.cssText = 'font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:8px';
-  label.textContent = 'Select the parent Tier 1 care plan this symptom will be addressed under:';
+  // Wire buttons fresh each time
+  const cancelBtn = document.getElementById('assoc-modal-cancel');
+  const confirmBtn = document.getElementById('assoc-modal-confirm');
 
-  const btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:4px';
+  const newCancel = cancelBtn.cloneNode(true);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  newCancel.addEventListener('click', function() { modal.classList.remove('show'); });
 
-  const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.style.cssText = 'padding:6px 14px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.82rem;cursor:pointer';
-  cancelBtn.addEventListener('click', function(e) { e.stopPropagation(); wrap.remove(); });
-
-  const confirmBtn = document.createElement('button');
-  confirmBtn.textContent = '🔗 Confirm as Associated Symptom';
-  confirmBtn.style.cssText = 'padding:6px 14px;background:#1a6a9a;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer';
-  confirmBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    const parentDx = select.value;
-    wrap.remove();
+  const newConfirm = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+  newConfirm.addEventListener('click', function() {
+    const parentDx = document.getElementById('assoc-modal-select').value;
+    modal.classList.remove('show');
     demoteToAssocSymptom(dx, parentDx, document.getElementById('tier-results'));
   });
 
-  btnRow.appendChild(cancelBtn);
-  btnRow.appendChild(confirmBtn);
-  wrap.appendChild(label);
-  wrap.appendChild(select);
-  wrap.appendChild(btnRow);
+  // Close on overlay click
+  modal.onclick = function(e) { if (e.target === modal) modal.classList.remove('show'); };
 
-  // Position near the button
-  const btnRect = btn.getBoundingClientRect();
-  wrap.style.top = (btnRect.bottom + window.scrollY + 4) + 'px';
-  wrap.style.right = (document.documentElement.clientWidth - btnRect.right) + 'px';
-
-  document.body.appendChild(wrap);
-
-  // Close on outside click — use capture to avoid immediate close
-  function closeDropdown(e) {
-    if (!wrap.contains(e.target) && e.target !== btn) {
-      wrap.remove();
-      document.removeEventListener('click', closeDropdown, true);
-    }
-  }
-  setTimeout(function() {
-    document.addEventListener('click', closeDropdown, true);
-  }, 200);
+  modal.classList.add('show');
 }
 
 function demoteToAssocSymptom(dx, parentDx, container) {
@@ -9555,7 +9582,7 @@ ${additionLines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 
 ${buildTierFrameworkSummary()}
 
-For each NEW diagnosis, determine tier (1/2/3), short reasoning (max 8 words), parentProblem if Tier 2 (must be one of the already-confirmed Tier 1 items or another new item you tier as Tier 1), parentRationale (max 12 words), parentWhat (max 10 words), associatedSymptom (true/false), confidence (high/low).
+For each NEW diagnosis, determine tier (1/2/3), short reasoning (max 8 words), parentProblem if Tier 2 (must be one of the already-confirmed Tier 1 items or another new item you tier as Tier 1), parentRationale (max 12 words), parentWhat (max 10 words), associatedSymptom (true/false), confidence (high/low), hospiceRelatedness ("related"/"unrelated"/"uncertain"), relatednessReason (max 8 words — does this contribute to terminal prognosis or symptom burden?).
 
 Respond ONLY with valid JSON, no markdown, no extra whitespace:
 {"items":[
@@ -9611,6 +9638,180 @@ Respond ONLY with valid JSON, no markdown, no extra whitespace:
 
   // Re-render the full combined results
   renderTierResults(resultsEl, tierCurrentData, primaryDx, false, '');
+}
+
+async function buildAllTier1CarePlans(data, primaryDx, container) {
+  const tier1Items = (data.items || []).filter(function(it) { return it.tier === 1; });
+  if (tier1Items.length === 0) { alert('No Tier 1 diagnoses found.'); return; }
+
+  const btn = document.getElementById('build-all-tier1-btn');
+  const wrap = document.getElementById('all-tier1-cp-wrap');
+  if (!btn || !wrap) return;
+
+  btn.textContent = '⏳ Building care plans...';
+  btn.disabled = true;
+  wrap.style.display = 'block';
+  wrap.innerHTML = '';
+
+  const patientDetails = (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '');
+
+  // Create a card placeholder for each Tier 1 item
+  const cards = tier1Items.map(function(it, idx) {
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px';
+    card.id = 'all-cp-card-' + idx;
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'padding:10px 14px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none';
+    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(it.diagnosis) + (it.diagnosis === primaryDx ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span>' : '') + '</span>'
+      + '<span class="card-chevron" style="font-size:.8rem;transition:transform .2s">▼</span>';
+    hdr.addEventListener('click', function() {
+      const body = card.querySelector('.all-cp-body');
+      const chev = hdr.querySelector('.card-chevron');
+      const isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : 'block';
+      chev.style.transform = isOpen ? 'rotate(-90deg)' : '';
+    });
+
+    const body = document.createElement('div');
+    body.className = 'all-cp-body';
+    body.style.cssText = 'padding:12px 14px';
+    body.innerHTML = '<div style="color:var(--text-mid);font-size:.84rem;font-style:italic">⏳ Generating...</div>';
+
+    card.appendChild(hdr);
+    card.appendChild(body);
+    wrap.appendChild(card);
+    return { card: card, body: body, item: it };
+  });
+
+  // Fire all AI calls in parallel
+  await Promise.all(cards.map(async function(c) {
+    const it = c.item;
+    const isPrimary = it.diagnosis === primaryDx;
+    const prompt = [
+      'You are a hospice care plan expert. Generate a single care plan for the following hospice problem.',
+      '',
+      'Primary Hospice Diagnosis: ' + primaryDx,
+      'Care Plan Problem: ' + it.diagnosis,
+      (patientDetails ? 'Patient Details: ' + patientDetails : ''),
+      '',
+      'Generate:',
+      '1. ONE comfort-focused goal appropriate for hospice (measurable, not curative)',
+      '2. 3-5 interventions. Each must start with ASSESS:, EDUCATE:, or PERFORM: followed by "Nurse will..."',
+      (isPrimary ? '3. Also include these required interventions for the primary diagnosis:' : ''),
+      (isPrimary ? '   - PERFORM: Nurse will enter admission order as directed.' : ''),
+      (isPrimary ? '   - PERFORM: Nurse will enter nutrition order as directed (documented as Nutrition in Firenote).' : ''),
+      (isPrimary ? '   - PERFORM: Nurse will identify and document the responsible party for medication administration, assess and provide medication education including purpose, dosing, administration, and potential side effects.' : ''),
+      (isPrimary ? '   - PERFORM: Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' : ''),
+      '',
+      'Respond ONLY with valid JSON, no markdown, no extra text:',
+      '{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."]}'
+    ].filter(Boolean).join('\n');
+
+        let result = null;
+    try {
+      const resp = await fetch('/.netlify/functions/claude', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ prompt: prompt, max_tokens: 1500 })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+        const clean = rawText.replace(/```json|```/g, '').trim();
+        try { result = JSON.parse(clean); } catch(e) {}
+      }
+    } catch(e) {}
+
+    renderAllCpCard(c.body, result, it.diagnosis, patientDetails);
+  }));
+
+  btn.textContent = '✨ Build All Tier 1 Care Plans';
+  btn.disabled = false;
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderAllCpCard(body, result, dx, patientDetails) {
+  if (!result || !result.goal) {
+    body.innerHTML = '<div style="color:var(--red);font-size:.84rem;padding:8px 0">⚠ Could not generate care plan. Please use the Care Plan Builder tab to generate individually.</div>';
+    return;
+  }
+
+  body.innerHTML = '';
+
+  // Goal section
+  const goalSec = document.createElement('div');
+  goalSec.style.cssText = 'margin-bottom:12px';
+  const goalLabel = document.createElement('div');
+  goalLabel.style.cssText = 'font-size:.74rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px';
+  goalLabel.textContent = 'Goal';
+  const goalRow = document.createElement('div');
+  goalRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--row-alt);padding:9px 11px;border-radius:5px';
+  const goalText = document.createElement('span');
+  goalText.style.cssText = 'flex:1;font-size:.87rem;line-height:1.55';
+  goalText.textContent = result.goal;
+  const goalCopy = document.createElement('button');
+  goalCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+  goalCopy.textContent = '📋';
+  goalCopy.addEventListener('click', function() { copyAllCpText(goalCopy, result.goal); });
+  goalRow.appendChild(goalText);
+  goalRow.appendChild(goalCopy);
+  goalSec.appendChild(goalLabel);
+  goalSec.appendChild(goalRow);
+  body.appendChild(goalSec);
+
+  // Interventions section
+  const ivSec = document.createElement('div');
+  const ivLabel = document.createElement('div');
+  ivLabel.style.cssText = 'font-size:.74rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px';
+  ivLabel.textContent = 'Interventions';
+  ivSec.appendChild(ivLabel);
+
+  (result.interventions || []).forEach(function(iv) {
+    const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
+    const prefixLabel = prefixMatch ? prefixMatch[0].toUpperCase() : '';
+    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM):\s*/i, '');
+    const color = prefixLabel === 'ASSESS' ? '#1a6a9a' : prefixLabel === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
+
+    const ivRow = document.createElement('div');
+    ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid ' + color + ';padding:7px 10px;margin-bottom:5px;background:#fafbfd;border-radius:0 5px 5px 0';
+
+    const pfx = document.createElement('span');
+    pfx.style.cssText = 'font-size:.72rem;font-weight:700;color:' + color + ';flex-shrink:0;padding-top:2px;min-width:60px';
+    pfx.textContent = prefixLabel;
+
+    const ivText = document.createElement('span');
+    ivText.style.cssText = 'flex:1;font-size:.86rem;line-height:1.5';
+    ivText.textContent = text;
+
+    const ivCopy = document.createElement('button');
+    ivCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+    ivCopy.textContent = '📋';
+    ivCopy.addEventListener('click', function() { copyAllCpText(ivCopy, text); });
+
+    ivRow.appendChild(pfx);
+    ivRow.appendChild(ivText);
+    ivRow.appendChild(ivCopy);
+    ivSec.appendChild(ivRow);
+  });
+
+  body.appendChild(ivSec);
+}
+
+function copyAllCpText(btn, text) {
+  var decoded = text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#039;/g,"'");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(decoded).then(function() {
+      var o = btn.textContent; btn.textContent = '✓'; btn.style.background = '#155724';
+      setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--navy)'; }, 1800);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = decoded; ta.style.cssText = 'position:fixed;top:-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    var o = btn.textContent; btn.textContent = '✓'; btn.style.background = '#155724';
+    setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--navy)'; }, 1800);
+  }
 }
 
 function buildTierFrameworkSummary() {
