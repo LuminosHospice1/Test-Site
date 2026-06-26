@@ -13,6 +13,21 @@
   --border:#dde3ee;--border-lt:#eef1f7;--row-alt:#f5f7fc;
   --red:#c0392b;--red-bg:#fdf2f1;--amber-bg:#fef9ee;
   --blue:#2c5f9e;--blue-bg:#eef3fb;--green:#1e7d4e;--green-bg:#f0faf5;
+/* Narrative compliance checklist */
+.narr-chk-display{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:14px}
+.narr-chk-display.show{display:block}
+.narr-chk-title{font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.narr-chk-item{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-lt);font-size:.86rem;line-height:1.45}
+.narr-chk-item:last-child{border-bottom:none}
+.narr-chk-item .ci{font-size:1rem;flex-shrink:0}
+.narr-chk-item .ce{font-weight:600;flex-shrink:0}
+.narr-chk-item .cn{color:var(--text-mid)}
+.narr-chk-item.present .ce{color:var(--green)}
+.narr-chk-item.partial .ce{color:#b45309}
+.narr-chk-item.missing .ce{color:var(--red)}
+.narr-chk-summary{margin-top:10px;padding:9px 12px;border-radius:6px;font-size:.85rem;font-weight:600}
+.narr-chk-summary.all-ok{background:var(--green-bg);color:var(--green)}
+.narr-chk-summary.needs-work{background:var(--red-bg);color:var(--red)}
   --purple:#5b3fa0;--purple-bg:#f4f1fb;
   --shadow-sm:0 1px 3px rgba(26,39,68,.07);
   --shadow-md:0 4px 16px rgba(26,39,68,.10);
@@ -7901,8 +7916,145 @@ function clearNarrative() {
   });
   const wrap = document.getElementById('narr-output-wrap');
   if (wrap) wrap.classList.remove('show');
+  const pasteBack = document.getElementById('narr-paste-back');
+  if (pasteBack) pasteBack.value = '';
+  const chkDisplay = document.getElementById('narr-chk-display');
+  if (chkDisplay) chkDisplay.classList.remove('show');
 }
 
+function handleNarrativePasteBack() {
+  const ta = document.getElementById('narr-paste-back');
+  if (!ta) return;
+  const cleaned = parseNarrativeChecklist(ta.value);
+  if (cleaned !== ta.value) ta.value = cleaned;
+}
+
+function parseNarrativeChecklist(rawText) {
+  const sepPatterns = [
+    /---\s*ELEMENT CHECKLIST[^\n]*---/i,
+    /ELEMENT CHECKLIST:/i,
+    /ELEMENT CHECKLIST\s*$/im
+  ];
+
+  let narrativePart = rawText;
+  let checklistPart = '';
+
+  for (var i = 0; i < sepPatterns.length; i++) {
+    var match = rawText.search(sepPatterns[i]);
+    if (match !== -1) {
+      narrativePart = rawText.substring(0, match).trimEnd();
+      checklistPart = rawText.substring(match);
+      break;
+    }
+  }
+
+  const display = document.getElementById('narr-chk-display');
+  const itemsEl = document.getElementById('narr-chk-items');
+  const summaryEl = document.getElementById('narr-chk-summary');
+
+  if (!checklistPart || !display || !itemsEl || !summaryEl) return narrativePart;
+
+  const lines = checklistPart.split('\n');
+  const items = [];
+  var summary = '';
+
+  for (var j = 0; j < lines.length; j++) {
+    var trimmed = lines[j].trim();
+    if (!trimmed) continue;
+    if (/^SUMMARY:/i.test(trimmed)) {
+      summary = trimmed.replace(/^SUMMARY:\s*/i, '');
+      continue;
+    }
+    var pMatch = trimmed.match(/✅\s*PRESENT[:\s]+(.*)/i);
+    var wMatch = trimmed.match(/⚠️\s*PARTIAL[:\s]+(.*)/i);
+    var xMatch = trimmed.match(/❌\s*MISSING[:\s]+(.*)/i);
+
+    if (pMatch) items.push({type:'present', icon:'✅', text: pMatch[1].trim()});
+    else if (wMatch) items.push({type:'partial', icon:'⚠️', text: wMatch[1].trim()});
+    else if (xMatch) items.push({type:'missing', icon:'❌', text: xMatch[1].trim()});
+  }
+
+  if (items.length === 0 && !summary) return narrativePart;
+
+  var html = '';
+  for (var k = 0; k < items.length; k++) {
+    var item = items[k];
+    var parts = item.text.split(/\s+—\s+/);
+    var el = parts[0] || '';
+    var note = parts.slice(1).join(' — ') || '';
+    html += '<div class="narr-chk-item ' + item.type + '">'
+      + '<span class="ci">' + item.icon + '</span>'
+      + '<span class="ce">' + escapeHtml(el) + '</span>'
+      + (note ? '<span class="cn">— ' + escapeHtml(note) + '</span>' : '')
+      + '</div>';
+  }
+  itemsEl.innerHTML = html;
+
+  var allOk = items.every(function(i) { return i.type === 'present'; });
+  var hasIssues = items.some(function(i) { return i.type === 'missing'; });
+  summaryEl.textContent = summary || (allOk
+    ? 'All required elements are present and this narrative is ready for Firenote.'
+    : hasIssues
+      ? 'One or more required elements are missing — review and update before copying into Firenote.'
+      : 'Some elements may need strengthening — review items marked ⚠️ before copying into Firenote.');
+  summaryEl.className = 'narr-chk-summary ' + (allOk ? 'all-ok' : 'needs-work');
+  display.classList.add('show');
+
+  return narrativePart;
+}
+
+function copyFinalNarrative(btn) {
+  const ta = document.getElementById('narr-paste-back');
+  if (!ta || !ta.value.trim()) {
+    alert('Please paste Copilot\'s narrative output in Step 2 before copying.');
+    return;
+  }
+
+  // Attestation confirmation popup
+  const confirmed = confirm(
+    'ATTESTATION REQUIRED\n\n' +
+    'By clicking OK you confirm that:\n\n' +
+    '✓ You have reviewed this narrative\n' +
+    '✓ You have edited it to reflect your own clinical observations\n' +
+    '✓ You have verified all details against the patient\'s actual record\n' +
+    '✓ The content is factually accurate and clinically appropriate\n\n' +
+    'Click OK to copy the narrative into your clipboard, or Cancel to return and continue editing.'
+  );
+
+  if (!confirmed) return;
+
+  const text = ta.value.trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      var orig = btn.textContent;
+      btn.textContent = '✓ Copied — paste into Firenote';
+      btn.style.background = '#155724';
+      setTimeout(function() {
+        btn.textContent = orig;
+        btn.style.background = 'var(--green)';
+      }, 3000);
+    }).catch(function() { fallbackCopyNarrative(text, btn); });
+  } else {
+    fallbackCopyNarrative(text, btn);
+  }
+}
+
+function fallbackCopyNarrative(text, btn) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  var orig = btn.textContent;
+  btn.textContent = '✓ Copied — paste into Firenote';
+  btn.style.background = '#155724';
+  setTimeout(function() {
+    btn.textContent = orig;
+    btn.style.background = 'var(--green)';
+  }, 3000);
+}
 
 // ── COPY TO CLIPBOARD ──────────────────────────────────────────────
 function copyOutput(elementId, btn) {
@@ -10030,9 +10182,28 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
         <strong>How to use:</strong> Click <em>Copy Prompt</em> above, then click <em>Open Microsoft Copilot</em>. Sign in with your Luminos Microsoft credentials, paste the prompt, and Copilot will return a strengthened narrative with an element checklist. Copy the result into Firenote and review before saving.
       </div>
 
+      <div style="margin-top:18px;border-top:2px solid var(--border);padding-top:18px">
+        <div style="font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:6px">📋 Step 2 — Paste Copilot's Output Here</div>
+        <div class="alert info" style="margin-bottom:10px;font-size:.82rem"><span>✂️</span><div>Paste <strong>only the narrative</strong> from Copilot — stop before the <code style="background:#e8edf8;padding:1px 5px;border-radius:3px">--- ELEMENT CHECKLIST ---</code> separator line. The checklist will appear automatically below. Do not paste the checklist section into Firenote.</div></div>
+        <textarea id="narr-paste-back" style="width:100%;min-height:200px;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.87rem;resize:vertical;outline:none;line-height:1.6" placeholder="Paste Copilot's narrative output here. Edit it to reflect your clinical language and judgment before copying into Firenote..." oninput="handleNarrativePasteBack()" onpaste="setTimeout(handleNarrativePasteBack, 50)"></textarea>
+
+        <div class="narr-chk-display" id="narr-chk-display">
+          <div class="narr-chk-title">📋 Compliance Checklist</div>
+          <div id="narr-chk-items"></div>
+          <div class="narr-chk-summary" id="narr-chk-summary"></div>
+        </div>
+
+        <div style="margin-top:12px;padding:12px 14px;background:#fff8e8;border:2px solid var(--gold);border-radius:7px">
+          <div style="font-size:.84rem;font-weight:700;color:#7a4200;margin-bottom:5px">⚠️ Before copying into Firenote</div>
+          <p style="font-size:.82rem;color:#6b4200;line-height:1.55;margin:0">Review the narrative above and edit it until it accurately reflects your own clinical observations and judgment. Verify all details against the patient's actual record. By clicking <strong>Copy Final Narrative</strong> you attest that the content is factually accurate and has been reviewed and updated as needed.</p>
+        </div>
+
+        <div style="margin-top:10px">
+          <button onclick="copyFinalNarrative(this)" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer">📋 Copy Final Narrative</button>
+        </div>
+      </div>
+
     </div>
-
-
 
   </div>
 </div>
