@@ -8751,7 +8751,7 @@ CRITICAL: You must process every single diagnosis in the list above and include 
   ],
   "missing": [
     {"suggestion": "Dyspnea", "icd10": "R06.00", "required": false, "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."},
-    {"suggestion": "F02.81 Dementia in Alzheimer's disease with behavioral disturbance", "icd10": "F02.81", "required": true, "reasoning": "ICD-10 requires a companion F-code for Alzheimer's disease diagnoses to document behavioral/psychological manifestation. Required for proper coding and compliance."}
+    {"suggestion": "Companion F-code required — F03.91 (with behavioral disturbance) or F03.90 (without)", "icd10": "F03.91", "required": true, "reasoning": "G31.1 requires companion F03.x code. Use F03.91 if behavioral disturbance present, F03.90 if not. NEVER use F02.x for G31.1."}
   ]
 }`;
 
@@ -8968,6 +8968,23 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       row.setAttribute('data-tier', tierNum);
       row.setAttribute('data-dx-key', it.diagnosis);
 
+      // Add delete button — appended inside the flex row, not absolutely positioned
+      const delBtn = document.createElement('button');
+      delBtn.title = 'Remove this diagnosis from the list';
+      delBtn.style.cssText = 'flex-shrink:0;width:22px;height:22px;background:#c0392b;color:#fff;border:none;border-radius:3px;font-size:.72rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:.65;transition:opacity .14s;align-self:flex-start;margin-top:1px';
+      delBtn.innerHTML = '✕';
+      delBtn.addEventListener('mouseenter', function() { delBtn.style.opacity = '1'; });
+      delBtn.addEventListener('mouseleave', function() { delBtn.style.opacity = '.65'; });
+      delBtn.addEventListener('click', function() { deleteTierRow(it.diagnosis, row, groupWrap, tierNum); });
+
+      // Insert delete button at the start of the first flex div in the row
+      const firstFlex = row.querySelector('div[style*="display:flex"]');
+      if (firstFlex) {
+        firstFlex.appendChild(delBtn);
+      } else {
+        row.appendChild(delBtn);
+      }
+
       // Active vs. historical check — append notice for diagnoses that may be historical
       if (isActiveHistoricalTrigger(it.diagnosis)) {
         const notice = document.createElement('div');
@@ -9102,6 +9119,26 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   });
 
   container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function deleteTierRow(dx, row, groupWrap, tierNum) {
+  // Remove from tierCurrentData
+  if (tierCurrentData) {
+    tierCurrentData.items = tierCurrentData.items.filter(function(it) { return it.diagnosis !== dx; });
+  }
+  // Remove from locked items
+  tierLockedItems.delete(dx.toLowerCase().trim());
+
+  // Remove the row
+  row.remove();
+
+  // Update group header count
+  const remaining = groupWrap.querySelectorAll('[data-tier="' + tierNum + '"]').length;
+  const hdr = groupWrap.querySelector('div:first-child');
+  if (hdr && TIER_CONFIG[tierNum]) {
+    hdr.textContent = TIER_CONFIG[tierNum].label + ' (' + remaining + ')';
+  }
+  if (remaining === 0) groupWrap.style.display = 'none';
 }
 
 function isActiveHistoricalTrigger(diagnosis) {
@@ -9803,13 +9840,16 @@ Rules:
 - If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
 - Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
 - For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
-- NEUROCOGNITIVE DIAGNOSES: "Senile degeneration of the brain" = G31.1 (not Alzheimer's). "Alzheimer's disease" = G30.x. "Lewy body dementia" = G31.83. "Frontotemporal dementia" = G31.09. "Vascular dementia" = F01.x. Each requires a companion F-code — flag as needsClarification and offer the correct options based on the specific diagnosis:
-  * G30.x (Alzheimer's) → offer F02.80 (without behavioral disturbance) and F02.81 (with behavioral disturbance)
-  * G31.1 (Senile degeneration of brain) → offer F03.90 (without behavioral disturbance) and F03.91 (with behavioral disturbance). Do NOT offer F02.x for G31.1.
-  * G31.83 (Lewy body) → offer F02.80 and F02.81
-  * G31.09 (Frontotemporal) → offer F02.80 and F02.81
-  * G20 (Parkinson's) → offer F02.80 and F02.81
-  * Unspecified dementia → offer F03.90 and F03.91
+- NEUROCOGNITIVE DIAGNOSES — CRITICAL RULES:
+  * "Senile degeneration of the brain" = G31.1 ONLY. Return G31.1 as the code with needsClarification: false. Do NOT combine G31.1 with any F-code into a single option.
+  * "Alzheimer's disease" = G30.9 (or G30.0/G30.1/G30.8 if specified). Return the G30.x code with needsClarification: false.
+  * "Lewy body dementia" = G31.83. Return G31.83 with needsClarification: false.
+  * "Frontotemporal dementia" = G31.09. Return G31.09 with needsClarification: false.
+  * "Vascular dementia" = F01.51 (with behavioral) or F01.50 (without). Return as needsClarification: true with both options.
+  * "Parkinson's disease" = G20. Return G20 with needsClarification: false.
+  * NEVER output a combined code like "G31.1 with F03.90" — these are always two separate ICD-10 entries.
+  * The companion F-code (F02.x or F03.x) is a SEPARATE diagnosis that must be coded separately in Firenote. It is NOT part of the G-code entry. Do not bundle them together.
+  * When you encounter "dementia with behavioral disturbance" or "dementia without behavioral disturbance" as a standalone diagnosis (i.e. the F-code itself), treat it as its own entry: F03.91 (with behavioral) or F03.90 (without behavioral) for unspecified dementia; F02.81/F02.80 for dementia in Alzheimer's/Lewy body/Parkinson's/frontotemporal.
 
 Diagnoses to code:
 ${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
