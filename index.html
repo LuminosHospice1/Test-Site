@@ -16,6 +16,21 @@
 /* Narrative compliance checklist */
 .narr-chk-display{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:14px}
 .narr-chk-display.show{display:block}
+/* Attestation modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,18,40,.55);z-index:9999;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;animation:modalIn .2s ease}
+@keyframes modalIn{from{transform:translateY(-16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;gap:10px}
+.modal-header h3{color:#fff;font-size:.95rem;font-weight:700;flex:1;margin:0}
+.modal-body{padding:20px 22px}
+.modal-body p{font-size:.88rem;color:var(--text-mid);line-height:1.65;margin-bottom:14px}
+.modal-body p strong{color:var(--navy)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;padding:0 22px 20px}
+.modal-confirm-btn{padding:10px 22px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;transition:background .14s}
+.modal-confirm-btn:hover{opacity:.9}
+.modal-cancel-btn{padding:10px 18px;background:none;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;color:var(--text-mid);cursor:pointer;transition:all .14s}
+.modal-cancel-btn:hover{border-color:var(--navy);color:var(--navy)}
 .narr-chk-title{font-size:.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
 .narr-chk-item{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-lt);font-size:.86rem;line-height:1.45}
 .narr-chk-item:last-child{border-bottom:none}
@@ -8003,57 +8018,134 @@ function parseNarrativeChecklist(rawText) {
   return narrativePart;
 }
 
+async function generateCocNote() {
+  const narrative = document.getElementById('narr-paste-back').value.trim();
+  if (!narrative) { alert('Please paste the narrative in Step 2 first.'); return; }
+
+  const btn = document.getElementById('coc-btn');
+  const errEl = document.getElementById('coc-error');
+  const wrapEl = document.getElementById('coc-output-wrap');
+  const outEl = document.getElementById('coc-output');
+  btn.textContent = '⏳ Generating...'; btn.disabled = true;
+  errEl.style.display = 'none'; wrapEl.style.display = 'none';
+
+  const prompt = 'Help me shorten the following nursing narrative for an IDG care coordination note. Remove anything that is not pertinent to the team or the picture of eligibility. Keep it concise and clinically focused. End the note with exactly this sentence: "Coordinated with patient, family/caregiver, and IDG members including physician, social worker, chaplain, aide, and volunteer coordinator. All parties are in agreement with hospice admission and the plan of care as documented." Return only the shortened note — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
+
+  let result = '';
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      result = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+    }
+  } catch(e) {}
+
+  btn.textContent = '✨ Generate'; btn.disabled = false;
+  if (result) {
+    outEl.value = result;
+    wrapEl.style.display = 'block';
+    wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    errEl.textContent = '⚠ Unable to generate — please try again.';
+    errEl.style.display = 'block';
+  }
+}
+
+async function generateTeamsNote() {
+  const narrative = document.getElementById('narr-paste-back').value.trim();
+  const patientId = document.getElementById('teams-patient-id').value.trim() || '[PATIENT INITIALS]';
+  if (!narrative) { alert('Please paste the narrative in Step 2 first.'); return; }
+
+  const btn = document.getElementById('teams-btn');
+  const errEl = document.getElementById('teams-error');
+  const wrapEl = document.getElementById('teams-output-wrap');
+  const outEl = document.getElementById('teams-output');
+  btn.textContent = '⏳ Generating...'; btn.disabled = true;
+  errEl.style.display = 'none'; wrapEl.style.display = 'none';
+
+  const prompt = 'Based on the following nursing narrative, formulate a brief admission summary for posting in a Microsoft Teams Admissions channel. Use patient identifier "' + patientId + '" (do not use any full names). Include: patient identifier, admission outcome, primary diagnosis, and any immediate follow-up needs or flags for the team. Keep it short — 3 to 5 sentences maximum. No bullet points. Return only the summary — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
+
+  let result = '';
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 800 })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      result = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+    }
+  } catch(e) {}
+
+  btn.textContent = '✨ Generate'; btn.disabled = false;
+  if (result) {
+    outEl.value = result;
+    wrapEl.style.display = 'block';
+    wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    errEl.textContent = '⚠ Unable to generate — please try again.';
+    errEl.style.display = 'block';
+  }
+}
+
+function copyNarrativeOutput(id, btn) {
+  const el = document.getElementById(id);
+  if (!el || !el.value.trim()) return;
+  const text = el.value.trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      var o = btn.textContent; btn.textContent = '✓ Copied'; btn.style.background = '#155724';
+      setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--navy)'; }, 2500);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;top:-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    var o = btn.textContent; btn.textContent = '✓ Copied'; btn.style.background = '#155724';
+    setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--navy)'; }, 2500);
+  }
+}
+
 function copyFinalNarrative(btn) {
   const ta = document.getElementById('narr-paste-back');
   if (!ta || !ta.value.trim()) {
     alert('Please paste Copilot\'s narrative output in Step 2 before copying.');
     return;
   }
+  document.getElementById('narr-attest-modal').classList.add('show');
+}
 
-  // Attestation confirmation popup
-  const confirmed = confirm(
-    'ATTESTATION REQUIRED\n\n' +
-    'By clicking OK you confirm that:\n\n' +
-    '✓ You have reviewed this narrative\n' +
-    '✓ You have edited it to reflect your own clinical observations\n' +
-    '✓ You have verified all details against the patient\'s actual record\n' +
-    '✓ The content is factually accurate and clinically appropriate\n\n' +
-    'Click OK to copy the narrative into your clipboard, or Cancel to return and continue editing.'
-  );
+function closeAttestModal() {
+  document.getElementById('narr-attest-modal').classList.remove('show');
+}
 
-  if (!confirmed) return;
-
-  const text = ta.value.trim();
+function confirmAttestation() {
+  const ta = document.getElementById('narr-paste-back');
+  const text = ta ? ta.value.trim() : '';
+  closeAttestModal();
+  if (!text) return;
+  const btn = document.querySelector('[onclick="copyFinalNarrative(this)"]');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function() {
-      var orig = btn.textContent;
-      btn.textContent = '✓ Copied — paste into Firenote';
-      btn.style.background = '#155724';
-      setTimeout(function() {
-        btn.textContent = orig;
-        btn.style.background = 'var(--green)';
-      }, 3000);
+      if (btn) { var o = btn.textContent; btn.textContent = '✓ Copied — paste into Firenote'; btn.style.background = '#155724'; setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--green)'; }, 3000); }
     }).catch(function() { fallbackCopyNarrative(text, btn); });
-  } else {
-    fallbackCopyNarrative(text, btn);
-  }
+  } else { fallbackCopyNarrative(text, btn); }
 }
+
+// Close modal on overlay click or Escape
+document.addEventListener('click', function(e) { if (e.target.id === 'narr-attest-modal') closeAttestModal(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAttestModal(); });
 
 function fallbackCopyNarrative(text, btn) {
   var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  var orig = btn.textContent;
-  btn.textContent = '✓ Copied — paste into Firenote';
-  btn.style.background = '#155724';
-  setTimeout(function() {
-    btn.textContent = orig;
-    btn.style.background = 'var(--green)';
-  }, 3000);
+  ta.value = text; ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  if (btn) { var o = btn.textContent; btn.textContent = '✓ Copied — paste into Firenote'; btn.style.background = '#155724'; setTimeout(function() { btn.textContent = o; btn.style.background = 'var(--green)'; }, 3000); }
 }
 
 // ── COPY TO CLIPBOARD ──────────────────────────────────────────────
@@ -10201,6 +10293,55 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
         <div style="margin-top:10px">
           <button onclick="copyFinalNarrative(this)" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer">📋 Copy Final Narrative</button>
         </div>
+
+        <!-- Additional notes generators -->
+        <div style="margin-top:22px;border-top:2px solid var(--border);padding-top:18px;display:flex;flex-direction:column;gap:16px">
+
+          <!-- Coordination of Care Note -->
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <div style="background:var(--row-alt);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-size:.88rem;font-weight:700;color:var(--navy)">📋 Coordination of Care Note</div>
+                <div style="font-size:.76rem;color:var(--text-lt);margin-top:2px">Shortened narrative for the IDG care coordination note</div>
+              </div>
+              <button id="coc-btn" onclick="generateCocNote()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer">✨ Generate</button>
+            </div>
+            <div id="coc-output-wrap" style="display:none;padding:12px 14px">
+              <textarea id="coc-output" style="width:100%;min-height:120px;padding:9px 11px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;resize:vertical;outline:none;line-height:1.6"></textarea>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button onclick="copyNarrativeOutput('coc-output', this)" style="padding:6px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer">📋 Copy</button>
+                <button onclick="document.getElementById('coc-output-wrap').style.display='none'" style="padding:6px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
+              </div>
+            </div>
+            <div id="coc-error" style="display:none;padding:10px 14px;font-size:.82rem;color:var(--red)"></div>
+          </div>
+
+          <!-- Teams Admission Note -->
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+            <div style="background:var(--row-alt);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-size:.88rem;font-weight:700;color:var(--navy)">💬 Teams Admission Note</div>
+                <div style="font-size:.76rem;color:var(--text-lt);margin-top:2px">Brief summary for the Admissions channel in Teams</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div>
+                  <label style="font-size:.75rem;color:var(--text-mid);display:block;margin-bottom:2px">Patient Initials / ID</label>
+                  <input type="text" id="teams-patient-id" placeholder="e.g. J.S." maxlength="20" style="width:100px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.82rem;outline:none">
+                </div>
+                <button id="teams-btn" onclick="generateTeamsNote()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:14px">✨ Generate</button>
+              </div>
+            </div>
+            <div id="teams-output-wrap" style="display:none;padding:12px 14px">
+              <textarea id="teams-output" style="width:100%;min-height:100px;padding:9px 11px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;resize:vertical;outline:none;line-height:1.6"></textarea>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button onclick="copyNarrativeOutput('teams-output', this)" style="padding:6px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer">📋 Copy</button>
+                <button onclick="document.getElementById('teams-output-wrap').style.display='none'" style="padding:6px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
+              </div>
+            </div>
+            <div id="teams-error" style="display:none;padding:10px 14px;font-size:.82rem;color:var(--red)"></div>
+          </div>
+
+        </div>
       </div>
 
     </div>
@@ -10211,4 +10352,26 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
 </div><!-- end container -->
 </div><!-- end panel-narrative -->
 </div><!-- end page-wrap -->
+
+<!-- Attestation Modal -->
+<div class="modal-overlay" id="narr-attest-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="font-size:1.2rem">⚠️</span>
+      <h3>Required Attestation Before Copying</h3>
+    </div>
+    <div class="modal-body">
+      <p>By clicking <strong>Copy &amp; Attest</strong> below, you confirm the following:</p>
+      <div style="background:var(--gold-pale);border:1.5px solid var(--gold);border-radius:6px;padding:13px 16px;margin-bottom:16px">
+        <p style="font-size:.88rem;color:var(--navy);font-weight:600;line-height:1.65;margin-bottom:0">I have reviewed this narrative in its entirety. It is written in my own words and accurately reflects my independent clinical judgment. I have verified all clinical details against the patient's actual record. I attest that this narrative was written in my own words and reflects my independent clinical judgment.</p>
+      </div>
+      <p style="font-size:.82rem;color:var(--text-lt);margin-bottom:0">Clicking <strong>Copy &amp; Attest</strong> constitutes your attestation and copies the narrative to your clipboard.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel-btn" onclick="closeAttestModal()">Cancel — Go Back to Edit</button>
+      <button class="modal-confirm-btn" onclick="confirmAttestation()">📋 Copy &amp; Attest</button>
+    </div>
+  </div>
+</div>
+
 </body>
