@@ -8018,6 +8018,27 @@ function parseNarrativeChecklist(rawText) {
   return narrativePart;
 }
 
+function cleanNarrativeOutput(text) {
+  if (!text) return '';
+  return text
+    .trim()
+    // Remove markdown bold/italic
+    .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    // Remove markdown headers
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove markdown bullet points — replace with nothing (prose should flow)
+    .replace(/^\s*[\*\-•]\s+/gm, '')
+    // Remove numbered list markers
+    .replace(/^\s*\d+\.\s+/gm, '')
+    // Collapse multiple blank lines to one
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function generateCocNote() {
   const narrative = document.getElementById('narr-paste-back').value.trim();
   if (!narrative) { alert('Please paste the narrative in Step 2 first.'); return; }
@@ -8029,7 +8050,7 @@ async function generateCocNote() {
   btn.textContent = '⏳ Generating...'; btn.disabled = true;
   errEl.style.display = 'none'; wrapEl.style.display = 'none';
 
-  const prompt = 'Help me shorten the following nursing narrative for an IDG care coordination note. Remove anything that is not pertinent to the team or the picture of eligibility. Keep it concise and clinically focused. End the note with exactly this sentence: "Coordinated with patient, family/caregiver, and IDG members including physician, social worker, chaplain, aide, and volunteer coordinator. All parties are in agreement with hospice admission and the plan of care as documented." Return only the shortened note — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
+  const prompt = 'Help me shorten the following nursing narrative for an IDG care coordination note. Remove anything that is not pertinent to the team or the picture of eligibility. Keep it concise and clinically focused. Write in plain prose — no bullet points, no bold text, no markdown formatting. End the note with exactly this sentence: "Coordinated with patient, family/caregiver, and IDG members including physician, social worker, chaplain, aide, and volunteer coordinator. All parties are in agreement with hospice admission and the plan of care as documented." Return only the shortened note — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
 
   let result = '';
   try {
@@ -8040,7 +8061,7 @@ async function generateCocNote() {
     });
     if (resp.ok) {
       const data = await resp.json();
-      result = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+      result = (data.content && data.content[0] && data.content[0].text) ? cleanNarrativeOutput(data.content[0].text) : '';
     }
   } catch(e) {}
 
@@ -8067,7 +8088,7 @@ async function generateTeamsNote() {
   btn.textContent = '⏳ Generating...'; btn.disabled = true;
   errEl.style.display = 'none'; wrapEl.style.display = 'none';
 
-  const prompt = 'Based on the following nursing narrative, formulate a brief admission summary for posting in a Microsoft Teams Admissions channel. Use patient identifier "' + patientId + '" (do not use any full names). Include: patient identifier, admission outcome, primary diagnosis, and any immediate follow-up needs or flags for the team. Keep it short — 3 to 5 sentences maximum. No bullet points. Return only the summary — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
+  const prompt = 'Based on the following nursing narrative, formulate a brief admission summary for posting in a Microsoft Teams Admissions channel. Use patient identifier "' + patientId + '" (do not use any full names). Include: patient identifier, admission outcome, primary diagnosis, and any immediate follow-up needs or flags for the team. Keep it short — 3 to 5 sentences maximum. Write in plain prose — no bullet points, no bold text, no markdown formatting. Return only the summary — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
 
   let result = '';
   try {
@@ -8078,7 +8099,7 @@ async function generateTeamsNote() {
     });
     if (resp.ok) {
       const data = await resp.json();
-      result = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : '';
+      result = (data.content && data.content[0] && data.content[0].text) ? cleanNarrativeOutput(data.content[0].text) : '';
     }
   } catch(e) {}
 
@@ -9141,41 +9162,64 @@ function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
 
   const wrap = document.createElement('div');
   wrap.id = 'assoc-dropdown-wrap';
-  wrap.style.cssText = 'position:absolute;z-index:999;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:12px 14px;min-width:320px;max-width:420px';
+  wrap.style.cssText = 'position:fixed;z-index:9998;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:14px 16px;min-width:320px;max-width:440px';
 
-  let optionsHtml = '<div style="font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:8px">Select the parent Tier 1 care plan this symptom will be addressed under:</div>';
-  optionsHtml += '<select id="assoc-parent-select" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;margin-bottom:10px">';
+  // Build select options
+  const select = document.createElement('select');
+  select.id = 'assoc-parent-select';
+  select.style.cssText = 'width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;margin-bottom:10px';
   tier1Options.forEach(function(opt) {
-    optionsHtml += '<option value="' + escapeHtml(opt).replace(/"/g,'&quot;') + '">' + escapeHtml(opt) + '</option>';
+    const o = document.createElement('option');
+    o.value = opt;
+    o.textContent = opt;
+    select.appendChild(o);
   });
-  optionsHtml += '</select>';
-  optionsHtml += '<div style="display:flex;gap:8px;justify-content:flex-end">'
-    + '<button onclick="document.getElementById(\'assoc-dropdown-wrap\').remove()" style="padding:5px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.8rem;cursor:pointer">Cancel</button>'
-    + '<button onclick="demoteToAssocSymptom(' + JSON.stringify(dx) + ', document.getElementById(\'assoc-parent-select\').value, document.getElementById(\'tier-results\'))" style="padding:5px 12px;background:#1a6a9a;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer">🔗 Confirm as Associated Symptom</button>'
-    + '</div>';
 
-  wrap.innerHTML = optionsHtml;
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:8px';
+  label.textContent = 'Select the parent Tier 1 care plan this symptom will be addressed under:';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:4px';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'padding:6px 14px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.82rem;cursor:pointer';
+  cancelBtn.addEventListener('click', function(e) { e.stopPropagation(); wrap.remove(); });
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = '🔗 Confirm as Associated Symptom';
+  confirmBtn.style.cssText = 'padding:6px 14px;background:#1a6a9a;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer';
+  confirmBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const parentDx = select.value;
+    wrap.remove();
+    demoteToAssocSymptom(dx, parentDx, document.getElementById('tier-results'));
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(confirmBtn);
+  wrap.appendChild(label);
+  wrap.appendChild(select);
+  wrap.appendChild(btnRow);
 
   // Position near the button
   const btnRect = btn.getBoundingClientRect();
-  const resultsEl = document.getElementById('tier-results');
-  const resultsRect = resultsEl.getBoundingClientRect();
-  wrap.style.top = (btnRect.bottom - resultsRect.top + resultsEl.scrollTop + 4) + 'px';
-  wrap.style.right = '10px';
-  wrap.style.position = 'absolute';
+  wrap.style.top = (btnRect.bottom + window.scrollY + 4) + 'px';
+  wrap.style.right = (document.documentElement.clientWidth - btnRect.right) + 'px';
 
-  resultsEl.style.position = 'relative';
-  resultsEl.appendChild(wrap);
+  document.body.appendChild(wrap);
 
-  // Close on outside click
+  // Close on outside click — use capture to avoid immediate close
+  function closeDropdown(e) {
+    if (!wrap.contains(e.target) && e.target !== btn) {
+      wrap.remove();
+      document.removeEventListener('click', closeDropdown, true);
+    }
+  }
   setTimeout(function() {
-    document.addEventListener('click', function closeDropdown(e) {
-      if (!wrap.contains(e.target) && e.target !== btn) {
-        wrap.remove();
-        document.removeEventListener('click', closeDropdown);
-      }
-    });
-  }, 50);
+    document.addEventListener('click', closeDropdown, true);
+  }, 200);
 }
 
 function demoteToAssocSymptom(dx, parentDx, container) {
