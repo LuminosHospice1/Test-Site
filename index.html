@@ -75,6 +75,14 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 .panel.active{display:block}
 .container{max-width:1080px;margin:0 auto;padding:22px 16px 90px}
 
+/* ── SUBPANELS (Reference & Learn groupings) ── */
+.subpanel{display:none}
+.subpanel.active{display:block}
+.subtab-bar{display:flex;background:var(--navy);border-bottom:2px solid var(--gold);overflow-x:auto;position:sticky;top:0;z-index:50}
+.subtab-btn{padding:11px 20px;font-family:inherit;font-size:.85rem;font-weight:600;color:rgba(255,255,255,.55);background:transparent;border:none;cursor:pointer;transition:all .15s;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.subtab-btn:hover{color:rgba(255,255,255,.85)}
+.subtab-btn.active{color:#fff;border-bottom-color:var(--gold);background:rgba(255,255,255,.07)}
+
 /* ── SHARED ELEMENTS ── */
 .intro-strip{background:#fff;border:1px solid var(--border);border-left:4px solid var(--gold);
   border-radius:var(--r);padding:13px 17px;margin-bottom:18px;font-size:.87rem;
@@ -368,16 +376,13 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   </div>
   <div class="tab-bar">
     <div class="tab-inner">
-      <button class="tab-btn" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
-      <button class="tab-btn active" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
-      <button class="tab-btn" onclick="switchTab('meds',this)">💊 Medication Coverage</button>
-      <button class="tab-btn" onclick="switchTab('rel',this)">🔗 Diagnosis Relatedness</button>
-      <button class="tab-btn" onclick="switchTab('checker',this)">🧠 Clinical Checkers</button>
-      <button class="tab-btn" onclick="switchTab('careplan',this)">📋 Care Plan Builder</button>
-      <button class="tab-btn" onclick="switchTab('narrative',this)">✍️ Narrative Strengthener</button>
-      <button class="tab-btn" onclick="switchTab('icd',this)">🔎 ICD-10 Reference</button>
-      <button class="tab-btn" onclick="switchTab('sample',this)">📄 Sample Admission</button>
-      <button class="tab-btn" onclick="switchTab('guide',this)">📖 User Guide</button>
+      <button class="tab-btn active" id="tab-checklist-btn" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
+      <button class="tab-btn" id="tab-walkthrough-btn" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
+      <button class="tab-btn" id="tab-checker-btn" onclick="switchTab('checker',this)">🧠 Clinical Checkers</button>
+      <button class="tab-btn" id="tab-careplan-btn" onclick="switchTab('careplan',this)">📋 Care Plan Builder</button>
+      <button class="tab-btn" id="tab-narrative-btn" onclick="switchTab('narrative',this)">✍️ Narrative Strengthener</button>
+      <button class="tab-btn" id="tab-reference-btn" onclick="switchTab('reference',this)">📚 Reference</button>
+      <button class="tab-btn" id="tab-learn-btn" onclick="switchTab('learn',this)">🎓 Learn</button>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
@@ -881,7 +886,12 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   .qtable { font-size: .78rem; }
 }
 </style>
-<div class="panel" id="panel-guide">
+<div class="subpanel" id="panel-guide">
+<div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
+  <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
+</div>
+
 <div style="max-width:1080px;margin:0 auto">
 <div class="page-wrap">
 
@@ -2637,7 +2647,13 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══════════════════════════════════════════════════════════════════
      PANEL 3 — ICD-10 REFERENCE
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-icd">
+<div class="subpanel" id="panel-icd">
+<div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
+  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
+</div>
+
 <div class="container">
 <div class="intro-strip"><strong>Use this reference when building the problem list at admission.</strong> Search by diagnosis name or ICD-10 code. Filter by category. Always code to the highest level of specificity — confirm codes are valid for the current fiscal year.</div>
 <div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">F Codes (F01.xx, F02.xx) may NOT be used as a primary hospice diagnosis. They must be secondary to a specific dementia code: G30.9 (Alzheimer's) · G31.83 (Lewy body) · G31.1 (Senile degeneration).</div></div>
@@ -2883,7 +2899,12 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══════════════════════════════════════════════════════════════════
      PANEL 4 — SAMPLE ADMISSION
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-sample">
+<div class="subpanel" id="panel-sample">
+<div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
+  <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
+</div>
+
 <div class="container">
 
 <style>
@@ -3356,7 +3377,13 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div><!-- end panel sample -->
 
 <!-- ══ PANEL 5 — MEDICATION COVERAGE ═══════════════════════════ -->
-<div class="panel" id="panel-meds">
+<div class="subpanel" id="panel-meds">
+<div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
+  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
+</div>
+
 <div class="container">
 <button class="print-btn" onclick="window.print()" style="margin-bottom:12px">🖨 Print This Section</button>
 <div class="intro-strip"><strong>Hospice Medication Coverage Guide</strong> — What's covered, what's not, and your role as a hospice nurse. Based on 42 CFR §418.106.</div>
@@ -3523,7 +3550,13 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div></div><!-- end panel meds -->
 
 <!-- ══ PANEL 6 — RELATEDNESS ════════════════════════════════════ -->
-<div class="panel" id="panel-rel">
+<div class="subpanel" id="panel-rel">
+<div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
+  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
+</div>
+
 <div class="container">
 <button class="print-btn" onclick="window.print()" style="margin-bottom:12px">🖨 Print This Section</button>
 <div class="intro-strip"><strong>Determining Relatedness to the Terminal Prognosis</strong> — A practical guide for hospice nurses. Based on 42 CFR §418.202 and NHPCO Relatedness Process Flow.</div>
@@ -4057,17 +4090,69 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 })();
 
 // ── Tab switching ──────────────────────────────────────────────────
+let lastRefSubTab = 'meds';
+let lastLearnSubTab = 'sample';
+
 function switchTab(name, btn) {
+  // Reference and Learn are virtual groups — map to their last-viewed subpanel
+  let targetId = name;
+  if (name === 'reference') targetId = lastRefSubTab;
+  if (name === 'learn') targetId = lastLearnSubTab;
+
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  btn.classList.add('active');
+  const targetPanel = document.getElementById('panel-'+targetId);
+  if (targetPanel) targetPanel.classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // Sync subtab bar active state for reference/learn groups
+  if (name === 'reference' || ['meds','rel','icd'].indexOf(name) !== -1) {
+    syncSubTabButtons(targetId, ['meds','rel','icd']);
+  }
+  if (name === 'learn' || ['sample','guide'].indexOf(name) !== -1) {
+    syncSubTabButtons(targetId, ['sample','guide']);
+  }
+
   // Show/hide bottom bar
   document.getElementById('bottomBar').classList.toggle('visible', name==='checklist');
   // Update progress bar only for checklist
   if(name==='checklist') updateProgress();
   else document.getElementById('progressBar').style.width='0%';
   window.scrollTo(0,0);
+}
+
+function switchSubTab(name, btn) {
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  const targetPanel = document.getElementById('panel-'+name);
+  if (targetPanel) targetPanel.classList.add('active');
+
+  if (['meds','rel','icd'].indexOf(name) !== -1) {
+    lastRefSubTab = name;
+    syncSubTabButtons(name, ['meds','rel','icd']);
+    syncMainTabActive('reference');
+  }
+  if (['sample','guide'].indexOf(name) !== -1) {
+    lastLearnSubTab = name;
+    syncSubTabButtons(name, ['sample','guide']);
+    syncMainTabActive('learn');
+  }
+  window.scrollTo(0,0);
+}
+
+function syncSubTabButtons(activeName, group) {
+  document.querySelectorAll('.subtab-btn[data-subtab]').forEach(function(b) {
+    var n = b.getAttribute('data-subtab');
+    if (group.indexOf(n) !== -1) {
+      b.classList.toggle('active', n === activeName);
+    }
+  });
+}
+
+function syncMainTabActive(mainName) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  const mainBtn = document.getElementById('tab-' + mainName + '-btn');
+  if (mainBtn) mainBtn.classList.add('active');
 }
 
 // ── Walkthrough card toggles ───────────────────────────────────────
