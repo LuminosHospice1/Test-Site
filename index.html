@@ -378,10 +378,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     <div class="tab-inner">
       <button class="tab-btn active" id="tab-checklist-btn" onclick="switchTab('checklist',this)">✅ Admission Checklist</button>
       <button class="tab-btn" id="tab-walkthrough-btn" onclick="switchTab('walkthrough',this)">📋 Assessment Walkthrough</button>
-      <button class="tab-btn" id="tab-checker-btn" onclick="switchTab('checker',this)">🧠 Clinical Checkers</button>
-      <button class="tab-btn" id="tab-careplan-btn" onclick="switchTab('careplan',this)">📋 Care Plan Builder</button>
-      <button class="tab-btn" id="tab-narrative-btn" onclick="switchTab('narrative',this)">✍️ Narrative Strengthener</button>
-      <button class="tab-btn" id="tab-reference-btn" onclick="switchTab('reference',this)">📚 Reference</button>
+      <button class="tab-btn" id="tab-checker-btn" onclick="switchTab('checker',this)">🧠 Clinical Tools</button>
       <button class="tab-btn" id="tab-learn-btn" onclick="switchTab('learn',this)">🎓 Learn</button>
     </div>
   </div>
@@ -890,6 +887,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div class="subtab-bar">
   <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
+  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
+  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
 </div>
 
 <div style="max-width:1080px;margin:0 auto">
@@ -2164,8 +2163,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div style="margin-top:14px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
   <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Ready to work on the care plan or check drug interactions?</span>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[2]&&document.querySelectorAll('.checker-tab')[2].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🧠 Drug Interaction Parser</a>
-    <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Care Plan Builder</a>
+    <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[7]&&document.querySelectorAll('.checker-tab')[7].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🧠 Drug Interaction Parser</a>
+    <a href="#" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Care Plan Builder</a>
   </div>
 </div>
 
@@ -2223,7 +2222,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="narr"><div class="narr-lbl">EXAMPLE</div><p>Dementia with behavioral disturbance (F02.81) can serve as the primary problem. Agitation (R45.1) and Anxiety (F41.9) can be grouped under the dementia problem — each will have their own entry due to coding requirements, but one set of goals and interventions may address all three.</p></div>
 <div class="sub-gold" style="margin-top:12px">Using AI (Microsoft Copilot) to Build Care Plan Goals &amp; Interventions</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Copilot can help you quickly generate appropriate, hospice-aligned goals and interventions for each diagnosis. Use the prompt below — paste it into Copilot and add the diagnosis and any relevant clinical details.</p>
-<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>Prefer a fully built care plan?</strong> Use the <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">📋 Care Plan Builder</a> tab — enter the diagnosis and it will generate a complete goal and structured Assess/Educate/Perform interventions ready to copy into Firenote.</div></div>
+<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>Prefer a fully built care plan?</strong> Use the <a href="#" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">📋 Care Plan Builder</a> tab — enter the diagnosis and it will generate a complete goal and structured Assess/Educate/Perform interventions ready to copy into Firenote.</div></div>
 <div class="narr">
   <div class="narr-lbl">COPILOT PROMPT — Copy, Fill In, and Use</div>
   <p>Use the following format: Patient will remain comfortable and free from [diagnosis]-related distress, as measured by patient report (if able), observed status, and trends in caregiver feedback by the end of the current benefit period.<br><br>Develop a hospice-appropriate goal and interventions for my hospice patient with the following diagnosis:<br><br>[Add diagnosis and any pertinent clinical details to help formulate the care plan goal and interventions]</p>
@@ -2241,12 +2240,12 @@ Keep the Monitor For intervention active unless the medication causing the inter
 
 <div style="margin-top:14px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
   <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Not sure which diagnoses need their own care plan?</span>
-  <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[3]&&document.querySelectorAll('.checker-tab')[3].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🗂️ Problem List Tiering</a>
+  <a href="#" onclick="switchTab('checker',document.querySelector('[onclick*=checker]'));setTimeout(()=>{document.querySelectorAll('.checker-tab')[2]&&document.querySelectorAll('.checker-tab')[2].click()},200);return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">🗂️ Problem List Tiering</a>
 </div>
 
 <div style="margin-top:10px;padding:10px 14px;background:var(--gold-pale);border:1px solid rgba(201,151,44,.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
   <span style="font-size:.82rem;font-weight:600;color:var(--navy)">Need help building a care plan goal and interventions?</span>
-  <a href="#" onclick="switchTab('careplan',document.querySelector('[onclick*=careplan]'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Open Care Plan Builder</a>
+  <a href="#" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'));return false;" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--navy);color:#fff;border-radius:5px;font-size:.8rem;font-weight:600;text-decoration:none">📋 Open Care Plan Builder</a>
 </div>
 
   </div></div>
@@ -2385,7 +2384,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div></div>
 
 <div class="sub-gold" style="margin-top:14px">Using AI (Microsoft Copilot) to Build Your Nursing Narrative</div>
-<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>For a streamlined experience</strong>, use the <a href="#" onclick="switchTab('narrative',document.querySelector('[onclick*=narrative]'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">✍️ Narrative Strengthener</a> tab — enter your draft notes and it builds a compliant Copilot prompt automatically, then opens directly in Microsoft Copilot.</div></div>
+<div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>For a streamlined experience</strong>, use the <a href="#" onclick="switchToNarrativeFromCheckers(document.getElementById('checker-tab-narrative'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">✍️ Narrative Strengthener</a> tab — enter your draft notes and it builds a compliant Copilot prompt automatically, then opens directly in Microsoft Copilot.</div></div>
 <ul class="blist"><li>Copy your full assessment narrative from the "Review and Finish" section</li><li>Paste it into Copilot and use the prompt below</li><li>Review and edit as needed to ensure accuracy</li></ul>
 <div class="alert warning"><span>⚠</span><div><strong>Do NOT include any patient identifying information</strong> (name, DOB, address, etc.)<br>Ensure all diagnoses are added to the care plan list first so they pull into your assessment.<br>If diagnoses are missing, you will need to manually include them in the narrative.</div></div>
 <div class="narr"><div class="narr-lbl">COPILOT PROMPT — Copy and Use</div><p>Using the information below, generate a hospice admission nursing narrative.<br><br>Include: primary diagnosis, related and non-related conditions, evidence of decline (functional, nutritional, cognitive), objective data (PPS, weight/MAC, intake, ADLs), symptom burden, current functional status, and any recent changes or hospitalizations.<br><br>Write in a clear, clinical narrative style that supports hospice eligibility and can be used by a physician for attestation. Do not include any patient identifiers.</p></div>
@@ -2649,9 +2648,14 @@ Keep the Monitor For intervention active unless the medication causing the inter
 ══════════════════════════════════════════════════════════════════ -->
 <div class="subpanel" id="panel-icd">
 <div class="subtab-bar">
-  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
-  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
-  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('icd-lookup', document.querySelector('[onclick*=icd-lookup]'))">🔎 ICD-10 Code Lookup</button>
+  <button class="subtab-btn active">📖 ICD-10 Reference</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('tier-check', document.querySelector('[onclick*=tier-check]'))">🗂️ Problem List Tiering</button>
+  <button class="subtab-btn" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'))">📋 Care Plan Builder</button>
+  <button class="subtab-btn" onclick="switchToNarrativeFromCheckers(document.getElementById('checker-tab-narrative'))">✍️ Narrative Strengthener</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
 </div>
 
 <div class="container">
@@ -2890,7 +2894,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="palliative care encounter z51.5 may be used as additional code on any hospice visit"><td>Palliative care encounter</td><td class="code-cell">Z51.5</td><td>May be used as additional code on any hospice visit</td></tr>
     </tbody>
   </table>
-  <div class="no-results hidden" id="icdNoResults">No diagnoses match your search. Try different keywords.</div>
+  <div class="no-results hidden" id="icdNoResults">
+    No diagnoses match your search. Try different keywords, or
+    <a href="#" id="icdGoogleSearchLink" onclick="openIcdGoogleSearch();return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">🔍 search Google for this ICD-10 code</a>.
+  </div>
 </div>
 </div><!-- end container -->
 </div><!-- end panel icd -->
@@ -2903,6 +2910,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="subtab-bar">
   <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
+  <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
+  <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
 </div>
 
 <div class="container">
@@ -3379,9 +3388,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══ PANEL 5 — MEDICATION COVERAGE ═══════════════════════════ -->
 <div class="subpanel" id="panel-meds">
 <div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
+  <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
-  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
 </div>
 
 <div class="container">
@@ -3552,9 +3562,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══ PANEL 6 — RELATEDNESS ════════════════════════════════════ -->
 <div class="subpanel" id="panel-rel">
 <div class="subtab-bar">
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
+  <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
-  <button class="subtab-btn" data-subtab="icd" onclick="switchSubTab('icd',this)">🔎 ICD-10 Reference</button>
 </div>
 
 <div class="container">
@@ -3730,16 +3741,19 @@ Use these results as a starting point for your MD conversation, not as a final a
     <p>Enter medication and/or diagnosis details below — AI will apply CMS hospice benefit rules to provide guidance</p>
   </div>
   <div class="checker-tabs">
-    <button class="checker-tab active" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
-    <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
-    <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
+    <button class="checker-tab active" onclick="switchCheckerTab('icd-lookup', this)">🔎 ICD-10 Code Lookup</button>
+    <button class="checker-tab" id="checker-tab-icdref" onclick="switchToIcdRefFromCheckers(this)">📖 ICD-10 Reference</button>
     <button class="checker-tab" onclick="switchCheckerTab('tier-check', this)">🗂️ Problem List Tiering</button>
-    <button class="checker-tab" onclick="switchCheckerTab('icd-lookup', this)">🔎 ICD-10 Code Lookup</button>
+    <button class="checker-tab" id="checker-tab-careplan" onclick="switchToCarePlanFromCheckers(this)">📋 Care Plan Builder</button>
+    <button class="checker-tab" id="checker-tab-narrative" onclick="switchToNarrativeFromCheckers(this)">✍️ Narrative Strengthener</button>
+    <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
+    <button class="checker-tab" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
+    <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
   </div>
   <div class="checker-body">
 
     <!-- MEDICATION CHECKER -->
-    <div id="meds-check" class="checker-section active">
+    <div id="meds-check" class="checker-section">
       <div class="checker-field">
         <label>Medication Name</label>
         <input type="text" id="med-name" placeholder="e.g. atorvastatin, metformin, furosemide, lorazepam...">
@@ -3911,7 +3925,7 @@ Chronic pain"></textarea>
       <div id="tier-results" style="display:none;margin-top:20px"></div>
     </div>
 
-    <div id="icd-lookup" class="checker-section">
+    <div id="icd-lookup" class="checker-section active">
       <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🔎</span><div>
         <strong>How this works:</strong> Type or paste a list of diagnoses — one per line. Be as specific as possible (include site, type, laterality, chronicity where relevant). The tool will return the best-match ICD-10 code for each, flag any that need clarification, and let you send the full coded list directly to the Problem List Tiering tool.
       </div></div>
@@ -4090,13 +4104,11 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 })();
 
 // ── Tab switching ──────────────────────────────────────────────────
-let lastRefSubTab = 'meds';
 let lastLearnSubTab = 'sample';
 
 function switchTab(name, btn) {
-  // Reference and Learn are virtual groups — map to their last-viewed subpanel
+  // Learn is a virtual group spanning meds/rel/sample/guide — map to last-viewed subpanel
   let targetId = name;
-  if (name === 'reference') targetId = lastRefSubTab;
   if (name === 'learn') targetId = lastLearnSubTab;
 
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -4106,12 +4118,9 @@ function switchTab(name, btn) {
   if (targetPanel) targetPanel.classList.add('active');
   if (btn) btn.classList.add('active');
 
-  // Sync subtab bar active state for reference/learn groups
-  if (name === 'reference' || ['meds','rel','icd'].indexOf(name) !== -1) {
-    syncSubTabButtons(targetId, ['meds','rel','icd']);
-  }
-  if (name === 'learn' || ['sample','guide'].indexOf(name) !== -1) {
-    syncSubTabButtons(targetId, ['sample','guide']);
+  // Sync subtab bar active state for the Learn group
+  if (name === 'learn' || ['meds','rel','sample','guide'].indexOf(name) !== -1) {
+    syncSubTabButtons(targetId, ['meds','rel','sample','guide']);
   }
 
   // Show/hide bottom bar
@@ -4127,14 +4136,9 @@ function switchSubTab(name, btn) {
   const targetPanel = document.getElementById('panel-'+name);
   if (targetPanel) targetPanel.classList.add('active');
 
-  if (['meds','rel','icd'].indexOf(name) !== -1) {
-    lastRefSubTab = name;
-    syncSubTabButtons(name, ['meds','rel','icd']);
-    syncMainTabActive('reference');
-  }
-  if (['sample','guide'].indexOf(name) !== -1) {
+  if (['meds','rel','sample','guide'].indexOf(name) !== -1) {
     lastLearnSubTab = name;
-    syncSubTabButtons(name, ['sample','guide']);
+    syncSubTabButtons(name, ['meds','rel','sample','guide']);
     syncMainTabActive('learn');
   }
   window.scrollTo(0,0);
@@ -4224,6 +4228,13 @@ function closeModal() {
 
 // ── ICD-10 filtering ───────────────────────────────────────────────
 let icdActiveCat = 'all';
+
+function openIcdGoogleSearch() {
+  const search = document.getElementById('icdSearch').value.trim();
+  if (!search) return;
+  const query = encodeURIComponent(search + ' ICD-10 code');
+  window.open('https://www.google.com/search?q=' + query, '_blank');
+}
 
 function filterICD(btn, cat) {
   if(cat !== null) {
@@ -4368,10 +4379,50 @@ initPanelSearch('checkSearch', 'panel-checklist', 'checkSearchClear');
 
 // ── Checker tab switching ─────────────────────────────────────────
 function switchCheckerTab(sectionId, btn) {
+  // Ensure panel-checker itself is active (in case we're coming from Care Plan Builder or Narrative Strengthener)
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  const checkerPanel = document.getElementById('panel-checker');
+  if (checkerPanel) checkerPanel.classList.add('active');
+  syncMainTabActive('checker');
+
   document.querySelectorAll('.checker-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.checker-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(sectionId).classList.add('active');
   btn.classList.add('active');
+}
+
+function switchToIcdRefFromCheckers(btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById('panel-icd');
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.checker-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  syncMainTabActive('checker');
+  window.scrollTo(0,0);
+}
+
+function switchToCarePlanFromCheckers(btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById('panel-careplan');
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.checker-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  syncMainTabActive('checker');
+  window.scrollTo(0,0);
+}
+
+function switchToNarrativeFromCheckers(btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.subpanel').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById('panel-narrative');
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.checker-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  syncMainTabActive('checker');
+  window.scrollTo(0,0);
 }
 function fillMedExample(name, primary, indication, context) {
   document.getElementById('med-name').value = name;
@@ -8710,7 +8761,7 @@ function cpQuickFillDirect(problem, primary, details) {
   if (sel) sel.value = 'comfort';
   document.getElementById('cp-output-wrap').classList.remove('show');
   document.getElementById('cp-error').classList.remove('show');
-  switchTab('careplan', document.querySelector('[onclick*=careplan]'));
+  switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'));
   setTimeout(function() {
     const el = document.getElementById('cp-problem');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -9983,32 +10034,58 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
   await Promise.all(cards.map(async function(c) {
     const it = c.item;
     const isPrimary = it.diagnosis === primaryDx;
-    const prompt = [
-      'You are a hospice care plan expert. Generate a single care plan for the following hospice problem.',
-      '',
-      'Primary Hospice Diagnosis: ' + primaryDx,
-      'Care Plan Problem: ' + it.diagnosis,
-      (patientDetails ? 'Patient Details: ' + patientDetails : ''),
-      '',
-      'Generate:',
-      '1. ONE comfort-focused goal appropriate for hospice (measurable, not curative)',
-      '2. 3-5 interventions. Each must start with ASSESS:, EDUCATE:, or PERFORM: followed by "Nurse will..."',
-      (isPrimary ? '3. Also include these required interventions for the primary diagnosis:' : ''),
-      (isPrimary ? '   - PERFORM: Nurse will enter admission order as directed.' : ''),
-      (isPrimary ? '   - PERFORM: Nurse will enter nutrition order as directed (documented as Nutrition in Firenote).' : ''),
-      (isPrimary ? '   - PERFORM: Nurse will identify and document the responsible party for medication administration, assess and provide medication education including purpose, dosing, administration, and potential side effects.' : ''),
-      (isPrimary ? '   - PERFORM: Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' : ''),
-      '',
-      'Respond ONLY with valid JSON, no markdown, no extra text:',
-      '{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."]}'
-    ].filter(Boolean).join('\n');
+
+    const goalsMap = {
+      comfort: 'comfort and symptom management',
+      family: 'family and caregiver support and education',
+      spiritual: 'spiritual and psychosocial wellbeing',
+      safety: 'safety and fall prevention'
+    };
+    const goalsEmphasis = goalsMap['comfort']; // Build All defaults to comfort-focused, matching Tier Checker's primary use case
+
+    const requiredPrimaryInterventions = isPrimary ? `
+
+This is the PRIMARY hospice diagnosis — also include these required interventions in addition to the clinically-relevant ones:
+   PERFORM — Nurse will enter admission order as directed.
+   PERFORM — Nurse will enter nutrition order as directed (documented as "Nutrition" in Firenote).
+   PERFORM — Nurse will identify and document the responsible party for medication administration, assess and provide medication education including purpose, dosing, administration, and potential side effects.
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.` : '';
+
+    const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
+
+Generate a complete hospice care plan for the following:
+
+CARE PLAN PROBLEM/DIAGNOSIS: ${it.diagnosis}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${patientDetails || 'Not provided'}
+GOALS OF CARE EMPHASIS: ${goalsEmphasis}
+
+REQUIREMENTS — STRICTLY FOLLOW THESE:
+
+1. GOAL: Must be comfort-focused only. Use this EXACT format:
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators], and trends in caregiver feedback by the end of the current benefit period."
+
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST follow this exact structure:
+
+   ASSESS — Nurse will assess [specific symptom, condition, or clinical indicator] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to the problem]
+   PERFORM — Nurse will perform [specific skilled nursing task or procedure]
+
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.${requiredPrimaryInterventions}
+
+3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
+
+4. PHYSICIAN/IDT COORDINATION: Include one sentence describing what to flag at IDT or discuss with the physician regarding this problem.
+
+Respond ONLY with valid JSON, no markdown, no extra text:
+{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
 
         let result = null;
     try {
       const resp = await fetch('/.netlify/functions/claude', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ prompt: prompt, max_tokens: 1500 })
+        body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
       });
       if (resp.ok) {
         const data = await resp.json();
@@ -10091,6 +10168,21 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   });
 
   body.appendChild(ivSec);
+
+  // Physician/IDT Coordination section
+  if (result.physicianCoordination) {
+    const coordSec = document.createElement('div');
+    coordSec.style.cssText = 'margin-top:12px';
+    const coordLabel = document.createElement('div');
+    coordLabel.style.cssText = 'font-size:.74rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px';
+    coordLabel.textContent = 'Physician/IDT Coordination';
+    const coordBody = document.createElement('div');
+    coordBody.style.cssText = 'font-size:.85rem;line-height:1.55;color:var(--text-mid);background:#eef3fb;border:1px solid #bfdbfe;border-radius:5px;padding:9px 11px';
+    coordBody.textContent = result.physicianCoordination;
+    coordSec.appendChild(coordLabel);
+    coordSec.appendChild(coordBody);
+    body.appendChild(coordSec);
+  }
 }
 
 function copyAllCpText(btn, text) {
@@ -10710,8 +10802,18 @@ function clearIcdLookup() {
 <!-- ══════════════════════════════════════════════════════════════════
      PANEL 8 — CARE PLAN BUILDER
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-careplan">
+<div class="subpanel" id="panel-careplan">
 <div class="container">
+
+<div class="subtab-bar" style="background:var(--navy);margin:-22px -16px 18px;border-radius:0">
+  <button class="subtab-btn" onclick="switchCheckerTab('icd-lookup', document.querySelector('[onclick*=icd-lookup]'))">🔎 ICD-10 Code Lookup</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('tier-check', document.querySelector('[onclick*=tier-check]'))">🗂️ Problem List Tiering</button>
+  <button class="subtab-btn active">📋 Care Plan Builder</button>
+  <button class="subtab-btn" onclick="switchToNarrativeFromCheckers(document.getElementById('checker-tab-narrative'))">✍️ Narrative Strengthener</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
+</div>
 
 <style>
 .ai-tool-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:16px}
@@ -10827,8 +10929,18 @@ function clearIcdLookup() {
 <!-- ══════════════════════════════════════════════════════════════════
      PANEL 9 — NARRATIVE STRENGTHENER
 ══════════════════════════════════════════════════════════════════ -->
-<div class="panel" id="panel-narrative">
+<div class="subpanel" id="panel-narrative">
 <div class="container">
+
+<div class="subtab-bar" style="background:var(--navy);margin:-22px -16px 18px;border-radius:0">
+  <button class="subtab-btn" onclick="switchCheckerTab('icd-lookup', document.querySelector('[onclick*=icd-lookup]'))">🔎 ICD-10 Code Lookup</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('tier-check', document.querySelector('[onclick*=tier-check]'))">🗂️ Problem List Tiering</button>
+  <button class="subtab-btn" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'))">📋 Care Plan Builder</button>
+  <button class="subtab-btn active">✍️ Narrative Strengthener</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
+</div>
 
 <div class="intro-strip" style="margin-bottom:14px">
   <span>✍️</span>
