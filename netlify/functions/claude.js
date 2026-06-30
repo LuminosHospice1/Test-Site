@@ -1,5 +1,4 @@
 exports.handler = async function (event, context) {
-
   // ── CORS headers ────────────────────────────────────────────────
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -7,12 +6,10 @@ exports.handler = async function (event, context) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
   };
-
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
-
   // Only allow POST
   if (event.httpMethod !== 'POST') {
     return {
@@ -21,7 +18,6 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
-
   // ── Get API key from environment ────────────────────────────────
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -32,7 +28,6 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'API key not configured. Please set ANTHROPIC_API_KEY in Netlify environment variables.' })
     };
   }
-
   // ── Parse request body ──────────────────────────────────────────
   let prompt, max_tokens, system;
   try {
@@ -47,7 +42,6 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'Invalid request body' })
     };
   }
-
   if (!prompt) {
     return {
       statusCode: 400,
@@ -55,20 +49,18 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ error: 'Missing prompt in request body' })
     };
   }
-
   // ── Call Anthropic API ──────────────────────────────────────────
   try {
     const requestBody = {
       model: 'claude-haiku-4-5',
       max_tokens: Math.min(max_tokens, 4000), // cap at 4000 for cost control
+      temperature: 0, // deterministic output — reduces run-to-run variation for clinical coding consistency
       messages: [{ role: 'user', content: prompt }]
     };
-
     // Add system prompt if provided
     if (system) {
       requestBody.system = system;
     }
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -78,9 +70,7 @@ exports.handler = async function (event, context) {
       },
       body: JSON.stringify(requestBody)
     });
-
     const data = await response.json();
-
     if (!response.ok) {
       console.error('Anthropic API error:', data);
       return {
@@ -92,13 +82,11 @@ exports.handler = async function (event, context) {
         })
       };
     }
-
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify(data)
     };
-
   } catch (err) {
     console.error('Function error:', err);
     return {
