@@ -8823,7 +8823,7 @@ For each diagnosis on the list, determine:
    - parentRationale: 1 short sentence (max 12 words) explaining WHY this diagnosis is addressed under that parent (e.g. "Caused by hepatic metastasis; managed within liver cancer interventions")
    - parentWhat: 1 short phrase (max 10 words) stating what specifically should be noted or addressed (e.g. "Monitor for worsening; comfort positioning and skin care")
 4. A confidence level: "high" or "low". Use "low" whenever the relationship is plausible but not clearly supported by what's on this specific list (e.g., a symptom that could plausibly relate to more than one diagnosis, or relate to something not on the list).
-5. hospiceRelatedness: "related", "unrelated", or "uncertain". Use hospice MAC/LCD standards — a diagnosis is RELATED if it contributes to the terminal prognosis, symptom burden, functional decline, or treatment complexity of the primary hospice diagnosis. It is UNRELATED if it is a completely separate condition that does not affect the terminal prognosis or care. Use "uncertain" when the relationship depends on clinical details not available in the list. Max 8-word rationale in relatednessReason field.
+5. hospiceRelatedness: "related", "unrelated", or "uncertain". Use hospice MAC/LCD standards — a diagnosis is RELATED if it contributes to the terminal prognosis, symptom burden, functional decline, or treatment complexity of the primary hospice diagnosis. It is UNRELATED if it is a completely separate condition that does not affect the terminal prognosis or care. Use "uncertain" when the relationship depends on clinical details not available in the list. Max 8-word rationale in relatednessReason field. When hospiceRelatedness is "uncertain", also include relatednessLean: "related" or "unrelated" — your best guess based on typical clinical presentation, indicating which way the nurse should lean before confirming. Omit relatednessLean (set to null) when hospiceRelatedness is not "uncertain".
 
 In the "diagnosis" field, repeat back the list item text exactly but do not add anything extra to it.
 
@@ -8832,8 +8832,9 @@ Separately, after reviewing the full list, identify up to 3 commonly-related dia
 CRITICAL: You must process every single diagnosis in the list above and include it in the "items" array — do not skip any, and do not run out of room. Keep every field as short as instructed so the complete response fits. Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace or indentation. Exact format:
 {
   "items": [
-    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Primary terminal diagnosis"},
-    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Directly caused by terminal cardiac condition"}
+    {"diagnosis": "exact text from the list", "tier": 1, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Primary terminal diagnosis", "relatednessLean": null},
+    {"diagnosis": "exact text from the list", "tier": 2, "reasoning": "...", "parentProblem": "CHF", "parentRationale": "Caused by fluid overload from CHF", "parentWhat": "Monitor edema; comfort positioning", "associatedSymptom": true, "confidence": "high", "hospiceRelatedness": "related", "relatednessReason": "Directly caused by terminal cardiac condition", "relatednessLean": null},
+    {"diagnosis": "exact text from the list", "tier": 3, "reasoning": "...", "parentProblem": null, "parentRationale": null, "parentWhat": null, "associatedSymptom": false, "confidence": "high", "hospiceRelatedness": "uncertain", "relatednessReason": "Could contribute to falls/decline depending on severity", "relatednessLean": "related"}
   ],
   "missing": [
     {"suggestion": "Dyspnea", "icd10": "R06.00", "required": false, "reasoning": "Commonly associated with CHF; consider whether the patient has this symptom and if it should be added and care planned."},
@@ -9029,7 +9030,8 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       } else if (it.hospiceRelatedness === 'unrelated') {
         html += ' <span title="' + escapeHtml(it.relatednessReason || 'Does not contribute to terminal prognosis') + '" style="font-size:.7rem;background:#f1f3f5;color:#5a6472;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #d0d5dd;cursor:help">✗ Unrelated</span>';
       } else if (it.hospiceRelatedness === 'uncertain') {
-        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Relatedness depends on clinical context') + '" style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #ffe082;cursor:help">? Verify</span>';
+        const leanLabel = it.relatednessLean === 'related' ? 'Likely Related — Verify' : it.relatednessLean === 'unrelated' ? 'Likely Unrelated — Verify' : '? Verify';
+        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Relatedness depends on clinical context') + '" style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #ffe082;cursor:help">' + escapeHtml(leanLabel) + '</span>';
       }
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
@@ -9667,7 +9669,7 @@ ${additionLines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 
 ${buildTierFrameworkSummary()}
 
-For each NEW diagnosis, determine tier (1/2/3), short reasoning (max 8 words), parentProblem if Tier 2 (must be one of the already-confirmed Tier 1 items or another new item you tier as Tier 1), parentRationale (max 12 words), parentWhat (max 10 words), associatedSymptom (true/false), confidence (high/low), hospiceRelatedness ("related"/"unrelated"/"uncertain"), relatednessReason (max 8 words — does this contribute to terminal prognosis or symptom burden?).
+For each NEW diagnosis, determine tier (1/2/3), short reasoning (max 8 words), parentProblem if Tier 2 (must be one of the already-confirmed Tier 1 items or another new item you tier as Tier 1), parentRationale (max 12 words), parentWhat (max 10 words), associatedSymptom (true/false), confidence (high/low), hospiceRelatedness ("related"/"unrelated"/"uncertain"), relatednessReason (max 8 words — does this contribute to terminal prognosis or symptom burden?), relatednessLean ("related" or "unrelated" if hospiceRelatedness is "uncertain", otherwise null).
 
 Respond ONLY with valid JSON, no markdown, no extra whitespace:
 {"items":[
