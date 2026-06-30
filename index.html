@@ -885,10 +885,10 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </style>
 <div class="subpanel" id="panel-guide">
 <div class="subtab-bar">
-  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
 </div>
 
 <div style="max-width:1080px;margin:0 auto">
@@ -939,7 +939,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     <a href="#sec-checklist" class="toc-item"><span class="toc-num">4</span> ✅ Admission Checklist Tab</a>
     <a href="#sec-meds" class="toc-item"><span class="toc-num">5</span> 💊 Medication Coverage Tab</a>
     <a href="#sec-rel" class="toc-item"><span class="toc-num">6</span> 🔗 Diagnosis Relatedness Tab</a>
-    <a href="#sec-checkers" class="toc-item"><span class="toc-num">7</span> 🧠 Clinical Checkers Tab</a>
+    <a href="#sec-checkers" class="toc-item"><span class="toc-num">7</span> 🧠 Clinical Tools Tab</a>
     <a href="#sec-careplan" class="toc-item"><span class="toc-num">8</span> 📋 Care Plan Builder Tab</a>
     <a href="#sec-narrative" class="toc-item"><span class="toc-num">9</span> ✍️ Narrative Strengthener Tab</a>
     <a href="#sec-icd" class="toc-item"><span class="toc-num">10</span> 🔎 ICD-10 Reference Tab</a>
@@ -989,7 +989,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <div class="tab-card-body">Decision framework for determining whether a diagnosis is related or non-related to the terminal prognosis. Includes real-world examples and the 3-question process.</div>
     </div>
     <div class="tab-card">
-      <div class="tab-card-hdr"><span class="tab-card-icon">🧠</span><span class="tab-card-title">Clinical Checkers</span><span class="tab-card-tag ai">AI-Powered</span></div>
+      <div class="tab-card-hdr"><span class="tab-card-icon">🧠</span><span class="tab-card-title">Clinical Tools</span><span class="tab-card-tag ai">AI-Powered</span></div>
       <div class="tab-card-body">Three sub-tools: Medication Coverage Checker, Diagnosis Relatedness Checker, and Drug Interaction Parser — each backed by AI analysis of CMS hospice benefit rules.</div>
     </div>
     <div class="tab-card">
@@ -1058,8 +1058,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <div class="wf-step">
         <div class="wf-num">5</div>
         <div class="wf-content">
-          <div class="wf-title">For questionable medications or diagnoses — use the Clinical Checkers</div>
-          <div class="wf-desc">If you're unsure whether a medication is covered or a diagnosis is related, use the Clinical Checkers tab. Enter the details and review the AI guidance. Always bring the result to the physician conversation — the checker's output is a starting point, not a final determination.</div>
+          <div class="wf-title">For questionable medications or diagnoses — use the Clinical Tools tab</div>
+          <div class="wf-desc">If you're unsure whether a medication is covered or a diagnosis is related, use the Clinical Tools tab. Enter the details and review the AI guidance. Always bring the result to the physician conversation — the checker's output is a starting point, not a final determination.</div>
         </div>
       </div>
       <div class="wf-step">
@@ -1219,7 +1219,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <li><strong>Drug interactions with Z91.89:</strong> If any drug-to-drug interactions are identified, add a Z91.89 care plan problem. Use the Drug Interaction Parser — it generates the 3 standard interventions plus one combined Monitor For intervention listing all interactions grouped by severity level, and a copyable MD notification comment to paste on that intervention.</li>
     </ul>
 
-    <p>For live medication coverage analysis, use the <strong>🧠 Clinical Checkers → Medication Coverage</strong> sub-tab.</p>
+    <p>For live medication coverage analysis, use the <strong>🧠 Clinical Tools → Medication Coverage</strong> sub-tab.</p>
   </div>
 </div>
 
@@ -1267,7 +1267,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <div><strong>Relatedness is a physician determination.</strong> Your role is to bring the clinical picture to the physician and document the outcome. The tool helps you have that conversation — it does not make the determination for you.</div>
     </div>
 
-    <p>For live relatedness analysis, use the <strong>🧠 Clinical Checkers → Diagnosis Relatedness</strong> sub-tab.</p>
+    <p>For live relatedness analysis, use the <strong>🧠 Clinical Tools → Diagnosis Relatedness</strong> sub-tab.</p>
   </div>
 </div>
 
@@ -1278,12 +1278,12 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   <div class="section-hdr">
     <div class="section-num">7</div>
     <div class="section-bar">
-      <h2>🧠 Clinical Checkers Tab</h2>
+      <h2>🧠 Clinical Tools Tab</h2>
       <p>AI-powered tools — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser</p>
     </div>
   </div>
   <div class="section-body">
-    <p>The Clinical Checkers tab contains three AI-powered analysis tools organized as sub-tabs. Each one analyzes your input against CMS hospice benefit rules and returns detailed clinical guidance.</p>
+    <p>The Clinical Tools tab contains three AI-powered analysis tools organized as sub-tabs. Each one analyzes your input against CMS hospice benefit rules and returns detailed clinical guidance.</p>
 
     <div class="sub-gold">Sub-Tab 1 — 💊 Medication Coverage Checker</div>
     <p>Enter a medication name and the patient's active related diagnoses. The AI applies the local rule engine and CMS guidelines to determine likely coverage status.</p>
@@ -1624,9 +1624,9 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <tr><td>Not sure what a Firenote field is asking for</td><td>📋 Assessment Walkthrough — expand the matching card</td></tr>
         <tr><td>Building a care plan</td><td>📋 Care Plan Builder (AI) or 🔎 ICD-10 Reference (manual lookup)</td></tr>
         <tr><td>Writing the nursing narrative</td><td>✍️ Narrative Strengthener → Microsoft Copilot</td></tr>
-        <tr><td>Unsure if a medication is covered</td><td>🧠 Clinical Checkers → Medication Coverage sub-tab</td></tr>
-        <tr><td>Unsure if a diagnosis is related</td><td>🧠 Clinical Checkers → Diagnosis Relatedness sub-tab</td></tr>
-        <tr><td>Drug interaction alert in Firenote</td><td>🧠 Clinical Checkers → Drug Interaction Parser sub-tab</td></tr>
+        <tr><td>Unsure if a medication is covered</td><td>🧠 Clinical Tools → Medication Coverage sub-tab</td></tr>
+        <tr><td>Unsure if a diagnosis is related</td><td>🧠 Clinical Tools → Diagnosis Relatedness sub-tab</td></tr>
+        <tr><td>Drug interaction alert in Firenote</td><td>🧠 Clinical Tools → Drug Interaction Parser sub-tab</td></tr>
         <tr><td>Need the ICD-10 code for a diagnosis</td><td>🔎 ICD-10 Reference — search by name or code</td></tr>
         <tr><td>About to sign the admission</td><td>✅ Admission Checklist — work through every item</td></tr>
         <tr><td>Unsure how a section should be documented</td><td>📄 Sample Admission — find the matching section</td></tr>
@@ -1904,9 +1904,9 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div class="sub-navy" style="margin-top:12px">Drug Profile Review</div>
 <p style="font-size:.87rem;color:var(--text-mid);margin-bottom:6px">A comprehensive drug profile review is required on all new admissions, with medication changes, and with each recertification. This review requires the nurse to assess:</p>
 <ul class="blist"><li>Medication appropriateness</li><li>Potential drug-to-drug interactions</li><li>Potential drug allergies</li><li>The need for any laboratory monitoring (e.g., INR monitoring for patients on Coumadin)</li><li>Appropriate medications to consider for deprescribing that are no longer medically necessary</li></ul>
-<table class="dtable"><thead><tr><th>Review Item</th><th>What to Do</th></tr></thead><tbody><tr><td><strong>Care Plan Med Review</strong></td><td>Review the medications listed on the Care Plan and mark each one as Reviewed to document you've reviewed current meds during the visit.<br><br><strong>Reminder:</strong> Identify and document who is responsible for medication administration. Provide education on each medication including purpose, dosing, administration, and potential side effects. Confirm patient/caregiver verbalized understanding.</td></tr><tr><td><strong>Med Interaction Review</strong></td><td>Check for potential interactions. Drug-to-drug interactions and drug allergy items will populate in a red box above the med list. The admission nurse MUST review each interaction, discuss with the hospice physician, and document the outcome. Use the Drug Interaction Parser (Clinical Checkers tab) to generate the Z91.89 care plan with one Monitor For intervention covering all interactions. After marking the intervention <strong>Performed</strong>, click the <strong>comment bubble</strong> next to Performed and paste the MD Notification Comment generated by the parser.<br><br>
-<div style="background:var(--green-bg);border:1px solid var(--green);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:.85rem;color:var(--text)"><strong style="color:var(--green)">✅ No interactions identified?</strong> If the Firenote medication tab shows a <strong>green box</strong> (no interactions identified), <strong>no Z91.89 care plan problem is needed</strong> at this time. If a medication is added later that changes the box to red, add the Z91.89 problem at that point using the Drug Interaction Parser in the Clinical Checkers tab.</div>
-<strong style="color:var(--navy)">If the Firenote medication tab shows a red box (drug-to-drug interactions identified), use the Drug Interaction Parser in the Clinical Checkers tab:</strong><br><br>
+<table class="dtable"><thead><tr><th>Review Item</th><th>What to Do</th></tr></thead><tbody><tr><td><strong>Care Plan Med Review</strong></td><td>Review the medications listed on the Care Plan and mark each one as Reviewed to document you've reviewed current meds during the visit.<br><br><strong>Reminder:</strong> Identify and document who is responsible for medication administration. Provide education on each medication including purpose, dosing, administration, and potential side effects. Confirm patient/caregiver verbalized understanding.</td></tr><tr><td><strong>Med Interaction Review</strong></td><td>Check for potential interactions. Drug-to-drug interactions and drug allergy items will populate in a red box above the med list. The admission nurse MUST review each interaction, discuss with the hospice physician, and document the outcome. Use the Drug Interaction Parser (Clinical Tools tab) to generate the Z91.89 care plan with one Monitor For intervention covering all interactions. After marking the intervention <strong>Performed</strong>, click the <strong>comment bubble</strong> next to Performed and paste the MD Notification Comment generated by the parser.<br><br>
+<div style="background:var(--green-bg);border:1px solid var(--green);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:.85rem;color:var(--text)"><strong style="color:var(--green)">✅ No interactions identified?</strong> If the Firenote medication tab shows a <strong>green box</strong> (no interactions identified), <strong>no Z91.89 care plan problem is needed</strong> at this time. If a medication is added later that changes the box to red, add the Z91.89 problem at that point using the Drug Interaction Parser in the Clinical Tools tab.</div>
+<strong style="color:var(--navy)">If the Firenote medication tab shows a red box (drug-to-drug interactions identified), use the Drug Interaction Parser in the Clinical Tools tab:</strong><br><br>
 <span style="color:var(--purple);font-weight:700">Problem:</span> Z91.89 — Other Personal Risk Factors, Not Elsewhere Classified<br>
 <span style="color:var(--purple);font-weight:700">Goal:</span> Patient will remain free from adverse medication effects as measured by absence of observed signs/symptoms of medication-related complications, safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks by end of the current benefit period.<br><br>
 <span style="color:var(--purple);font-weight:700">Standard Interventions (always added — 3 total):</span><br>
@@ -1924,7 +1924,7 @@ The parser generates a short copyable comment to document the physician notifica
 Format: <em>Drug/Allergy interactions reviewed with Dr. [Name] on [Date]. [Physician response]. [Level] Drug Interaction - [Drug 1] and [Drug 2]...</em><br><br>
 The parser generates this automatically when you enter the physician name, date, and their response before parsing.<br><br>
 Keep the Monitor For intervention active unless the medication causing the interaction is discontinued and the alert clears from Firenote.<br><br>
-<span style="background:#eef3fb;padding:4px 8px;border-radius:4px;font-size:.85rem;color:#1e3a8a"><strong>💡 Tip:</strong> Use the Drug Interaction Parser in the Clinical Checkers tab — paste the full text from the Firenote red box, fill in the physician name, date, and response, and it generates all 4 interventions plus the MD comment, each with its own Copy button.</span>
+<span style="background:#eef3fb;padding:4px 8px;border-radius:4px;font-size:.85rem;color:#1e3a8a"><strong>💡 Tip:</strong> Use the Drug Interaction Parser in the Clinical Tools tab — paste the full text from the Firenote red box, fill in the physician name, date, and response, and it generates all 4 interventions plus the MD comment, each with its own Copy button.</span>
 </td></tr><tr><td><strong>Duplicate Med Review</strong></td><td>Identify and remove duplicate medication entries (often patient-reported meds that duplicate covered or encounter-ordered meds) to avoid confusion.</td></tr></tbody></table>
 
 <div class="sub-navy" style="margin-top:12px">Bereavement Risk Evaluation for Family / Caregivers</div>
@@ -2908,10 +2908,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 ══════════════════════════════════════════════════════════════════ -->
 <div class="subpanel" id="panel-sample">
 <div class="subtab-bar">
-  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
 </div>
 
 <div class="container">
@@ -3388,10 +3388,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══ PANEL 5 — MEDICATION COVERAGE ═══════════════════════════ -->
 <div class="subpanel" id="panel-meds">
 <div class="subtab-bar">
-  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
 </div>
 
 <div class="container">
@@ -3562,10 +3562,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <!-- ══ PANEL 6 — RELATEDNESS ════════════════════════════════════ -->
 <div class="subpanel" id="panel-rel">
 <div class="subtab-bar">
-  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
   <button class="subtab-btn" data-subtab="guide" onclick="switchSubTab('guide',this)">📖 User Guide</button>
   <button class="subtab-btn" data-subtab="meds" onclick="switchSubTab('meds',this)">💊 Medication Coverage</button>
   <button class="subtab-btn" data-subtab="rel" onclick="switchSubTab('rel',this)">🔗 Diagnosis Relatedness</button>
+  <button class="subtab-btn" data-subtab="sample" onclick="switchSubTab('sample',this)">📄 Sample Admission</button>
 </div>
 
 <div class="container">
@@ -3726,7 +3726,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </style>
 
 <div class="intro-strip" style="margin-bottom:14px">
-  <strong>Clinical Checkers</strong> — Enter a medication or diagnosis and the tool will instantly apply the local rule engine, then call Claude AI for a full clinical analysis — including documentation guidance, audit flags, and physician language — based on CMS hospice benefit standards.
+  <strong>Clinical Tools</strong> — Enter a medication or diagnosis and the tool will instantly apply the local rule engine, then call Claude AI for a full clinical analysis — including documentation guidance, audit flags, and physician language — based on CMS hospice benefit standards.
 </div>
 
 <div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>
@@ -3737,7 +3737,7 @@ Use these results as a starting point for your MD conversation, not as a final a
 
 <div class="checker-wrap">
   <div class="checker-header">
-    <h2>🧠 Clinical Checkers — Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser, Problem List Tiering &amp; ICD-10 Code Lookup</h2>
+    <h2>🧠 Clinical Tools — ICD-10 Lookup, Problem List Tiering, Care Plan Builder, Narrative Strengthener &amp; more</h2>
     <p>Enter medication and/or diagnosis details below — AI will apply CMS hospice benefit rules to provide guidance</p>
   </div>
   <div class="checker-tabs">
@@ -4104,7 +4104,7 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 })();
 
 // ── Tab switching ──────────────────────────────────────────────────
-let lastLearnSubTab = 'sample';
+let lastLearnSubTab = 'guide';
 
 function switchTab(name, btn) {
   // Learn is a virtual group spanning meds/rel/sample/guide — map to last-viewed subpanel
