@@ -9464,6 +9464,125 @@ function demoteToAssocSymptom(dx, parentDx, container) {
   newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function undoPromotion(dx, container) {
+  // Offer the nurse a choice: send back to Tier 2 (assign a parent) or Tier 3 (no care plan needed)
+  var modal = document.getElementById('undo-promo-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'undo-promo-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box"><div class="modal-header"><span style="font-size:1.1rem">↩</span><h3>Undo Promotion</h3></div><div class="modal-body"><p>Where should this diagnosis go instead?</p>'
+      + '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">'
+      + '<button id="undo-to-tier2-btn" style="text-align:left;padding:12px 14px;background:var(--row-alt);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-family:inherit"><strong style="color:var(--navy);font-size:.88rem">Tier 2 — Addressed Under Another Problem</strong><div style="color:var(--text-mid);font-size:.8rem;margin-top:2px">Stays on the problem list, managed under another Tier 1 care plan</div></button>'
+      + '<button id="undo-to-tier3-btn" style="text-align:left;padding:12px 14px;background:var(--row-alt);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-family:inherit"><strong style="color:var(--navy);font-size:.88rem">Tier 3 — Diagnosis List Only</strong><div style="color:var(--text-mid);font-size:.8rem;margin-top:2px">Not currently causing symptoms or requiring intervention</div></button>'
+      + '</div></div><div class="modal-footer"><button class="modal-cancel-btn" id="undo-promo-cancel">Cancel</button></div></div>';
+    document.body.appendChild(modal);
+  }
+
+  const cancelBtn = document.getElementById('undo-promo-cancel');
+  const newCancel = cancelBtn.cloneNode(true);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  newCancel.addEventListener('click', function() { modal.classList.remove('show'); });
+
+  const toTier2Btn = document.getElementById('undo-to-tier2-btn');
+  const newTier2Btn = toTier2Btn.cloneNode(true);
+  toTier2Btn.parentNode.replaceChild(newTier2Btn, toTier2Btn);
+  newTier2Btn.addEventListener('click', function() {
+    modal.classList.remove('show');
+    removeTierItemRow(dx, container, 1);
+    showAssocSymptomDropdownForTier3(dx, container); // reuses the same parent-picker, works for any source tier
+  });
+
+  const toTier3Btn = document.getElementById('undo-to-tier3-btn');
+  const newTier3Btn = toTier3Btn.cloneNode(true);
+  toTier3Btn.parentNode.replaceChild(newTier3Btn, toTier3Btn);
+  newTier3Btn.addEventListener('click', function() {
+    modal.classList.remove('show');
+    moveItemToTier3(dx, container);
+  });
+
+  modal.onclick = function(e) { if (e.target === modal) modal.classList.remove('show'); };
+  modal.classList.add('show');
+}
+
+function removeTierItemRow(dx, container, fromTier) {
+  const resultsEl = container || document.getElementById('tier-results');
+  const group = resultsEl.querySelector('[data-tier-group="' + fromTier + '"]');
+  const row = resultsEl.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  if (row) row.remove();
+  if (group) {
+    const remaining = group.querySelectorAll('[data-tier="' + fromTier + '"]').length;
+    const hdr = group.querySelector('div:first-child');
+    if (hdr && TIER_CONFIG[fromTier]) hdr.textContent = TIER_CONFIG[fromTier].label + ' (' + remaining + ')';
+    if (remaining === 0) group.style.display = 'none';
+  }
+}
+
+function moveItemToTier3(dx, container) {
+  if (!tierCurrentData) return;
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (!item) return;
+
+  const resultsEl = container || document.getElementById('tier-results');
+  const fromTier = item.tier;
+
+  item.tier = 3;
+  item.parentProblem = null;
+  item.parentRationale = null;
+  item.parentWhat = null;
+  item.associatedSymptom = false;
+
+  const lockKey = dx.toLowerCase().trim();
+  if (tierLockedItems.has(lockKey)) tierLockedItems.set(lockKey, item);
+
+  removeTierItemRow(dx, resultsEl, fromTier);
+
+  let tier3Group = resultsEl.querySelector('[data-tier-group="3"]');
+  const newRow = document.createElement('div');
+  newRow.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
+  newRow.setAttribute('data-tier', 3);
+  newRow.setAttribute('data-dx-key', dx);
+
+  let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">→ Moved to Tier 3</span>';
+  html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved by nurse — not currently requiring intervention</div>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0">';
+  html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Tier 1</button>';
+  html += '<button class="tier-promote-tier2-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">→ Tier 2</button>';
+  html += '</div></div>';
+  newRow.innerHTML = html;
+
+  newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
+    promoteTierItem(dx, resultsEl, tierCurrentPrimaryDx);
+  });
+  newRow.querySelector('.tier-promote-tier2-btn').addEventListener('click', function() {
+    promoteTier3toTier2(dx, resultsEl);
+  });
+
+  if (!tier3Group) {
+    // Tier 3 group may have been hidden/removed if it reached 0 — recreate it
+    const cfg = TIER_CONFIG[3];
+    tier3Group = document.createElement('div');
+    tier3Group.style.cssText = 'margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden';
+    tier3Group.setAttribute('data-tier-group', 3);
+    const groupHdr = document.createElement('div');
+    groupHdr.style.cssText = 'padding:9px 14px;background:' + cfg.bg + ';border-bottom:1px solid var(--border);font-size:.78rem;font-weight:700;color:' + cfg.color + ';text-transform:uppercase;letter-spacing:.05em';
+    groupHdr.textContent = cfg.label + ' (0)';
+    tier3Group.appendChild(groupHdr);
+    resultsEl.appendChild(tier3Group);
+  }
+
+  tier3Group.appendChild(newRow);
+  tier3Group.style.display = '';
+  const count = tier3Group.querySelectorAll('[data-tier="3"]').length;
+  const hdr = tier3Group.querySelector('div:first-child');
+  if (hdr) hdr.textContent = TIER_CONFIG[3].label + ' (' + count + ')';
+
+  newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function promoteTier3toTier2(dx, container) {
   if (!tierCurrentData) return;
   const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
@@ -9647,12 +9766,19 @@ function promoteTierItem(dx, container, primaryDx) {
   html += ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">⬆ Promoted to Tier 1</span>';
   html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Promoted by nurse — requires standalone care plan</div>';
   html += '</div>';
-  html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">';
+  html += '<button class="tier-cp-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:6px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">📋 Build Care Plan</button>';
+  html += '<button class="tier-undo-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:6px 11px;background:var(--row-alt);color:var(--text-mid);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">↩ Undo Promotion</button>';
+  html += '</div>';
   html += '</div>';
   newRow.innerHTML = html;
 
   newRow.querySelector('.tier-cp-btn').addEventListener('click', function() {
     cpQuickFillDirect(dx, tierCurrentPrimaryDx, (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : ''));
+  });
+
+  newRow.querySelector('.tier-undo-btn').addEventListener('click', function() {
+    undoPromotion(dx, container);
   });
 
   if (tier1Group) {
