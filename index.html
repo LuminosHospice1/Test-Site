@@ -9469,22 +9469,83 @@ function promoteTier3toTier2(dx, container) {
   const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
   if (!item) return;
 
-  // Update data
-  item.tier = 2;
-  item.parentProblem = null;
-  item.parentRationale = null;
-  item.parentWhat = null;
-  item.associatedSymptom = false;
+  // Reuse the same Associated Symptom modal/flow used when demoting a Tier 1 item —
+  // this ensures the resulting row gets the proper "Addressed under / Why / What to address" formatting
+  // instead of a generic placeholder. We pass a flag so demoteToAssocSymptom knows the item is coming
+  // from Tier 3 (not Tier 1), so it removes from the correct group.
+  showAssocSymptomDropdownForTier3(dx, container);
+}
 
-  // Find Tier 2 and Tier 3 groups
-  const tier2Group = container.querySelector('[data-tier-group="2"]');
-  const tier3Group = container.querySelector('[data-tier-group="3"]');
+function showAssocSymptomDropdownForTier3(dx, container) {
+  const tier1Options = (tierCurrentData ? tierCurrentData.items : [])
+    .filter(function(it) { return it.tier === 1 && it.diagnosis !== dx; })
+    .map(function(it) { return it.diagnosis; });
+
+  if (tier1Options.length === 0) {
+    alert('No Tier 1 diagnoses available to assign as parent. Add at least one Tier 1 care plan first.');
+    return;
+  }
+
+  var modal = document.getElementById('assoc-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'assoc-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = '<div class="modal-box"><div class="modal-header"><span style="font-size:1.1rem">🔗</span><h3>Move to Tier 2 — Associated Symptom</h3></div><div class="modal-body"><p>Select the Tier 1 care plan this symptom will be addressed under:</p><select id="assoc-modal-select" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;margin-bottom:0"></select></div><div class="modal-footer"><button class="modal-cancel-btn" id="assoc-modal-cancel">Cancel</button><button class="modal-confirm-btn" id="assoc-modal-confirm" style="background:#1a6a9a">🔗 Confirm as Associated Symptom</button></div></div>';
+    document.body.appendChild(modal);
+  }
+
+  const select = document.getElementById('assoc-modal-select');
+  select.innerHTML = '';
+  tier1Options.forEach(function(opt) {
+    const o = document.createElement('option');
+    o.value = opt;
+    o.textContent = opt;
+    select.appendChild(o);
+  });
+
+  const cancelBtn = document.getElementById('assoc-modal-cancel');
+  const confirmBtn = document.getElementById('assoc-modal-confirm');
+
+  const newCancel = cancelBtn.cloneNode(true);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  newCancel.addEventListener('click', function() { modal.classList.remove('show'); });
+
+  const newConfirm = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+  newConfirm.addEventListener('click', function() {
+    const parentDx = document.getElementById('assoc-modal-select').value;
+    modal.classList.remove('show');
+    demoteTier3ToAssocSymptom(dx, parentDx, container);
+  });
+
+  modal.onclick = function(e) { if (e.target === modal) modal.classList.remove('show'); };
+  modal.classList.add('show');
+}
+
+function demoteTier3ToAssocSymptom(dx, parentDx, container) {
+  if (!tierCurrentData || !parentDx) return;
+
+  const item = tierCurrentData.items.find(function(it) { return it.diagnosis === dx; });
+  if (!item) return;
+  item.tier = 2;
+  item.parentProblem = parentDx;
+  item.parentRationale = 'Identified by nurse as related to this condition';
+  item.parentWhat = 'Address within the parent care plan interventions';
+  item.associatedSymptom = true;
+  item.confidence = 'high';
+
+  const lockKey = dx.toLowerCase().trim();
+  if (tierLockedItems.has(lockKey)) tierLockedItems.set(lockKey, item);
+
+  const resultsEl = container || document.getElementById('tier-results');
+  const tier2Group = resultsEl.querySelector('[data-tier-group="2"]');
+  const tier3Group = resultsEl.querySelector('[data-tier-group="3"]');
 
   // Remove from Tier 3
-  const oldRow = container.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  const oldRow = resultsEl.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
   if (oldRow) oldRow.remove();
 
-  // Update Tier 3 count
   if (tier3Group) {
     const remaining = tier3Group.querySelectorAll('[data-tier="3"]').length;
     const hdr = tier3Group.querySelector('div:first-child');
@@ -9492,23 +9553,28 @@ function promoteTier3toTier2(dx, container) {
     if (remaining === 0) tier3Group.style.display = 'none';
   }
 
-  // Build new Tier 2 row
+  // Build properly-formatted Tier 2 row — matches the standard Tier 2 layout exactly
   const newRow = document.createElement('div');
   newRow.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem;color:var(--text)';
   newRow.setAttribute('data-tier', 2);
   newRow.setAttribute('data-dx-key', dx);
 
-  newRow.innerHTML = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
-    + '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>'
-    + ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">→ Moved to Tier 2</span>'
-    + '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Promoted by nurse — assign a parent care plan below</div>'
-    + '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem;color:var(--text-mid);font-style:italic">No parent assigned yet — review and confirm which Tier 1 care plan this should be addressed under</div>'
-    + '</div>'
-    + '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>'
+  let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
+  html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved to Tier 2 by nurse</div>';
+  html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
+    + '<div style="color:var(--navy);font-weight:600;margin-bottom:2px">Addressed under: <strong>' + escapeHtml(parentDx) + '</strong></div>'
+    + '<div style="color:var(--text-mid);font-size:.8rem;font-style:italic">Why: Identified by nurse as related to this condition</div>'
+    + '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>'
     + '</div>';
+  html += '</div>';
+  html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 11px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+  html += '</div>';
+  newRow.innerHTML = html;
 
   newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
-    promoteTierItem(dx, container, tierCurrentPrimaryDx);
+    promoteTierItem(dx, resultsEl, tierCurrentPrimaryDx);
   });
 
   if (tier2Group) {
