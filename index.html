@@ -9721,6 +9721,22 @@ Respond ONLY with valid JSON, no markdown, no extra whitespace:
     tierLockedItems.set(it.diagnosis.toLowerCase().trim(), it);
   });
 
+  // Remove the just-added diagnoses from the "Consider Adding" missing list so they don't show twice
+  if (tierCurrentData.missing && tierCurrentData.missing.length > 0) {
+    const addedSuggestions = additions.map(function(a) { return (a.suggestion || '').toLowerCase().trim(); });
+    const addedCodes = additions.map(function(a) { return (a.icd10 || '').toLowerCase().trim(); }).filter(Boolean);
+    tierCurrentData.missing = tierCurrentData.missing.filter(function(m) {
+      const mSuggestion = (m.suggestion || '').toLowerCase().trim();
+      const mCode = (m.icd10 || '').toLowerCase().trim();
+      // Remove if exact suggestion match, OR if this missing item's code matches an added code,
+      // OR if the missing item's suggestion text contains an added code (covers split F-code options)
+      const exactMatch = addedSuggestions.indexOf(mSuggestion) !== -1;
+      const codeMatch = mCode && addedCodes.indexOf(mCode) !== -1;
+      const codeInSuggestion = addedCodes.some(function(c) { return c && mSuggestion.indexOf(c) !== -1; });
+      return !(exactMatch || codeMatch || codeInSuggestion);
+    });
+  }
+
   tierQueuedAdditions = new Map();
 
   // Re-render the full combined results
