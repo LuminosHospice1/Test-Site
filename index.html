@@ -10328,13 +10328,44 @@ async function runIcdLookup() {
 
   const prompt = `You are a hospice clinical coding expert. For each diagnosis listed below, return the most specific ICD-10-CM code possible.
 
+VERIFIED CODE REFERENCE — for the following diagnosis families, you MUST use ONLY the exact codes listed here. Do not generate, modify, or invent codes outside this list for these specific conditions:
+
+CHRONIC RESPIRATORY FAILURE (J96.1x series):
+- J96.10 = Chronic respiratory failure, unspecified whether with hypoxia or hypercapnia
+- J96.11 = Chronic respiratory failure with hypoxia
+- J96.12 = Chronic respiratory failure with hypercapnia
+(There is no J96.20 or other variant for chronic — J96.2x is reserved for acute-on-chronic respiratory failure: J96.20 unspecified, J96.21 with hypoxia, J96.22 with hypercapnia)
+
+ATRIAL FIBRILLATION (I48.9x series, unspecified type):
+- I48.91 = Unspecified atrial fibrillation
+- I48.20 = Chronic atrial fibrillation, unspecified
+- I48.0 = Paroxysmal atrial fibrillation
+- I48.11 = Longstanding persistent atrial fibrillation
+- I48.19 = Other persistent atrial fibrillation
+(Do NOT invent ventricular-response-rate-specific codes like "with rapid ventricular response" or "with slow ventricular response" or codes like I48.901 — these do not exist in ICD-10-CM. Ventricular response rate is not a coding axis for I48. If the input does not specify paroxysmal/persistent/permanent, use I48.91 with needsClarification: false.)
+
+ANXIETY (F41 series):
+- F41.1 = Generalized anxiety disorder
+- F41.9 = Anxiety disorder, unspecified
+- F41.0 = Panic disorder (ONLY offer this if the input specifically mentions panic attacks — do not offer for generic "anxiety")
+
+GENERALIZED WEAKNESS:
+- R53.1 = Weakness (use this for "generalized weakness," "weakness," or "asthenia")
+- R53.81 = Other malaise (use this ONLY for "malaise" or "fatigue" specifically — NOT for "weakness." If the input says "weakness," always use R53.1, never R53.81.)
+
+HYPERLIPIDEMIA:
+- E78.5 = Hyperlipidemia, unspecified (use this directly with needsClarification: false UNLESS the input specifies a subtype like "high cholesterol" or "high triglycerides")
+- E78.0 = Pure hypercholesterolemia (only if cholesterol specifically mentioned)
+- E78.1 = Pure hyperglyceridemia (only if triglycerides specifically mentioned)
+- E78.2 = Mixed hyperlipidemia (only if both specifically mentioned)
+
 Rules:
 - Return the MOST SPECIFIC code available given the information provided.
 - If a diagnosis is too vague to code specifically (e.g. "fracture" with no site, "cancer" with no type/site, "diabetes" with no type), mark it as "needsClarification": true and provide options the nurse can choose from, each with a code and a label.
 - LATERALITY IS REQUIRED: When a diagnosis involves a body part that has laterality in ICD-10 (lung, kidney, limb, breast, eye, hip, knee, etc.), you MUST include separate options for Left, Right, and Unspecified — do not collapse these into "unspecified" only. For lung cancer, include left lung, right lung, and unspecified lung variants. Combine laterality WITH site/lobe specificity where both apply (e.g. "upper lobe, right lung" AND "upper lobe, left lung" as distinct options).
 - If a diagnosis clearly maps to one specific code with high confidence AND laterality is already specified in the input, return that single code and set "needsClarification": false.
 - If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
-- Never guess or fabricate codes. If genuinely uncertain, flag for clarification.
+- Never guess or fabricate codes. If genuinely uncertain, flag for clarification. NEVER invent a code that does not follow standard ICD-10-CM structure — if you are not certain a code exists, omit it rather than guess.
 - For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
 - NEUROCOGNITIVE DIAGNOSES — CRITICAL RULES:
   * "Senile degeneration of the brain" = G31.1 ONLY. Return G31.1 as the code with needsClarification: false. Do NOT combine G31.1 with any F-code into a single option.
