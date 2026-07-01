@@ -9104,7 +9104,10 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
         html += '</div>';
       }
       if (tierNum === 2) {
-        html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 13px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+        html += '<div style="display:flex;gap:6px;flex-shrink:0">'
+          + '<button class="tier-promote-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Tier 1</button>'
+          + '<button class="tier-move-t3-btn" data-dx="' + escapeHtml(it.diagnosis).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--text-mid);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">↓ Tier 3</button>'
+          + '</div>';
       }
       if (tierNum === 3) {
         html += '<div style="display:flex;gap:6px;flex-shrink:0">'
@@ -9122,7 +9125,11 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
           + '<li>Intervention: responsible party for medication administration identified, documented, and education assessed</li>'
           + '<li>Intervention: patient/caregiver verbalized understanding of medications — mark Performed</li>'
           + '<li>All DME (hospice-ordered, facility-provided, and patient-owned) and all supplies not tied to another diagnosis</li>'
-          + '</ul></div>';
+          + '</ul>'
+          + '<div style="margin-top:7px;padding:6px 10px;background:#fff8e1;border:1px solid #ffe082;border-radius:5px;font-size:.79rem;color:#7a4200">'
+          + '<strong>⚠ If patient is Full Code:</strong> Add an additional goal under this primary diagnosis problem (not a new problem) — "Patient\'s code status is Full Code and will be honored per patient/caregiver wishes" — with a PERFORM intervention: "Nurse will document and honor patient\'s Full Code status; ensure code status is communicated to all IDG members and emergency contacts."'
+          + '</div>'
+          + '</div>';
       }
 
       row.innerHTML = html;
@@ -9276,6 +9283,13 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   container.querySelectorAll('.tier-promote-btn').forEach(function(b) {
     b.addEventListener('click', function() {
       promoteTierItem(b.getAttribute('data-dx'), container, primaryDx);
+    });
+  });
+
+  // Wire up "↓ Tier 3" buttons (Tier 2 only)
+  container.querySelectorAll('.tier-move-t3-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      moveItemToTier3(b.getAttribute('data-dx'), container);
     });
   });
 
@@ -9479,13 +9493,18 @@ function demoteToAssocSymptom(dx, parentDx, container) {
     + '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>'
     + '</div>';
   html += '</div>';
-  html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 11px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0">'
+    + '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Tier 1</button>'
+    + '<button class="tier-move-t3-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--text-mid);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">↓ Tier 3</button>'
+    + '</div>';
   html += '</div>';
   newRow.innerHTML = html;
 
   newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
     promoteTierItem(dx, resultsEl, tierCurrentPrimaryDx);
   });
+  var t3btn1 = newRow.querySelector('.tier-move-t3-btn');
+  if (t3btn1) t3btn1.addEventListener('click', function() { moveItemToTier3(dx, resultsEl); });
 
   // Add to Tier 2 group or create one
   if (tier2Group) {
@@ -9739,13 +9758,18 @@ function demoteTier3ToAssocSymptom(dx, parentDx, container) {
     + '<div style="color:#1a6a9a;margin-top:5px;font-size:.78rem;font-style:italic">💡 Consider a standalone Tier 1 care plan if this symptom is severe, frequently assessed, or requires nursing interventions beyond the parent problem.</div>'
     + '</div>';
   html += '</div>';
-  html += '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="flex-shrink:0;padding:6px 11px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Move to Tier 1</button>';
+  html += '<div style="display:flex;gap:6px;flex-shrink:0">'
+    + '<button class="tier-promote-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">⬆ Tier 1</button>'
+    + '<button class="tier-move-t3-btn" data-dx="' + escapeHtml(dx).replace(/"/g,'&quot;') + '" style="padding:5px 10px;background:#f0f4fa;color:var(--text-mid);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap">↓ Tier 3</button>'
+    + '</div>';
   html += '</div>';
   newRow.innerHTML = html;
 
   newRow.querySelector('.tier-promote-btn').addEventListener('click', function() {
     promoteTierItem(dx, resultsEl, tierCurrentPrimaryDx);
   });
+  var t3btn2 = newRow.querySelector('.tier-move-t3-btn');
+  if (t3btn2) t3btn2.addEventListener('click', function() { moveItemToTier3(dx, resultsEl); });
 
   if (tier2Group) {
     tier2Group.appendChild(newRow);
