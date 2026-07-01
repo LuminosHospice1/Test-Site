@@ -10626,7 +10626,14 @@ async function runIcdLookup() {
         }
       }
     } catch(e) { errMsg = 'Network error: ' + e.message; }
-    if (parsed && parsed.results) { parsed.results.forEach(function(r) { apiResults[r.diagnosis] = r; }); }
+    if (parsed && parsed.results) {
+      parsed.results.forEach(function(r) {
+        // Store by exact text AND by stripped version (in case AI added number prefix)
+        var stripped = (r.diagnosis || '').replace(/^\d+\.\s*/, '').trim();
+        apiResults[stripped] = r;
+        if (r.diagnosis !== stripped) apiResults[r.diagnosis] = r;
+      });
+    }
     else if (Object.keys(localResults).length === 0) {
       btn.textContent = origText; btn.disabled = false;
       resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
@@ -10643,8 +10650,16 @@ async function runIcdLookup() {
       return { diagnosis: line, code: local.code, description: local.desc, needsClarification: false, options: null, source: 'local' };
     }
     var api = apiResults[line];
+    // Fallback: try case-insensitive match
+    if (!api) {
+      var lineLower = line.toLowerCase();
+      Object.keys(apiResults).forEach(function(k) {
+        if (!api && k.toLowerCase() === lineLower) api = apiResults[k];
+      });
+    }
     if (api) { api.source = 'api'; return api; }
-    return { diagnosis: line, code: null, description: null, needsClarification: true, options: [], source: 'none' };
+    // No match from local or API — show as clarification needed with manual entry prompt
+    return { diagnosis: line, code: null, description: null, needsClarification: true, options: [{ code: '__manual__', label: 'Enter code manually using the ICD-10 Reference' }], source: 'none' };
   });
   icdLookupResults = finalResults;
   icdPrimaryIdx = -1;
