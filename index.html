@@ -10426,6 +10426,160 @@ let tierCurrentPrimaryDx = ''; // stores primary dx for re-run
 let tierQueuedAdditions = new Map(); // stores "Consider Adding" suggestions queued for re-analysis: suggestion -> {suggestion, icd10}
 let tierLockedItems = new Map(); // diagnosis -> item object; locked after initial analysis, never re-tiered
 
+// ── LOCAL ICD-10 REFERENCE LOOKUP ─────────────────────────────────
+// Scans the Reference database before calling the API.
+// Returns {code, description, confidence:'high'/'multi', options:[]} or null.
+
+function buildLocalIcdDatabase() {
+  var db = [];
+  document.querySelectorAll('.icd-data-row').forEach(function(row) {
+    var cells = row.querySelectorAll('td');
+    if (cells.length < 2) return;
+    var name = cells[0].textContent.trim();
+    var code = cells[1].textContent.trim();
+    var search = (row.getAttribute('data-search') || '').toLowerCase();
+    if (name && code && !code.includes('—') && !code.includes('+')) {
+      db.push({ name: name, code: code, search: search });
+    }
+  });
+  return db;
+}
+
+// Additional synonym/alias mappings not in the Reference database
+var LOCAL_ICD_SYNONYMS = {
+  // Exact-match overrides — these always resolve to a specific code
+  'essential hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
+  'hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
+  'urinary tract infection': { code: 'N39.0', desc: 'Urinary tract infection, site not specified', resolve: true },
+  'uti': { code: 'N39.0', desc: 'Urinary tract infection, site not specified', resolve: true },
+  'type 2 diabetes mellitus without complications': { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications', resolve: true },
+  'type 2 diabetes without complications': { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications', resolve: true },
+  'gastroesophageal reflux disease': { code: 'K21.9', desc: 'Gastro-esophageal reflux disease without esophagitis', resolve: true },
+  'gerd': { code: 'K21.9', desc: 'Gastro-esophageal reflux disease without esophagitis', resolve: true },
+  'gastroesophageal reflux': { code: 'K21.9', desc: 'Gastro-esophageal reflux disease without esophagitis', resolve: true },
+  'hyperlipidemia': { code: 'E78.5', desc: 'Hyperlipidemia, unspecified', resolve: true },
+  'hypercholesterolemia': { code: 'E78.0', desc: 'Pure hypercholesterolemia', resolve: true },
+  'senile degeneration of the brain': { code: 'G31.1', desc: 'Senile degeneration of brain, not elsewhere classified', resolve: true },
+  'generalized weakness': { code: 'R53.1', desc: 'Weakness', resolve: true },
+  'weakness': { code: 'R53.1', desc: 'Weakness', resolve: true },
+  'sundowning': { code: 'R41.83', desc: 'Wandering in diseases classified elsewhere', resolve: true },
+  'insomnia': { code: 'G47.00', desc: 'Insomnia, unspecified', resolve: true },
+  'insomnia, unspecified': { code: 'G47.00', desc: 'Insomnia, unspecified', resolve: true },
+  'abnormal weight loss': { code: 'R63.4', desc: 'Abnormal weight loss', resolve: true },
+  'weight loss': { code: 'R63.4', desc: 'Abnormal weight loss', resolve: true },
+  'dependence on supplemental oxygen': { code: 'Z99.81', desc: 'Dependence on supplemental oxygen', resolve: true },
+  'oxygen dependence': { code: 'Z99.81', desc: 'Dependence on supplemental oxygen', resolve: true },
+  'diabetic peripheral neuropathy': { code: 'E11.42', desc: 'Type 2 diabetes mellitus with diabetic polyneuropathy', resolve: true },
+  'history of pulmonary embolism': { code: 'Z86.711', desc: 'Personal history of pulmonary embolism', resolve: true },
+  'personal history of pulmonary embolism': { code: 'Z86.711', desc: 'Personal history of pulmonary embolism', resolve: true },
+  'hallucinations': { code: 'R44.3', desc: 'Hallucinations, unspecified', resolve: true },
+  'hallucinations, unspecified': { code: 'R44.3', desc: 'Hallucinations, unspecified', resolve: true },
+  'agitation': { code: 'R45.1', desc: 'Restlessness and agitation', resolve: true },
+  'dementia with behavioral disturbance': { code: 'F03.91', desc: 'Unspecified dementia with behavioral disturbance', resolve: true },
+  'dementia without behavioral disturbance': { code: 'F03.90', desc: 'Unspecified dementia without behavioral disturbance', resolve: true },
+  'major depressive disorder, single episode': { code: 'F32.9', desc: 'Major depressive disorder, single episode, unspecified', resolve: true },
+  'dysphagia': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'R13.10', label: 'Dysphagia, unspecified' },
+    { code: 'R13.11', label: 'Dysphagia, oral phase' },
+    { code: 'R13.12', label: 'Dysphagia, oropharyngeal phase' },
+    { code: 'R13.13', label: 'Dysphagia, pharyngeal phase' },
+  ]},
+  'aspiration risk': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'R13.10', label: 'Dysphagia, unspecified (aspiration risk related to swallowing difficulty)' },
+    { code: 'J69.0', label: 'Pneumonitis due to solids and liquids (active aspiration events occurring)' },
+  ]},
+  'fall risk': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'R29.6', label: 'Tendency to fall, not elsewhere classified (active fall risk)' },
+    { code: 'Z91.81', label: 'History of falling (past history of falls)' },
+  ]},
+  'constipation': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'K59.00', label: 'Constipation, unspecified' },
+    { code: 'K59.01', label: 'Slow transit constipation' },
+    { code: 'K59.02', label: 'Outlet dysfunction constipation' },
+    { code: 'K59.09', label: 'Other constipation' },
+  ]},
+  'depression': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'F32.9', label: 'Major depressive disorder, single episode, unspecified' },
+    { code: 'F33.9', label: 'Major depressive disorder, recurrent, unspecified' },
+    { code: 'F32.A', label: 'Depression, unspecified' },
+  ]},
+  'anxiety': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'F41.9', label: 'Anxiety disorder, unspecified' },
+    { code: 'F41.1', label: 'Generalized anxiety disorder' },
+  ]},
+  'atrial fibrillation': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'I48.91', label: 'Unspecified atrial fibrillation' },
+    { code: 'I48.0', label: 'Paroxysmal atrial fibrillation' },
+    { code: 'I48.11', label: 'Longstanding persistent atrial fibrillation' },
+    { code: 'I48.19', label: 'Other persistent atrial fibrillation' },
+    { code: 'I48.20', label: 'Chronic atrial fibrillation, unspecified' },
+  ]},
+  'protein calorie malnutrition': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'E44.0', label: 'Moderate protein-calorie malnutrition' },
+    { code: 'E44.1', label: 'Mild protein-calorie malnutrition' },
+    { code: 'E43', label: 'Unspecified severe protein-calorie malnutrition' },
+  ]},
+  'protein-calorie malnutrition': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'E44.0', label: 'Moderate protein-calorie malnutrition' },
+    { code: 'E44.1', label: 'Mild protein-calorie malnutrition' },
+    { code: 'E43', label: 'Unspecified severe protein-calorie malnutrition' },
+  ]},
+};
+
+function normalizeForLookup(s) {
+  return s.toLowerCase()
+    .replace(/^(end.?stage|advanced|severe|acute|chronic|unspecified|late.?stage)\s+/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function localIcdLookup(diagnosis) {
+  var norm = normalizeForLookup(diagnosis);
+  var orig = diagnosis.toLowerCase().trim();
+
+  // 1. Check synonym table first (exact match on original or normalized)
+  if (LOCAL_ICD_SYNONYMS[orig]) return LOCAL_ICD_SYNONYMS[orig];
+  if (LOCAL_ICD_SYNONYMS[norm]) return LOCAL_ICD_SYNONYMS[norm];
+
+  // 2. Partial synonym match (input contains a known key phrase)
+  var synKeys = Object.keys(LOCAL_ICD_SYNONYMS);
+  for (var i = 0; i < synKeys.length; i++) {
+    var key = synKeys[i];
+    if (key.length > 6 && (orig.indexOf(key) !== -1 || norm.indexOf(key) !== -1)) {
+      return LOCAL_ICD_SYNONYMS[key];
+    }
+  }
+
+  // 3. Search the Reference database
+  var db = buildLocalIcdDatabase();
+  var best = null;
+  var bestScore = 0;
+  var qwords = norm.split(' ').filter(function(w) { return w.length > 3; });
+
+  db.forEach(function(entry) {
+    var ename = normalizeForLookup(entry.name);
+    var ewords = ename.split(' ').filter(function(w) { return w.length > 3; });
+
+    var s = 0;
+    if (norm === ename) s = 100;
+    else if (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1) s = 85;
+    else if (qwords.length >= 2) {
+      var overlap = qwords.filter(function(w) { return ewords.indexOf(w) !== -1; }).length;
+      if (overlap >= 2 && overlap / Math.max(qwords.length, 1) >= 0.75) s = 72;
+    }
+
+    if (s > bestScore) { bestScore = s; best = entry; }
+  });
+
+  // Only return database matches at high confidence (80+) to avoid false positives
+  if (best && bestScore >= 80) {
+    return { code: best.code, desc: best.name, resolve: true };
+  }
+
+  return null; // send to API
+}
+
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
   if (!raw) { alert('Please enter at least one diagnosis.'); return; }
@@ -10442,105 +10596,60 @@ async function runIcdLookup() {
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--navy);font-size:.88rem;font-style:italic">Looking up ICD-10 codes...</div>';
 
-  const prompt = `You are a hospice clinical coding expert. For each diagnosis listed below, return the most specific ICD-10-CM code possible.
+  // ── Step 1: Run local lookup on all diagnoses ──────────────────
+  var localResults = {};
+  var needsApi = [];
 
-VERIFIED CODE REFERENCE — for the following diagnosis families, you MUST use ONLY the exact codes listed here. Do not generate, modify, or invent codes outside this list for these specific conditions:
-
-CHRONIC RESPIRATORY FAILURE (J96.1x series):
-- J96.10 = Chronic respiratory failure, unspecified whether with hypoxia or hypercapnia
-- J96.11 = Chronic respiratory failure with hypoxia
-- J96.12 = Chronic respiratory failure with hypercapnia
-(There is no J96.20 or other variant for chronic — J96.2x is reserved for acute-on-chronic respiratory failure: J96.20 unspecified, J96.21 with hypoxia, J96.22 with hypercapnia)
-
-ATRIAL FIBRILLATION (I48.9x series, unspecified type):
-- I48.91 = Unspecified atrial fibrillation
-- I48.20 = Chronic atrial fibrillation, unspecified
-- I48.0 = Paroxysmal atrial fibrillation
-- I48.11 = Longstanding persistent atrial fibrillation
-- I48.19 = Other persistent atrial fibrillation
-(Do NOT invent ventricular-response-rate-specific codes like "with rapid ventricular response" or "with slow ventricular response" or codes like I48.901 — these do not exist in ICD-10-CM. Ventricular response rate is not a coding axis for I48. If the input does not specify paroxysmal/persistent/permanent, use I48.91 with needsClarification: false.)
-
-ANXIETY (F41 series):
-- F41.1 = Generalized anxiety disorder
-- F41.9 = Anxiety disorder, unspecified
-- F41.0 = Panic disorder (ONLY offer this if the input specifically mentions panic attacks — do not offer for generic "anxiety")
-
-GENERALIZED WEAKNESS:
-- R53.1 = Weakness (use this for "generalized weakness," "weakness," or "asthenia")
-- R53.81 = Other malaise (use this ONLY for "malaise" or "fatigue" specifically — NOT for "weakness." If the input says "weakness," always use R53.1, never R53.81.)
-
-HYPERLIPIDEMIA:
-- E78.5 = Hyperlipidemia, unspecified (use this directly with needsClarification: false UNLESS the input specifies a subtype like "high cholesterol" or "high triglycerides")
-- E78.0 = Pure hypercholesterolemia (only if cholesterol specifically mentioned)
-- E78.1 = Pure hyperglyceridemia (only if triglycerides specifically mentioned)
-- E78.2 = Mixed hyperlipidemia (only if both specifically mentioned)
-
-Rules:
-- Return the MOST SPECIFIC code available given the information provided.
-- If a diagnosis is too vague to code specifically (e.g. "fracture" with no site, "cancer" with no type/site, "diabetes" with no type), mark it as "needsClarification": true and provide options the nurse can choose from, each with a code and a label.
-- LATERALITY IS REQUIRED: When a diagnosis involves a body part that has laterality in ICD-10 (lung, kidney, limb, breast, eye, hip, knee, etc.), you MUST include separate options for Left, Right, and Unspecified — do not collapse these into "unspecified" only. For lung cancer, include left lung, right lung, and unspecified lung variants. Combine laterality WITH site/lobe specificity where both apply (e.g. "upper lobe, right lung" AND "upper lobe, left lung" as distinct options).
-- If a diagnosis clearly maps to one specific code with high confidence AND laterality is already specified in the input, return that single code and set "needsClarification": false.
-- If a diagnosis could reasonably map to multiple codes depending on type, laterality, site, acuity, or chronicity, set "needsClarification": true and list ALL relevant permutations. Prefer more options over fewer. Maximum 8 options per item — prioritize most clinically common ones and include an unspecified fallback.
-- Never guess or fabricate codes. If genuinely uncertain, flag for clarification. NEVER invent a code that does not follow standard ICD-10-CM structure — if you are not certain a code exists, omit it rather than guess.
-- For hospice-common diagnoses, use the most specific hospice-appropriate code (e.g. for end-stage CHF, use I50.9 or more specific if determinable; for dementia, distinguish F02/F03/G30 by type if specified).
-- NEUROCOGNITIVE DIAGNOSES — CRITICAL RULES:
-  * "Senile degeneration of the brain" = G31.1 ONLY. Return G31.1 as the code with needsClarification: false. Do NOT combine G31.1 with any F-code into a single option.
-  * "Alzheimer's disease" = G30.9 (or G30.0/G30.1/G30.8 if specified). Return the G30.x code with needsClarification: false.
-  * "Lewy body dementia" = G31.83. Return G31.83 with needsClarification: false.
-  * "Frontotemporal dementia" = G31.09. Return G31.09 with needsClarification: false.
-  * "Vascular dementia" = F01.51 (with behavioral) or F01.50 (without). Return as needsClarification: true with both options.
-  * "Parkinson's disease" = G20. Return G20 with needsClarification: false.
-  * NEVER output a combined code like "G31.1 with F03.90" — these are always two separate ICD-10 entries.
-  * The companion F-code (F02.x or F03.x) is a SEPARATE diagnosis that must be coded separately in Firenote. It is NOT part of the G-code entry. Do not bundle them together.
-  * When you encounter "dementia with behavioral disturbance" or "dementia without behavioral disturbance" as a standalone diagnosis (i.e. the F-code itself), treat it as its own entry: F03.91 (with behavioral) or F03.90 (without behavioral) for unspecified dementia; F02.81/F02.80 for dementia in Alzheimer's/Lewy body/Parkinson's/frontotemporal.
-
-Diagnoses to code:
-${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
-
-Respond ONLY with valid JSON, no markdown, no preamble, no extra whitespace. Exact format:
-{"results":[
-  {"diagnosis":"exact diagnosis text","code":"I50.9","description":"Heart failure, unspecified","needsClarification":false,"options":null},
-  {"diagnosis":"exact diagnosis text","code":null,"description":null,"needsClarification":true,"options":[
-    {"code":"E11.9","label":"Type 2 diabetes mellitus without complications"},
-    {"code":"E10.9","label":"Type 1 diabetes mellitus without complications"}
-  ]}
-]}`;
-
-  let parsed = null;
-  let errMsg = '';
-  try {
-    const resp = await fetch('/.netlify/functions/claude', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt: prompt, max_tokens: 4000 })
-    });
-    if (!resp.ok) {
-      errMsg = 'HTTP ' + resp.status;
+  lines.forEach(function(line) {
+    var local = localIcdLookup(line);
+    if (local) {
+      localResults[line] = local;
     } else {
-      const data = await resp.json();
-      if (data.error) {
-        errMsg = 'API error: ' + (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)).slice(0, 200);
-      } else {
-        const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
-        const clean = rawText.replace(/```json|```/g, '').trim();
-        try { parsed = JSON.parse(clean); } catch(e) { errMsg = 'Parse error: ' + e.message; }
-      }
+      needsApi.push(line);
     }
-  } catch(e) { errMsg = 'Network error: ' + e.message; }
+  });
 
+  // ── Step 2: Call API only for unmatched diagnoses ──────────────
+  var apiResults = {};
+  if (needsApi.length > 0) {
+    btn.textContent = '⏳ Coding ' + needsApi.length + ' remaining via AI...';
+    const needsApiLines = needsApi;
+    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration. F03.91/F03.90=unspecified dementia. F02.81/F02.80=dementia in Alzheimers/Lewy/Parkinson. F-codes are separate entries.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+    let parsed = null; let errMsg = '';
+    try {
+      const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: apiPrompt, max_tokens: 4000 }) });
+      if (!resp.ok) { errMsg = 'HTTP ' + resp.status; } else {
+        const data = await resp.json();
+        if (data.error) { errMsg = String(data.error).slice(0,200); } else {
+          const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+          try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim()); } catch(e) { errMsg = 'Parse error: ' + e.message; }
+        }
+      }
+    } catch(e) { errMsg = 'Network error: ' + e.message; }
+    if (parsed && parsed.results) { parsed.results.forEach(function(r) { apiResults[r.diagnosis] = r; }); }
+    else if (Object.keys(localResults).length === 0) {
+      btn.textContent = origText; btn.disabled = false;
+      resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
+      return;
+    }
+  }
   btn.textContent = origText;
   btn.disabled = false;
-
-  if (!parsed || !parsed.results) {
-    resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
-    return;
-  }
-
-  icdLookupResults = parsed.results;
+  // ── Step 3: Merge local + API results in original order ─────────
+  const finalResults = lines.map(function(line) {
+    var local = localResults[line];
+    if (local) {
+      if (local.clarify) return { diagnosis: line, code: null, description: null, needsClarification: true, options: local.options, source: 'local' };
+      return { diagnosis: line, code: local.code, description: local.desc, needsClarification: false, options: null, source: 'local' };
+    }
+    var api = apiResults[line];
+    if (api) { api.source = 'api'; return api; }
+    return { diagnosis: line, code: null, description: null, needsClarification: true, options: [], source: 'none' };
+  });
+  icdLookupResults = finalResults;
   icdPrimaryIdx = -1;
   renderIcdLookupResults(resultsEl);
 }
-
 function renderIcdLookupResults(container) {
   container.innerHTML = '';
 
@@ -10583,7 +10692,7 @@ function renderIcdLookupResults(container) {
         + '<span style="color:var(--text-mid);font-style:italic">Other — enter code manually</span>'
         + '</label>'
         + '<div id="icd-other-' + idx + '" style="display:none;margin-top:6px;margin-left:24px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px">'
-        + '<div style="font-size:.78rem;color:var(--text-mid);margin-bottom:6px">Look up the correct code in the <strong>ICD-10 Reference</strong> tab, then enter it below:</div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px"><span style="font-size:.78rem;color:var(--text-mid)">Look up the correct code, then enter it below:</span><button onclick="switchToIcdRefFromCheckers(document.getElementById(\'checker-tab-icdref\'))" style="font-size:.74rem;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap">📖 Open ICD-10 Reference</button></div>'
         + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
         + '<div><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">ICD-10 Code</div>'
         + '<input type="text" id="icd-other-code-' + idx + '" placeholder="e.g. I48.11" maxlength="10" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();checkIcdOtherReady(' + idx + ')"></div>'
@@ -10702,7 +10811,7 @@ function reopenIcdOption(idx) {
     + '<span style="color:var(--text-mid);font-style:italic">Other — enter code manually</span>'
     + '</label>'
     + '<div id="icd-other-' + idx + '" style="display:none;margin-top:6px;margin-left:24px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px">'
-    + '<div style="font-size:.78rem;color:var(--text-mid);margin-bottom:6px">Look up the correct code in the <strong>ICD-10 Reference</strong> tab, then enter it below:</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px"><span style="font-size:.78rem;color:var(--text-mid)">Look up the correct code, then enter it below:</span><button onclick="switchToIcdRefFromCheckers(document.getElementById(\'checker-tab-icdref\'))" style="font-size:.74rem;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap">📖 Open ICD-10 Reference</button></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
     + '<div><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">ICD-10 Code</div>'
     + '<input type="text" id="icd-other-code-' + idx + '" placeholder="e.g. I48.11" maxlength="10" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();checkIcdOtherReady(' + idx + ')"></div>'
