@@ -10663,6 +10663,10 @@ async function runIcdLookup() {
   });
   icdLookupResults = finalResults;
   icdPrimaryIdx = -1;
+  // Safety check — if finalResults is shorter than lines, something went wrong in merge
+  if (finalResults.length < lines.length) {
+    console.warn('ICD merge produced', finalResults.length, 'results for', lines.length, 'input lines');
+  }
   renderIcdLookupResults(resultsEl);
 }
 function renderIcdLookupResults(container) {
@@ -10670,7 +10674,8 @@ function renderIcdLookupResults(container) {
 
   const disclaimer = document.createElement('div');
   disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
-  disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote. Resolve any clarification items below before sending to the Tier Checker.';
+  disclaimer.innerHTML = '<strong>⚠ Nurse review required.</strong> ICD-10 codes are AI-suggested — verify against the ICD-10 Reference tab or Luminos formulary before entering into Firenote. Resolve any clarification items below before sending to the Tier Checker.'
+    + ' <span style="color:var(--text-lt);font-size:.76rem">(' + icdLookupResults.length + ' diagnoses)</span>';
   container.appendChild(disclaimer);
 
   const listWrap = document.createElement('div');
@@ -10681,6 +10686,28 @@ function renderIcdLookupResults(container) {
     const row = document.createElement('div');
     row.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem';
     row.id = 'icd-row-' + idx;
+
+    // Items with no local or API match — show manually with Other entry panel open
+    if (item.source === 'none') {
+      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">'
+        + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Enter code manually</span>'
+        + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+        + '</div>'
+        + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
+        + '</div>'
+        + '<div style="margin-top:8px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px"><span style="font-size:.78rem;color:var(--text-mid)">This diagnosis was not found in the local database — enter the code manually:</span><button onclick="switchToIcdRefFromCheckers(document.getElementById(\'checker-tab-icdref\'))" style="font-size:.74rem;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap">📖 Open ICD-10 Reference</button></div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
+        + '<div><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">ICD-10 Code</div>'
+        + '<input type="text" id="icd-other-code-' + idx + '" placeholder="e.g. M84.451A" maxlength="10" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();checkIcdOtherReady(' + idx + ')"></div>'
+        + '<div style="flex:1;min-width:180px"><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">Description</div>'
+        + '<input type="text" id="icd-other-desc-' + idx + '" placeholder="e.g. Pathological fracture, right femur" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.85rem" oninput="checkIcdOtherReady(' + idx + ')"></div>'
+        + '<div style="padding-top:18px"><button id="icd-other-confirm-' + idx + '" disabled onclick="confirmIcdOther(' + idx + ')" style="padding:5px 13px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;opacity:.4">Use This Code</button></div>'
+        + '</div></div>';
+      listWrap.appendChild(row);
+      return;
+    }
 
     if (!item.needsClarification) {
       row.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between">'
