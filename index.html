@@ -10689,22 +10689,90 @@ function renderIcdLookupResults(container) {
 
     // Items with no local or API match — show manually with Other entry panel open
     if (item.source === 'none') {
-      row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between">'
-        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">'
-        + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Enter code manually</span>'
-        + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
-        + '</div>'
-        + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
-        + '</div>'
-        + '<div style="margin-top:8px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px"><span style="font-size:.78rem;color:var(--text-mid)">This diagnosis was not found in the local database — enter the code manually:</span><button onclick="switchToIcdRefFromCheckers(document.getElementById(\'checker-tab-icdref\'))" style="font-size:.74rem;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap">📖 Open ICD-10 Reference</button></div>'
-        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">'
-        + '<div><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">ICD-10 Code</div>'
-        + '<input type="text" id="icd-other-code-' + idx + '" placeholder="e.g. M84.451A" maxlength="10" style="width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();checkIcdOtherReady(' + idx + ')"></div>'
-        + '<div style="flex:1;min-width:180px"><div style="font-size:.74rem;color:var(--text-mid);margin-bottom:3px">Description</div>'
-        + '<input type="text" id="icd-other-desc-' + idx + '" placeholder="e.g. Pathological fracture, right femur" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.85rem" oninput="checkIcdOtherReady(' + idx + ')"></div>'
-        + '<div style="padding-top:18px"><button id="icd-other-confirm-' + idx + '" disabled onclick="confirmIcdOther(' + idx + ')" style="padding:5px 13px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;opacity:.4">Use This Code</button></div>'
-        + '</div></div>';
+      // Build header
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between';
+      const hdrLeft = document.createElement('div');
+      hdrLeft.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1';
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0';
+      badge.textContent = '⚠ Enter code manually';
+      const dxName = document.createElement('span');
+      dxName.style.cssText = 'color:var(--navy);font-weight:600';
+      dxName.textContent = item.diagnosis;
+      hdrLeft.appendChild(badge);
+      hdrLeft.appendChild(dxName);
+      const primaryWrap = document.createElement('div');
+      primaryWrap.className = 'icd-primary-btn-wrap';
+      primaryWrap.style.cssText = 'flex-shrink:0';
+      primaryWrap.innerHTML = icdPrimaryBtnHtml(idx);
+      hdr.appendChild(hdrLeft);
+      hdr.appendChild(primaryWrap);
+      row.appendChild(hdr);
+
+      // Build manual entry panel
+      const panel = document.createElement('div');
+      panel.style.cssText = 'margin-top:8px;padding:9px 12px;background:var(--row-alt);border:1px solid var(--border);border-radius:6px';
+      const panelHdr = document.createElement('div');
+      panelHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px';
+      const panelHdrText = document.createElement('span');
+      panelHdrText.style.cssText = 'font-size:.78rem;color:var(--text-mid)';
+      panelHdrText.textContent = 'Not found in local database — enter the code manually:';
+      const refBtn = document.createElement('button');
+      refBtn.style.cssText = 'font-size:.74rem;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-weight:600;cursor:pointer;white-space:nowrap';
+      refBtn.textContent = '📖 Open ICD-10 Reference';
+      refBtn.addEventListener('click', function() { switchToIcdRefFromCheckers(document.getElementById('checker-tab-icdref')); });
+      panelHdr.appendChild(panelHdrText);
+      panelHdr.appendChild(refBtn);
+      panel.appendChild(panelHdr);
+
+      const fields = document.createElement('div');
+      fields.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start';
+
+      const codeField = document.createElement('div');
+      const codeLabel = document.createElement('div');
+      codeLabel.style.cssText = 'font-size:.74rem;color:var(--text-mid);margin-bottom:3px';
+      codeLabel.textContent = 'ICD-10 Code';
+      const codeInput = document.createElement('input');
+      codeInput.type = 'text';
+      codeInput.id = 'icd-other-code-' + idx;
+      codeInput.placeholder = 'e.g. M84.451A';
+      codeInput.maxLength = 10;
+      codeInput.style.cssText = 'width:110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase';
+      codeInput.addEventListener('input', function() { this.value = this.value.toUpperCase(); checkIcdOtherReady(idx); });
+      codeField.appendChild(codeLabel);
+      codeField.appendChild(codeInput);
+
+      const descField = document.createElement('div');
+      descField.style.cssText = 'flex:1;min-width:180px';
+      const descLabel = document.createElement('div');
+      descLabel.style.cssText = 'font-size:.74rem;color:var(--text-mid);margin-bottom:3px';
+      descLabel.textContent = 'Description';
+      const descInput = document.createElement('input');
+      descInput.type = 'text';
+      descInput.id = 'icd-other-desc-' + idx;
+      descInput.placeholder = 'e.g. Pathological fracture, right femur';
+      descInput.style.cssText = 'width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.85rem';
+      descInput.addEventListener('input', function() { checkIcdOtherReady(idx); });
+      descField.appendChild(descLabel);
+      descField.appendChild(descInput);
+
+      const confirmDiv = document.createElement('div');
+      confirmDiv.style.cssText = 'padding-top:18px';
+      const confirmBtn = document.createElement('button');
+      confirmBtn.id = 'icd-other-confirm-' + idx;
+      confirmBtn.disabled = true;
+      confirmBtn.style.cssText = 'padding:5px 13px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;opacity:.4';
+      confirmBtn.textContent = 'Use This Code';
+      confirmBtn.addEventListener('click', function() { confirmIcdOther(idx); });
+      confirmDiv.appendChild(confirmBtn);
+
+      fields.appendChild(codeField);
+      fields.appendChild(descField);
+      fields.appendChild(confirmDiv);
+      panel.appendChild(fields);
+      row.appendChild(panel);
+
       listWrap.appendChild(row);
       return;
     }
