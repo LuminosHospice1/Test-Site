@@ -7888,18 +7888,20 @@ PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
 GOALS OF CARE EMPHASIS: ${goalsMap[goals]}
 
+CRITICAL: This care plan is for the specific problem "${problem}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problem}" specifically. Do not write a generic care plan for the primary diagnosis.
+
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused only. Use this EXACT format:
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators], and trends in caregiver feedback by the end of the current benefit period."
+1. GOAL: Must be comfort-focused and specific to "${problem}". Use this EXACT format, substituting [problem] with the actual clinical presentation of "${problem}":
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problem}], and trends in caregiver feedback by the end of the current benefit period."
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST follow this exact structure:
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}" and follow this exact structure:
 
-   ASSESS — Nurse will assess [specific symptom, condition, or clinical indicator] at each visit
-   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to the problem]
-   PERFORM — Nurse will perform [specific skilled nursing task or procedure]
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${problem}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problem}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problem}]
 
-   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate. Do NOT use any other intervention type labels.
 
 3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
 
@@ -8859,8 +8861,8 @@ SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires
 
 The patient's PRIMARY HOSPICE DIAGNOSIS is: ${primaryDx}
 
-The ACTIVE PROBLEM LIST is:
-${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
+Active problem list to tier:
+${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}n('\n')}
 
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
@@ -8896,12 +8898,49 @@ CRITICAL: You must process every single diagnosis in the list above and include 
   let parsed = null;
   let debugInfo = '';
   let wasTruncated = false;
-  try {
+
+  const BATCH_SIZE = 18; // safe size to fit within 4000 token response
+
+  async function runTierBatch(batchLines, isFirstBatch) {
+    // Build the list section for this batch
+    const listSection = batchLines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n');
+    const missingInstruction = isFirstBatch
+      ? 'After reviewing this batch, identify up to 2 commonly-related diagnoses NOT on the full list that are often associated with diagnoses in this batch. Keep reasoning to 10 words max.'
+      : 'For "missing": return empty array [].';
+
+    const batchPrompt = prompt.replace(
+      /Active problem list to tier[\s\S]*$/,
+      'Active problem list to tier (process ALL ' + batchLines.length + ' items — do not skip any):\n' + listSection + '\n\n' + missingInstruction
+    );
+
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt: prompt, max_tokens: 6000 })
+      body: JSON.stringify({ prompt: batchPrompt, max_tokens: 6000 })
     });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (data.error) throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
+    const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+    if (data.stop_reason === 'max_tokens') wasTruncated = true;
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    try {
+      return JSON.parse(clean);
+    } catch(e) {
+      const salvaged = salvageTruncatedTierJson(clean);
+      if (salvaged && salvaged.items && salvaged.items.length > 0) { wasTruncated = true; return salvaged; }
+      throw new Error('Batch parse failed: ' + e.message);
+    }
+  }
+
+  try {
+    if (lines.length <= BATCH_SIZE) {
+      // Single batch — original flow
+      const resp = await fetch('/.netlify/functions/claude', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ prompt: prompt, max_tokens: 6000 })
+      });
     if (!resp.ok) {
       debugInfo = 'HTTP ' + resp.status + ' ' + resp.statusText;
       try { const errBody = await resp.text(); debugInfo += ' — ' + errBody.slice(0, 300); } catch(e2) {}
@@ -8919,7 +8958,6 @@ CRITICAL: You must process every single diagnosis in the list above and include 
           try {
             attempt = JSON.parse(clean);
           } catch(e) {
-            // Truncated response — try to salvage complete items from the "items" array
             const salvaged = salvageTruncatedTierJson(clean);
             const stopInfo = ' [stop_reason: ' + (data.stop_reason || 'unknown') + ', response chars: ' + clean.length + ', usage: ' + JSON.stringify(data.usage || {}) + ']';
             if (salvaged && salvaged.items && salvaged.items.length > 0) {
@@ -8936,6 +8974,37 @@ CRITICAL: You must process every single diagnosis in the list above and include 
             parsed = attempt;
           }
         }
+      }
+    }
+
+    } else {
+      // Multi-batch mode for large lists
+      btn.textContent = '⏳ Analyzing ' + lines.length + ' diagnoses in batches...';
+      const batches = [];
+      for (var bi = 0; bi < lines.length; bi += BATCH_SIZE) {
+        batches.push(lines.slice(bi, bi + BATCH_SIZE));
+      }
+
+      try {
+        const batchResults = await Promise.all(batches.map(function(batch, idx) {
+          return runTierBatch(batch, idx === 0);
+        }));
+
+        // Merge all batch results
+        const allItems = [];
+        let mergedMissing = [];
+        batchResults.forEach(function(result, idx) {
+          if (result && result.items) allItems.push.apply(allItems, result.items);
+          if (idx === 0 && result && result.missing) mergedMissing = result.missing;
+        });
+
+        if (allItems.length > 0) {
+          parsed = { items: allItems, missing: mergedMissing };
+        } else {
+          debugInfo = 'Batched analysis returned no items.';
+        }
+      } catch(e) {
+        debugInfo = 'Batch error: ' + e.message;
       }
     }
   } catch(e) { debugInfo = 'Network/fetch error: ' + e.message; parsed = null; }
@@ -9466,12 +9535,13 @@ function demoteToAssocSymptom(dx, parentDx, container) {
   const tier1Group = resultsEl.querySelector('[data-tier-group="1"]');
   const tier2Group = resultsEl.querySelector('[data-tier-group="2"]');
 
-  // Remove from Tier 1
+  // Remove row from wherever it currently sits
   const oldRow = resultsEl.querySelector('[data-dx-key="' + dx.replace(/"/g, '\\"') + '"]');
+  const wasInTier1 = oldRow && oldRow.getAttribute('data-tier') === '1';
   if (oldRow) oldRow.remove();
 
-  // Update Tier 1 count
-  if (tier1Group) {
+  // Update Tier 1 count only if we actually removed a Tier 1 row
+  if (wasInTier1 && tier1Group) {
     const remaining = tier1Group.querySelectorAll('[data-tier="1"]').length;
     const hdr = tier1Group.querySelector('div:first-child');
     if (hdr) hdr.textContent = TIER_CONFIG[1].label + ' (' + remaining + ')';
@@ -10084,16 +10154,18 @@ PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${patientDetails || 'Not provided'}
 GOALS OF CARE EMPHASIS: ${goalsEmphasis}
 
+CRITICAL: This care plan is for the specific problem "${it.diagnosis}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${it.diagnosis}" specifically. Do not write a generic care plan for the primary diagnosis.
+
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused only. Use this EXACT format:
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators], and trends in caregiver feedback by the end of the current benefit period."
+1. GOAL: Must be comfort-focused and specific to "${it.diagnosis}". Use this EXACT format, filling in clinical indicators relevant to "${it.diagnosis}":
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback by the end of the current benefit period."
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST follow this exact structure:
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${it.diagnosis}" and follow this exact structure:
 
-   ASSESS — Nurse will assess [specific symptom, condition, or clinical indicator] at each visit
-   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to the problem]
-   PERFORM — Nurse will perform [specific skilled nursing task or procedure]
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${it.diagnosis}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${it.diagnosis}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${it.diagnosis}]
 
    You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.${requiredPrimaryInterventions}
 
@@ -10584,7 +10656,7 @@ async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
   if (!raw) { alert('Please enter at least one diagnosis.'); return; }
 
-  const lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  const lines = raw.split('\n').map(function(l) { return cleanDiagnosisLine(l.trim()); }).filter(function(l) { return l && l.length > 0 && !isJunkProblemListLine(l); });
   if (lines.length === 0) { alert('No diagnoses found.'); return; }
 
   const btn = document.getElementById('icd-lookup-btn');
