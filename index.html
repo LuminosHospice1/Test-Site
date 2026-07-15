@@ -10764,16 +10764,25 @@ async function runIcdLookup() {
     } catch(e) { errMsg = 'Network error: ' + e.message; }
     if (parsed && parsed.results) {
       parsed.results.forEach(function(r) {
-        // Store by exact text AND by stripped version (in case AI added number prefix)
         var stripped = (r.diagnosis || '').replace(/^\d+\.\s*/, '').trim();
         apiResults[stripped] = r;
-        if (r.diagnosis !== stripped) apiResults[r.diagnosis] = r;
+        apiResults[stripped.toLowerCase()] = r;
+        if (r.diagnosis !== stripped) {
+          apiResults[r.diagnosis] = r;
+          apiResults[(r.diagnosis || '').toLowerCase()] = r;
+        }
       });
-    }
-    else if (Object.keys(localResults).length === 0) {
-      btn.textContent = origText; btn.disabled = false;
-      resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
-      return;
+    } else {
+      if (Object.keys(localResults).length === 0) {
+        btn.textContent = origText; btn.disabled = false;
+        resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
+        return;
+      }
+      // API failed but we have some local results — add a visible warning and continue
+      const apiWarn = document.createElement('div');
+      apiWarn.style.cssText = 'padding:8px 14px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:8px';
+      apiWarn.innerHTML = '<strong>⚠ AI lookup unavailable</strong> — ' + needsApiLines.length + ' diagnoses could not be auto-coded. Use "Other — enter code manually" for those. Error: ' + (errMsg || 'Unknown');
+      resultsEl.appendChild(apiWarn);
     }
   }
   btn.textContent = origText;
@@ -10785,8 +10794,8 @@ async function runIcdLookup() {
       if (local.clarify) return { diagnosis: line, code: null, description: null, needsClarification: true, options: local.options, source: 'local' };
       return { diagnosis: line, code: local.code, description: local.desc, needsClarification: false, options: null, source: 'local' };
     }
-    var api = apiResults[line];
-    // Fallback: try case-insensitive match
+    var api = apiResults[line] || apiResults[line.toLowerCase()];
+    // Fallback: try case-insensitive match across all keys
     if (!api) {
       var lineLower = line.toLowerCase();
       Object.keys(apiResults).forEach(function(k) {
