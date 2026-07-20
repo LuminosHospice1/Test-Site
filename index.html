@@ -2815,6 +2815,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="neurogenic bladder, unspecified n31.9 ms, parkinson&amp;#39;s, cva, als, spinal cord injury"><td>Neurogenic bladder, unspecified</td><td class="code-cell">N31.9</td><td>MS, Parkinson&amp;#39;s, CVA, ALS, spinal cord injury</td></tr>
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="urinary retention r33.9 document cause when known"><td>Urinary retention</td><td class="code-cell">R33.9</td><td>Document cause when known</td></tr>
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="urinary tract infection n39.0 requires physician documentation"><td>Urinary tract infection</td><td class="code-cell">N39.0</td><td>Requires physician documentation</td></tr>
+<tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="foley catheter urinary catheterization y84.6 catheter care insertion ongoing care bladder drainage"><td>Urinary catheterization (Foley catheter)</td><td class="code-cell">Y84.6</td><td>Use for foley/indwelling urinary catheter; requires own care plan with goal and 3+ interventions</td></tr>
 <tr class="icd-cat-row" data-cat="Hepatic &amp; GI"><td colspan="3">Hepatic &amp; GI</td></tr>
 <tr class="icd-data-row" data-cat="Hepatic &amp; GI" data-search="alcoholic cirrhosis without ascites k70.30 "><td>Alcoholic cirrhosis without ascites</td><td class="code-cell">K70.30</td><td></td></tr>
 <tr class="icd-data-row" data-cat="Hepatic &amp; GI" data-search="alcoholic cirrhosis with ascites k70.31 ascites captured in combination — do not also code r18.8"><td>Alcoholic cirrhosis with ascites</td><td class="code-cell">K70.31</td><td>Ascites captured in combination — do not also code R18.8</td></tr>
@@ -3903,6 +3904,33 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
         <label>Patient Details <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(optional — carries over to Care Plan Builder)</span></label>
         <textarea id="tier-patient-details" style="min-height:60px;width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;outline:none" placeholder="e.g. PPS 40%, lives with son, incontinent, non-verbal"></textarea>
         <div style="font-size:.75rem;color:var(--text-lt);margin-top:4px;font-style:italic">Include functional status, caregiver situation, current medications, communication ability — anything clinically relevant</div>
+      </div>
+
+      <div class="checker-field">
+        <label>Patient Setting</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:7px 14px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="tier-setting-label-home"><input type="radio" name="tier-setting" id="tier-setting-home" value="home" checked onchange="highlightTierSetting()"> 🏠 Home</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:7px 14px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="tier-setting-label-facility"><input type="radio" name="tier-setting" id="tier-setting-facility" value="facility" onchange="highlightTierSetting()"> 🏢 Facility / ALF</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:7px 14px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="tier-setting-label-snf"><input type="radio" name="tier-setting" id="tier-setting-snf" value="snf" onchange="highlightTierSetting()"> 🏥 SNF / LTC</label>
+        </div>
+        <div id="tier-snf-flag" style="display:none;margin-top:8px;padding:7px 11px;background:#fff3b0;border:1px solid #ffe082;border-radius:5px;font-size:.8rem;color:#7a4200">⚠ <strong>SNF/LTC patients:</strong> A Facility Delineation Form is required — ensure this is completed and on file.</div>
+      </div>
+
+      <div class="checker-field">
+        <label>Situational Flags <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(check all that apply — adds required care plans to Build All output)</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:6px">
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-fullcode"> 🆘 Patient is Full Code</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-oxygen"> 💨 Continuous supplemental O₂</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-foley"> 💧 Foley catheter present</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-fallrisk"> ⚠️ Moderate/High fall risk</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-skinrisk"> 🩹 Risk for skin breakdown</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-opioids"> 💊 On scheduled opioids</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-anticoag"> 🩸 On anticoagulants</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-wound"> 🩹 Active wound on admission</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-infection"> 🦠 Active infection on admission</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-alone"> 🏠 Patient lives alone</label>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-lt);margin-top:5px;font-style:italic">These generate as additional care plan cards in the Build All Tier 1 output — not part of the tier analysis itself.</div>
       </div>
 
       <div class="checker-field">
@@ -7853,11 +7881,271 @@ function escHtml(s) {
 
 
 // ── CARE PLAN BUILDER ──────────────────────────────────────────────
+function highlightTierSetting() {
+  ['home','facility','snf'].forEach(function(v) {
+    var lbl = document.getElementById('tier-setting-label-' + v);
+    var inp = document.getElementById('tier-setting-' + v);
+    var flag = document.getElementById('tier-snf-flag');
+    if (lbl && inp) {
+      if (inp.checked) {
+        lbl.style.borderColor = 'var(--navy)';
+        lbl.style.background = '#eef3fb';
+      } else {
+        lbl.style.borderColor = 'var(--border)';
+        lbl.style.background = 'var(--row-alt)';
+      }
+    }
+    if (flag) flag.style.display = (document.getElementById('tier-setting-snf') && document.getElementById('tier-setting-snf').checked) ? 'block' : 'none';
+  });
+}
+
+function highlightSetting() {
+  ['home','facility','snf'].forEach(function(v) {
+    var lbl = document.getElementById('cp-setting-label-' + v);
+    var inp = document.getElementById('cp-setting-' + v);
+    if (!lbl || !inp) return;
+    if (inp.checked) {
+      lbl.style.borderColor = 'var(--navy)';
+      lbl.style.background = '#eef3fb';
+      lbl.style.color = 'var(--navy)';
+    } else {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = 'var(--row-alt)';
+      lbl.style.color = '';
+    }
+  });
+}
+
+function toggleSettingFields() {
+  const snf = document.getElementById('cp-setting-snf');
+  const flag = document.getElementById('cp-snf-flag');
+  if (flag) flag.style.display = (snf && snf.checked) ? 'block' : 'none';
+}
+
+function getCpFlags() {
+  const get = function(id) { const el = document.getElementById(id); return el ? el.checked : false; };
+  // Prefer tier-setting (on tier checker page) over cp-setting (care plan builder)
+  const tierSetting = document.querySelector('input[name="tier-setting"]:checked');
+  const cpSetting = document.querySelector('input[name="cp-setting"]:checked');
+  const setting = (tierSetting ? tierSetting.value : null) || (cpSetting ? cpSetting.value : 'home');
+  return {
+    setting: setting,
+    fullCode: get('cpf-fullcode'),
+    oxygen: get('cpf-oxygen'),
+    foley: get('cpf-foley'),
+    fallRisk: get('cpf-fallrisk'),
+    skinRisk: get('cpf-skinrisk'),
+    opioids: get('cpf-opioids'),
+    anticoag: get('cpf-anticoag'),
+    wound: get('cpf-wound'),
+    infection: get('cpf-infection'),
+    alone: get('cpf-alone'),
+  };
+}
+
+function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
+  const lines = [];
+
+  // ── Bereavement (always required under primary DX) ──────────────
+  if (isPrimaryDxPlan) {
+    lines.push(`
+REQUIRED — BEREAVEMENT CARE PLAN (add under primary DX, required on every admission):
+Goal: [Patient's family/caregiver] will receive a pre-bereavement assessment to help identify risk factors for complicated grief, and utilize available support systems and hospice bereavement services within 48 hours of admission.
+Interventions (add all four):
+• ASSESS: Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
+• PERFORM: Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.
+• PERFORM: Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.
+• EDUCATE: Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.`);
+  }
+
+  // ── Full Code ───────────────────────────────────────────────────
+  if (flags.fullCode && isPrimaryDxPlan) {
+    lines.push(`
+REQUIRED — FULL CODE STATUS (add as a secondary goal under primary DX, not a new problem):
+Secondary Goal: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.
+Interventions (add all three as custom interventions under primary DX):
+• ASSESS: Nurse will assess for risk of hospitalization due to Full Code status.
+• EDUCATE: Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.
+• PERFORM: Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.`);
+  }
+
+  // ── Patient Setting — medication administration language ─────────
+  const medLang = {
+    home: `PERFORM: Nurse will confirm that the patient/family will be responsible for administering medications. SN may administer when present.`,
+    facility: `PERFORM: Nurse will instruct facility staff to administer medications based on the hospice plan of care. SN may administer when present.`,
+    snf: `PERFORM: Nurse will confirm the facility staff will be responsible for administering medications. SN may administer when present. (Note: Facility Delineation Form required — ensure on file.)`
+  };
+  if (isPrimaryDxPlan) {
+    lines.push(`\nMEDICATION ADMINISTRATION SETTING (${flags.setting.toUpperCase()}):\n${medLang[flags.setting] || medLang.home}`);
+  }
+
+  // ── Continuous Oxygen ───────────────────────────────────────────
+  if (flags.oxygen) {
+    lines.push(`
+FLAG — CONTINUOUS OXYGEN (generate a SEPARATE care plan for Z99.81 Dependence on supplemental oxygen):
+This patient requires continuous oxygen. Z99.81 must be added as a related problem with its own care plan:
+Goal: Patient will experience improved respiratory comfort as evidenced by patient/caregiver report and reduced signs of respiratory distress.
+Interventions:
+• ASSESS: Nurse will assess respiratory status each visit including rate, depth, work of breathing, lung sounds, level of dyspnea, and use of accessory muscles.
+• ASSESS: Nurse will assess oxygen flow rate, verify it matches orders, and assess oxygen equipment for proper setup and functioning.
+• ASSESS: Nurse will assess the home/facility environment and patient/caregiver ability to safely use oxygen equipment, including identification of fire and safety hazards.
+• EDUCATE: Nurse will educate patient/caregiver on the purpose of continuous oxygen therapy and the importance of using oxygen as ordered.
+• EDUCATE: Nurse will educate on oxygen safety precautions: no smoking near oxygen, keep equipment at least 6 feet from heat sources and open flames, avoid flammable products (aerosol sprays, oil-based lotions), and ensure tubing is placed safely to prevent falls.
+• EDUCATE: Nurse will educate on signs of increased respiratory distress to report: increased shortness of breath, anxiety, cyanosis, confusion, or increased fatigue.
+• PERFORM: Nurse will verify and adjust oxygen equipment to ensure proper function and correct flow rate.
+• PERFORM: Nurse will assist with positioning to promote ease of breathing (elevated HOB, tripod position as tolerated).
+• PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider if repair or replacement is needed.
+(Also include oxygen order and DME supplies under this code.)`);
+  }
+
+  // ── Foley Catheter ──────────────────────────────────────────────
+  if (flags.foley) {
+    lines.push(`
+FLAG — FOLEY CATHETER (generate a SEPARATE care plan for Y84.6 Urinary Catheterization):
+Goal: Patient will remain comfortable with minimum catheter-related complications and maintain adequate urine flow.
+Interventions:
+• ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental changes.
+• EDUCATE: Nurse will educate patient/caregiver on proper foley bag positioning (below bladder level, never on the floor), emptying technique for drainage bag, importance of keeping tubing straight/untangled, and proper routine perineal care.
+• EDUCATE: Nurse will educate patient/caregiver on signs/symptoms of catheter-related infections to report: cloudy urine, foul smell, fever, agitation, or abdominal pain.
+• PERFORM: Nurse will perform routine perineal care using mild soap and water, cleansing away from the meatus.
+(Ensure foley catheter order is present with frequency of catheter changes. List foley supplies under this code.)`);
+  }
+
+  // ── Fall Risk ───────────────────────────────────────────────────
+  if (flags.fallRisk) {
+    lines.push(`
+SITUATIONAL — FALL RISK (add fall risk interventions under an appropriate existing diagnosis, or add R26.89 Abnormality of gait and mobility as a new problem if no applicable diagnosis exists):
+Goal: Patient will realize decreased fall risk with implementation of fall prevention measures as illustrated by reduction in fall events by the end of the current benefit period.
+Interventions:
+• ASSESS: Nurse will assess patient's risk for falls at each visit and implement appropriate safety measures.
+• EDUCATE: Nurse will educate patient and family/caregiver on the importance of using assistive devices and following safety precautions to prevent falls.
+• PERFORM: Nurse will implement fall prevention measures and confirm caregiver understanding and ability to maintain a safe environment.
+(Also add Z91.81 History of falling and R26.89 to the active problem list as applicable.)`);
+  }
+
+  // ── Skin Breakdown Risk ─────────────────────────────────────────
+  if (flags.skinRisk) {
+    lines.push(`
+SITUATIONAL — SKIN BREAKDOWN RISK (add under an appropriate existing diagnosis such as malnutrition or immobility, or add Z91.89 Other specified personal risk factors if no applicable diagnosis exists):
+Goal: Patient will remain free from skin breakdown/pressure injury as evidenced by intact skin or wound healing progress throughout the benefit period.
+Interventions:
+• ASSESS: Nurse will assess skin integrity at each visit, including bony prominences, areas of moisture exposure, and existing wounds or areas of breakdown.
+• EDUCATE: Nurse will educate caregiver on proper turning and repositioning schedule, skin care techniques, and use of protective barriers/moisture barriers.
+• PERFORM: Nurse will perform and document skin assessment and implement pressure injury prevention measures including repositioning, protective padding, and coordination with CNA for skin care.`);
+  }
+
+  // ── Scheduled Opioids → K59.03 flag ────────────────────────────
+  if (flags.opioids) {
+    lines.push(`
+FLAG — OPIOID-INDUCED CONSTIPATION: Patient is on scheduled opioids. Consider adding K59.03 (Constipation due to opioids) as a separate active problem with its own goal and interventions for bowel management.`);
+  }
+
+  // ── Anticoagulants ──────────────────────────────────────────────
+  if (flags.anticoag) {
+    lines.push(`
+SITUATIONAL — ANTICOAGULANT THERAPY (add bleeding precaution interventions under the diagnosis the anticoagulant is tied to):
+• ASSESS: Nurse will assess for signs of bleeding or bruising at each visit including gum bleeding, blood in urine or stool, unusual bruising, or prolonged bleeding from cuts.
+• EDUCATE: Nurse will educate patient/caregiver on bleeding precautions: avoid falls, use soft toothbrush, use electric razor, avoid NSAIDs, and report any unusual bleeding to hospice immediately.
+• PERFORM: Nurse will monitor effectiveness and tolerance of anticoagulant therapy and notify physician of any concerning changes or signs of bleeding.`);
+  }
+
+  // ── Active Wound ────────────────────────────────────────────────
+  if (flags.wound) {
+    lines.push(`
+FLAG — ACTIVE WOUND ON ADMISSION:
+⚠ QAPI EVENT REQUIRED — document wound(s) present on admission in the QAPI section before closing this visit.
+⚠ WOUND CARE ORDER REQUIRED — ensure a wound care order is entered for each wound.
+A separate wound care plan is required for each wound with at least 1 goal and 3 interventions (Assess, Educate, Perform). Use the Wound Care quick-fill scenario in the Care Plan Builder for each wound.`);
+  }
+
+  // ── Active Infection ────────────────────────────────────────────
+  if (flags.infection) {
+    lines.push(`
+FLAG — ACTIVE INFECTION ON ADMISSION:
+⚠ QAPI EVENT REQUIRED — document the infection present on admission in the QAPI section before closing this visit.
+⚠ ANTIBIOTIC/TREATMENT ORDER — ensure any ordered treatment is entered.
+A separate infection care plan is required using the specific infection ICD-10 code (e.g. N39.0 for UTI) with at least 1 goal and 3 interventions.`);
+  }
+
+  // ── Lives Alone ─────────────────────────────────────────────────
+  if (flags.alone) {
+    lines.push(`
+SITUATIONAL — PATIENT LIVES ALONE (add safety interventions under the primary DX or an appropriate problem):
+• ASSESS: Nurse will assess patient's ability to safely manage at home alone, including medication self-administration, mobility, fall risk, nutrition, and ability to call for help.
+• EDUCATE: Nurse will educate patient on emergency contact procedures, when to call hospice, and importance of keeping phone accessible at all times.
+• PERFORM: Nurse will confirm emergency contacts are documented and accessible, ensure patient has a working phone and knows how to use it, and coordinate with IDG regarding safety concerns for a patient living alone.`);
+  }
+
+  return lines.join('\n');
+}
+
+function updateGoalsForType() {
+  var type = document.getElementById('cp-problem-type').value;
+  var goalsEl = document.getElementById('cp-goals');
+  var hintEl = document.getElementById('cp-type-hint');
+  var hints = {
+    clinical: 'Standard hospice care plan — comfort-focused goal, ASSESS / EDUCATE / PERFORM interventions.',
+    coordination: 'Care coordination plan — goal focused on transition or planning outcomes, ASSESS / EDUCATE / PERFORM interventions.',
+    safety: 'Safety care plan — goal focused on risk reduction and patient safety, ASSESS / INTERVENE / DOCUMENT interventions.',
+    psychosocial: 'Psychosocial care plan — goal focused on emotional support and coping, ASSESS / EDUCATE / PERFORM interventions.'
+  };
+  if (hintEl) hintEl.textContent = hints[type] || hints.clinical;
+
+  // Adjust Goals of Care options based on type
+  var currentVal = goalsEl.value;
+  goalsEl.innerHTML = '<option value="" disabled>— Select goals of care direction —</option>';
+
+  if (type === 'clinical') {
+    [['comfort','Comfort / Symptom Management'],['family','Family/Caregiver Support & Education emphasis'],['spiritual','Spiritual / Psychosocial emphasis'],['safety','Safety & Fall Prevention emphasis']].forEach(function(o) {
+      goalsEl.innerHTML += '<option value="' + o[0] + '">' + o[1] + '</option>';
+    });
+  } else if (type === 'coordination') {
+    [['transition','Transition / Discharge Planning'],['family','Family/Caregiver Readiness'],['facility','Facility Coordination'],['respite','Respite / Level of Care Change']].forEach(function(o) {
+      goalsEl.innerHTML += '<option value="' + o[0] + '">' + o[1] + '</option>';
+    });
+  } else if (type === 'safety') {
+    [['safety_general','General Safety & Risk Reduction'],['safety_psych','Behavioral / Psychiatric Safety'],['safety_home','Home Environment Safety'],['safety_elopement','Elopement / Wandering Safety']].forEach(function(o) {
+      goalsEl.innerHTML += '<option value="' + o[0] + '">' + o[1] + '</option>';
+    });
+  } else if (type === 'psychosocial') {
+    [['grief','Grief / Bereavement Support'],['spiritual','Spiritual / Existential Distress'],['caregiver','Caregiver Burden / Coping'],['emotional','Emotional / Psychological Support']].forEach(function(o) {
+      goalsEl.innerHTML += '<option value="' + o[0] + '">' + o[1] + '</option>';
+    });
+  }
+
+  // Restore previous value if still valid
+  if (currentVal) goalsEl.value = currentVal;
+  if (!goalsEl.value) goalsEl.selectedIndex = 0;
+}
+
+function toggleCaregiverField() {
+  const problem = (document.getElementById('cp-problem') ? document.getElementById('cp-problem').value.trim() : '');
+  const primaryDx = (document.getElementById('cp-primary-dx') ? document.getElementById('cp-primary-dx').value.trim() : '');
+  const field = document.getElementById('cp-caregiver-field');
+  if (!field) return;
+  const isPrimary = primaryDx && problem && (
+    problem.toLowerCase().includes(primaryDx.toLowerCase()) ||
+    primaryDx.toLowerCase().includes(problem.toLowerCase()) ||
+    problem.toLowerCase() === primaryDx.toLowerCase()
+  );
+  field.style.display = isPrimary ? 'block' : 'none';
+}
+
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
   const primaryDx = document.getElementById('cp-primary-dx').value.trim();
   const details = document.getElementById('cp-details').value.trim();
   const goals = document.getElementById('cp-goals').value;
+  const problemType = (document.getElementById('cp-problem-type') ? document.getElementById('cp-problem-type').value : 'clinical');
+  const caregiver = (document.getElementById('cp-caregiver') ? document.getElementById('cp-caregiver').value.trim() : '');
+  const flags = getCpFlags();
+
+  const isPrimaryDxPlan = primaryDx && problem && (
+    problem.toLowerCase().includes(primaryDx.toLowerCase()) ||
+    primaryDx.toLowerCase().includes(problem.toLowerCase()) ||
+    normalizeForLookup(problem) === normalizeForLookup(primaryDx));
+
+  const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver);
 
   if (!problem) { alert('Please enter a care plan problem or diagnosis.'); return; }
   if (!goals) { alert('Please select a Goals of Care Direction before generating.'); document.getElementById('cp-goals').focus(); return; }
@@ -7872,41 +8160,191 @@ async function runCarePlanBuilder() {
   errorEl.classList.remove('show');
   outputWrap.classList.remove('show');
 
+  // ── Build type-specific prompt ─────────────────────────────────
   const goalsMap = {
+    // Clinical
     comfort: 'comfort and symptom management',
     family: 'family and caregiver support and education',
     spiritual: 'spiritual and psychosocial wellbeing',
-    safety: 'safety and fall prevention'
+    safety: 'safety and fall prevention',
+    // Coordination
+    transition: 'transition and discharge planning',
+    facility: 'facility collaboration and coordination',
+    respite: 'respite or level of care change',
+    // Safety
+    safety_general: 'general safety and risk reduction',
+    safety_psych: 'behavioral and psychiatric safety',
+    safety_home: 'home environment safety',
+    safety_elopement: 'elopement and wandering safety',
+    // Psychosocial
+    grief: 'grief and bereavement support',
+    caregiver: 'caregiver burden and coping',
+    emotional: 'emotional and psychological support'
   };
+  const goalsLabel = goalsMap[goals] || goals || 'comfort and symptom management';
 
-  const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
+  // Required interventions block for primary DX
+  const requiredPrimaryBlock = isPrimaryDxPlan ? `
+3. REQUIRED ADDITIONAL INTERVENTIONS — This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:
+   PERFORM — Nurse will enter admission order as directed.
+   PERFORM — Nurse will enter nutrition order as directed (document as "Nutrition" in Firenote, not "Diet").
+   PERFORM — Nurse will identify and document${caregiver ? ' ' + caregiver + ' as' : ''} the responsible party for medication administration. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.` : '';
+
+  let prompt;
+
+  if (problemType === 'safety') {
+    // ── SAFETY / CRISIS template ──────────────────────────────────
+    prompt = `You are an expert hospice clinical documentation specialist.
+
+Generate a hospice SAFETY care plan for the following:
+
+CARE PLAN PROBLEM: ${problem}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${details || 'Not provided'}
+SAFETY FOCUS: ${goalsLabel}
+
+CRITICAL: This care plan addresses "${problem}" as a safety or crisis concern. The goal must focus on RISK REDUCTION and PATIENT SAFETY — not comfort or symptom management. Do NOT use comfort-focused hospice goal language.
+
+REQUIREMENTS:
+
+1. GOAL: Must be measurable and safety-focused. Format:
+"Patient/caregiver will [demonstrate/verbalize/maintain] [specific safety behavior or risk reduction outcome] as evidenced by [measurable indicator] throughout the benefit period."
+
+2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / INTERVENE / DOCUMENT labels (NOT Perform/Educate). Every intervention must be specific to "${problem}":
+   ASSESS — Nurse will assess [specific safety risk or indicator] at each visit
+   INTERVENE — Nurse will [specific safety action or de-escalation strategy]
+   DOCUMENT — Nurse will document [specific finding, action taken, or response]
+
+3. Do NOT use Perform or Educate labels in this care plan type. Use only ASSESS, INTERVENE, DOCUMENT.
+
+4. Format EXACTLY:
+## CARE PLAN PROBLEM
+[problem statement]
+
+## GOAL
+[safety goal]
+
+## INTERVENTIONS
+**ASSESS** — Nurse will assess [...]
+**INTERVENE** — Nurse will [...]
+**DOCUMENT** — Nurse will document [...]
+[additional interventions as needed]
+
+## PHYSICIAN/IDT COORDINATION
+[Who to notify and what to communicate re: this safety concern]${situationalContent ? '\n\n## ADDITIONAL REQUIRED/SITUATIONAL ITEMS\n' + situationalContent : ''}`;
+
+  } else if (problemType === 'coordination') {
+    // ── CARE COORDINATION template ────────────────────────────────
+    prompt = `You are an expert hospice clinical documentation specialist.
+
+Generate a hospice CARE COORDINATION care plan for the following:
+
+CARE PLAN PROBLEM: ${problem}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${details || 'Not provided'}
+COORDINATION FOCUS: ${goalsLabel}
+
+CRITICAL: "${problem}" is a care coordination or planning problem — NOT a clinical diagnosis. The goal must reflect a coordination or transition outcome. Do NOT use clinical symptom-management goal language.
+
+REQUIREMENTS:
+
+1. GOAL: Must be coordination-focused and measurable. Format:
+"Patient/family/caregiver will [achieve specific coordination outcome — e.g. verbalize understanding of, complete, successfully transition to] [specific goal] as evidenced by [measurable indicator] by [timeframe or throughout the benefit period]."
+
+2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / EDUCATE / PERFORM labels, all specific to "${problem}" coordination needs:
+   ASSESS — Nurse will assess [specific coordination need, readiness, or barrier]
+   EDUCATE — Nurse will educate patient/caregiver/facility on [specific coordination topic]
+   PERFORM — Nurse will perform or coordinate [specific coordination action]
+
+3. Do NOT use comfort or symptom management language anywhere in this plan.
+
+4. Format EXACTLY:
+## CARE PLAN PROBLEM
+[problem statement]
+
+## GOAL
+[coordination goal]
+
+## INTERVENTIONS
+**ASSESS** — Nurse will assess [...]
+**EDUCATE** — Nurse will educate [...]
+**PERFORM** — Nurse will perform/coordinate [...]
+[additional interventions as needed]
+
+## PHYSICIAN/IDT COORDINATION
+[IDG members to involve and their specific roles in this coordination plan]${situationalContent ? '\n\n## ADDITIONAL REQUIRED/SITUATIONAL ITEMS\n' + situationalContent : ''}`;
+
+  } else if (problemType === 'psychosocial') {
+    // ── PSYCHOSOCIAL template ─────────────────────────────────────
+    prompt = `You are an expert hospice clinical documentation specialist.
+
+Generate a hospice PSYCHOSOCIAL care plan for the following:
+
+CARE PLAN PROBLEM: ${problem}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${details || 'Not provided'}
+PSYCHOSOCIAL FOCUS: ${goalsLabel}
+
+CRITICAL: "${problem}" is a psychosocial or emotional care problem. The goal must focus on EMOTIONAL SUPPORT, COPING, and WELLBEING — not physical comfort or symptom management.
+
+REQUIREMENTS:
+
+1. GOAL: Must be psychosocial and measurable. Format:
+"Patient/family/caregiver will [verbalize/demonstrate/utilize] [specific coping strategy, emotional outcome, or support utilization] as evidenced by [observable indicator] throughout the benefit period."
+
+2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / EDUCATE / PERFORM labels, all specific to "${problem}":
+   ASSESS — Nurse will assess [specific psychosocial or emotional indicator]
+   EDUCATE — Nurse will educate patient/caregiver on [specific coping or support topic]
+   PERFORM — Nurse will perform [specific supportive or referral action]
+
+3. Do NOT use physical symptom management language. Focus on emotional, spiritual, and psychosocial dimensions.
+
+4. Format EXACTLY:
+## CARE PLAN PROBLEM
+[problem statement]
+
+## GOAL
+[psychosocial goal]
+
+## INTERVENTIONS
+**ASSESS** — Nurse will assess [...]
+**EDUCATE** — Nurse will educate [...]
+**PERFORM** — Nurse will perform [...]
+[additional interventions as needed]
+
+## PHYSICIAN/IDT COORDINATION
+[IDG members to involve — social work, chaplain, bereavement coordinator, etc.]${situationalContent ? '\n\n## ADDITIONAL REQUIRED/SITUATIONAL ITEMS\n' + situationalContent : ''}`;
+
+  } else {
+    // ── CLINICAL DIAGNOSIS template (default) ─────────────────────
+    prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
 
 Generate a complete hospice care plan for the following:
 
 CARE PLAN PROBLEM/DIAGNOSIS: ${problem}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
-GOALS OF CARE EMPHASIS: ${goalsMap[goals]}
+GOALS OF CARE EMPHASIS: ${goalsLabel}
 
 CRITICAL: This care plan is for the specific problem "${problem}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problem}" specifically. Do not write a generic care plan for the primary diagnosis.
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused and specific to "${problem}". Use this EXACT format, substituting [problem] with the actual clinical presentation of "${problem}":
+1. GOAL: Must be comfort-focused and specific to "${problem}". Use this EXACT format:
 "Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problem}], and trends in caregiver feedback by the end of the current benefit period."
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}" and follow this exact structure:
-
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}":
    ASSESS — Nurse will assess [specific symptom or indicator related to ${problem}] at each visit
    EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problem}]
    PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problem}]
 
-   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate. Do NOT use any other intervention type labels.
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three. Do NOT use any other intervention type labels.
+${requiredPrimaryBlock}
 
-3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
+3. Do NOT include any curative, restorative, or rehabilitation-focused language.
 
-4. Format the output EXACTLY as shown below using these exact headers — no deviations:
-
+4. Format EXACTLY:
 ## CARE PLAN PROBLEM
 [problem statement]
 
@@ -7917,12 +8355,13 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
 **ASSESS** — Nurse will assess [...]
 **EDUCATE** — Nurse will educate patient/caregiver on [...]
 **PERFORM** — Nurse will perform [...]
-[additional **ASSESS** / **EDUCATE** / **PERFORM** lines if clinically appropriate]
+[additional interventions as clinically appropriate]
 
 ## PHYSICIAN/IDT COORDINATION
-[One sentence describing what to flag at IDT or discuss with MD]`;
+[One sentence describing what to flag at IDT or discuss with MD]${situationalContent ? '\n\n## ADDITIONAL REQUIRED/SITUATIONAL ITEMS\n' + situationalContent : ''}`;
+  }
 
-  try {
+    try {
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -8763,6 +9202,7 @@ function cpQuickFillDirect(problem, primary, details) {
   if (sel) sel.value = 'comfort';
   document.getElementById('cp-output-wrap').classList.remove('show');
   document.getElementById('cp-error').classList.remove('show');
+  toggleCaregiverField();
   switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'));
   setTimeout(function() {
     const el = document.getElementById('cp-problem');
@@ -10141,9 +10581,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
 
 This is the PRIMARY hospice diagnosis — also include these required interventions in addition to the clinically-relevant ones:
    PERFORM — Nurse will enter admission order as directed.
-   PERFORM — Nurse will enter nutrition order as directed (documented as "Nutrition" in Firenote).
-   PERFORM — Nurse will identify and document the responsible party for medication administration, assess and provide medication education including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.` : '';
+   PERFORM — Nurse will enter nutrition order as directed (document as "Nutrition" in Firenote, not "Diet").
+   PERFORM — Nurse will identify and document the responsible party for medication administration. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.` : '';
 
     const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
 
@@ -10196,7 +10636,232 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
   btn.textContent = '✨ Build All Tier 1 Care Plans';
   btn.disabled = false;
+
+  // Append situational/required care plan cards
+  const flags = getCpFlags();
+  const sitCards = buildSituationalCards(flags, primaryDx);
+  sitCards.forEach(function(sc) { wrap.appendChild(sc); });
+
   wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function buildSituationalCards(flags, primaryDx) {
+  var cards = [];
+
+  function makeCard(title, tag, color, sections) {
+    var card = document.createElement('div');
+    card.style.cssText = 'border:2px solid ' + color + ';border-radius:8px;overflow:hidden;margin-bottom:10px';
+
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'padding:10px 14px;background:' + color + ';color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none';
+    hdr.innerHTML = '<div><span style="font-weight:700;font-size:.88rem">' + escapeHtml(title) + '</span>'
+      + (tag ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;margin-left:6px">' + escapeHtml(tag) + '</span>' : '')
+      + '</div><span style="font-size:.8rem;transition:transform .2s">▼</span>';
+    hdr.addEventListener('click', function() {
+      var body = card.querySelector('.sit-card-body');
+      var chev = hdr.querySelector('span:last-child');
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      chev.style.transform = open ? 'rotate(-90deg)' : '';
+    });
+
+    var body = document.createElement('div');
+    body.className = 'sit-card-body';
+    body.style.cssText = 'padding:12px 14px';
+
+    sections.forEach(function(sec) {
+      if (sec.type === 'flag') {
+        var d = document.createElement('div');
+        d.style.cssText = 'padding:9px 12px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.84rem;color:#7a4200;margin-bottom:10px;line-height:1.55';
+        d.innerHTML = '<strong>⚠ ' + escapeHtml(sec.label) + '</strong><br>' + escapeHtml(sec.text);
+        body.appendChild(d);
+      } else if (sec.type === 'goal') {
+        var goalSec = document.createElement('div');
+        goalSec.style.cssText = 'margin-bottom:10px';
+        var lbl = document.createElement('div');
+        lbl.style.cssText = 'font-size:.74rem;font-weight:700;color:#1a2744;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px';
+        lbl.textContent = sec.isSecondary ? 'Secondary Goal' : 'Goal';
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:#f5f7fc;padding:9px 11px;border-radius:5px';
+        var txt = document.createElement('span');
+        txt.style.cssText = 'flex:1;font-size:.87rem;line-height:1.55';
+        txt.textContent = sec.text;
+        var copyBtn = document.createElement('button');
+        copyBtn.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+        copyBtn.textContent = '📋';
+        copyBtn.addEventListener('click', function() { copyAllCpText(copyBtn, sec.text); });
+        row.appendChild(txt); row.appendChild(copyBtn);
+        goalSec.appendChild(lbl); goalSec.appendChild(row);
+        body.appendChild(goalSec);
+      } else if (sec.type === 'interventions') {
+        var ivSec = document.createElement('div');
+        var ivLbl = document.createElement('div');
+        ivLbl.style.cssText = 'font-size:.74rem;font-weight:700;color:#1a2744;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px';
+        ivLbl.textContent = 'Interventions';
+        ivSec.appendChild(ivLbl);
+        sec.items.forEach(function(iv) {
+          var prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
+          var prefix = prefixMatch ? prefixMatch[0].toUpperCase() : '';
+          var text = iv.replace(/^(ASSESS|EDUCATE|PERFORM):\s*/i, '');
+          var color2 = prefix === 'ASSESS' ? '#1a6a9a' : prefix === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
+          var ivRow = document.createElement('div');
+          ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid ' + color2 + ';padding:7px 10px;margin-bottom:5px;background:#fafbfd;border-radius:0 5px 5px 0';
+          var pfx = document.createElement('span');
+          pfx.style.cssText = 'font-size:.72rem;font-weight:700;color:' + color2 + ';flex-shrink:0;padding-top:2px;min-width:60px';
+          pfx.textContent = prefix;
+          var ivTxt = document.createElement('span');
+          ivTxt.style.cssText = 'flex:1;font-size:.86rem;line-height:1.5';
+          ivTxt.textContent = text;
+          var ivCopy = document.createElement('button');
+          ivCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+          ivCopy.textContent = '📋';
+          ivCopy.addEventListener('click', function() { copyAllCpText(ivCopy, text); });
+          ivRow.appendChild(pfx); ivRow.appendChild(ivTxt); ivRow.appendChild(ivCopy);
+          ivSec.appendChild(ivRow);
+        });
+        body.appendChild(ivSec);
+      }
+    });
+
+    card.appendChild(hdr);
+    card.appendChild(body);
+    return card;
+  }
+
+  var navy = 'var(--navy)';
+  var green = '#1e7d4e';
+  var amber = '#b45309';
+  var red = '#c0392b';
+  var teal = '#0e7490';
+
+  // ── Bereavement (always) ────────────────────────────────────────
+  cards.push(makeCard('😢 Bereavement Care Plan', 'REQUIRED — All Admissions', navy, [
+    { type: 'goal', text: "[Patient's family/caregiver] will receive a pre-bereavement assessment to help identify risk factors for complicated grief, and utilize available support systems and hospice bereavement services within 48 hours of admission." },
+    { type: 'interventions', items: [
+      'ASSESS: Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family\'s ability to provide mutual support.',
+      'PERFORM: Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.',
+      'PERFORM: Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.',
+      'EDUCATE: Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.'
+    ]}
+  ]));
+
+  // ── Full Code ────────────────────────────────────────────────────
+  if (flags.fullCode) {
+    cards.push(makeCard('🆘 Full Code Status', 'Add under Primary DX — Secondary Goal', red, [
+      { type: 'goal', isSecondary: true, text: "Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period." },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess for risk of hospitalization due to Full Code status.',
+        'EDUCATE: Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.',
+        'PERFORM: Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
+      ]}
+    ]));
+  }
+
+  // ── Continuous Oxygen ────────────────────────────────────────────
+  if (flags.oxygen) {
+    cards.push(makeCard('💨 Z99.81 — Oxygen Dependence Care Plan', 'Separate Problem Required', teal, [
+      { type: 'flag', label: 'Add Z99.81 as a separate active problem in Firenote', text: 'Continuous oxygen dependence requires its own care plan with a goal and interventions.' },
+      { type: 'goal', text: "Patient will experience improved respiratory comfort as evidenced by patient/caregiver report and reduced signs of respiratory distress throughout the benefit period." },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess respiratory status each visit including rate, depth, work of breathing, lung sounds, level of dyspnea, and use of accessory muscles.',
+        'ASSESS: Nurse will assess oxygen flow rate, verify it matches orders, and assess oxygen equipment for proper setup and functioning.',
+        'ASSESS: Nurse will assess the home/facility environment and patient/caregiver ability to safely use oxygen equipment, including identification of fire and safety hazards.',
+        'EDUCATE: Nurse will educate patient/caregiver on the purpose of continuous oxygen therapy and the importance of using oxygen as ordered.',
+        'EDUCATE: Nurse will educate on oxygen safety precautions: no smoking near oxygen, keep equipment at least 6 feet from heat sources and open flames, avoid flammable products (aerosol sprays, oil-based lotions), and ensure tubing is placed safely to prevent falls.',
+        'EDUCATE: Nurse will educate on signs of increased respiratory distress to report: increased shortness of breath, anxiety, cyanosis, confusion, or increased fatigue.',
+        'PERFORM: Nurse will verify and adjust oxygen equipment to ensure proper function and correct flow rate per order.',
+        'PERFORM: Nurse will assist with positioning to promote ease of breathing as tolerated (elevated HOB, tripod position).',
+        'PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider if repair or replacement is needed.'
+      ]}
+    ]));
+  }
+
+  // ── Foley Catheter ───────────────────────────────────────────────
+  if (flags.foley) {
+    cards.push(makeCard('💧 Y84.6 — Foley Catheter Care Plan', 'Separate Problem Required', teal, [
+      { type: 'flag', label: 'Add Y84.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan. Ensure catheter order and supplies are entered.' },
+      { type: 'goal', text: "Patient will remain comfortable with minimum catheter-related complications and maintain adequate urine flow throughout the benefit period." },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental status changes.',
+        'EDUCATE: Nurse will educate patient/caregiver on proper foley bag positioning (below bladder level, never on the floor), emptying technique, importance of keeping tubing straight/untangled, and routine perineal care.',
+        'EDUCATE: Nurse will educate patient/caregiver on signs/symptoms of catheter-related infections to report: cloudy urine, foul smell, fever, agitation, or abdominal pain.',
+        'PERFORM: Nurse will perform routine perineal care using mild soap and water, cleansing away from the urethral meatus.'
+      ]}
+    ]));
+  }
+
+  // ── Fall Risk ────────────────────────────────────────────────────
+  if (flags.fallRisk) {
+    cards.push(makeCard('⚠️ Fall Risk Interventions', 'Add under applicable diagnosis or R26.89', amber, [
+      { type: 'flag', label: 'If no applicable diagnosis exists, add R26.89 (Abnormality of gait and mobility) as a separate problem', text: 'Add these interventions under whichever diagnosis is most related to the fall risk (e.g. dementia, neuropathy, weakness). Also add Z91.81 (History of falling) to the problem list as applicable.' },
+      { type: 'goal', text: "Patient will realize decreased fall risk with implementation of fall prevention measures as illustrated by reduction in fall events throughout the benefit period." },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess patient\'s risk for falls at each visit and implement appropriate safety measures based on the patient\'s current functional status.',
+        'EDUCATE: Nurse will educate patient and family/caregiver on the importance of using assistive devices and following safety precautions to prevent falls.',
+        'PERFORM: Nurse will implement fall prevention measures and confirm caregiver understanding and ability to maintain a safe environment.'
+      ]}
+    ]));
+  }
+
+  // ── Skin Breakdown Risk ──────────────────────────────────────────
+  if (flags.skinRisk) {
+    cards.push(makeCard('🩹 Skin Breakdown Risk Interventions', 'Add under applicable diagnosis or Z91.89', amber, [
+      { type: 'flag', label: 'If no applicable diagnosis exists, add Z91.89 (Other specified personal risk factors) as a separate problem', text: 'Add under whichever existing diagnosis is most related (e.g. malnutrition, immobility, incontinence). Note: Z91.89 is also used for drug interaction care plans — if both apply, combine under one Z91.89 problem.' },
+      { type: 'goal', text: "Patient will remain free from skin breakdown/pressure injury as evidenced by intact skin integrity throughout the benefit period." },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess skin integrity at each visit, including bony prominences, areas of moisture exposure, and existing wounds or areas of breakdown.',
+        'EDUCATE: Nurse will educate caregiver on proper turning and repositioning schedule, skin care techniques, and use of protective barriers/moisture barriers.',
+        'PERFORM: Nurse will perform and document skin assessment and implement pressure injury prevention measures including repositioning, protective padding, and coordination with CNA for skin care.'
+      ]}
+    ]));
+  }
+
+  // ── Opioids → K59.03 flag ────────────────────────────────────────
+  if (flags.opioids) {
+    cards.push(makeCard('💊 Opioid-Induced Constipation', 'Consider Adding K59.03', amber, [
+      { type: 'flag', label: 'Consider adding K59.03 (Constipation due to opioids) as a separate active problem', text: 'Patient is on scheduled opioids. K59.03 is more specific than K59.00 and reflects the opioid-related etiology. Add a bowel management goal and interventions under this code.' }
+    ]));
+  }
+
+  // ── Anticoagulants ───────────────────────────────────────────────
+  if (flags.anticoag) {
+    cards.push(makeCard('🩸 Anticoagulant — Bleeding Precautions', 'Add under diagnosis tied to anticoagulant', amber, [
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess for signs of bleeding or bruising at each visit including gum bleeding, blood in urine or stool, unusual bruising, or prolonged bleeding from cuts.',
+        'EDUCATE: Nurse will educate patient/caregiver on bleeding precautions: avoid falls, use soft toothbrush, use electric razor, avoid NSAIDs, and report any unusual bleeding to hospice immediately.',
+        'PERFORM: Nurse will monitor effectiveness and tolerance of anticoagulant therapy and notify physician of any concerning changes or signs of bleeding.'
+      ]}
+    ]));
+  }
+
+  // ── Active Wound ─────────────────────────────────────────────────
+  if (flags.wound) {
+    cards.push(makeCard('🩹 Active Wound on Admission', 'QAPI Required + Wound Order', red, [
+      { type: 'flag', label: 'QAPI Event Required', text: 'Document wound(s) present on admission in the QAPI section before closing this visit.' },
+      { type: 'flag', label: 'Wound Care Order Required', text: 'Ensure a wound care order is entered for each wound. A separate wound care plan is required per wound — use the Wound Care quick-fill scenario in the Care Plan Builder.' }
+    ]));
+  }
+
+  // ── Active Infection ─────────────────────────────────────────────
+  if (flags.infection) {
+    cards.push(makeCard('🦠 Active Infection on Admission', 'QAPI Required + Treatment Order', red, [
+      { type: 'flag', label: 'QAPI Event Required', text: 'Document the infection present on admission in the QAPI section before closing this visit.' },
+      { type: 'flag', label: 'Treatment Order Required', text: 'Ensure any ordered treatment (antibiotic, antifungal, etc.) is entered. A separate infection care plan is required using the specific infection ICD-10 code.' }
+    ]));
+  }
+
+  // ── Lives Alone ──────────────────────────────────────────────────
+  if (flags.alone) {
+    cards.push(makeCard('🏠 Patient Lives Alone — Safety Interventions', 'Add under Primary DX or applicable problem', green, [
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess patient\'s ability to safely manage at home alone, including medication self-administration, mobility, fall risk, nutrition, and ability to call for help.',
+        'EDUCATE: Nurse will educate patient on emergency contact procedures, when to call hospice, and importance of keeping phone accessible at all times.',
+        'PERFORM: Nurse will confirm emergency contacts are documented and accessible, ensure patient has a working phone and knows how to use it, and coordinate with IDG regarding safety concerns for a patient living alone.'
+      ]}
+    ]));
+  }
+
+  return cards;
 }
 
 function renderAllCpCard(body, result, dx, patientDetails) {
@@ -10597,7 +11262,11 @@ var LOCAL_ICD_SYNONYMS = {
     { code: 'R15.9', label: 'Full incontinence of feces' },
     { code: 'R15.0', label: 'Incomplete defecation (fecal incontinence)' },
   ]},
-  'urinary incontinence': { code: 'R32', desc: 'Unspecified urinary incontinence', resolve: true },
+  'urinary catheterization': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
+  'foley catheter': { code: 'Y84.6', desc: 'Urinary catheterization (Foley catheter)', resolve: true },
+  'indwelling urinary catheter': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
+  'catheter care': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
+  'foley': { code: 'Y84.6', desc: 'Urinary catheterization (Foley catheter)', resolve: true },
   'fecal incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
   'bowel incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
   'contractures': { code: null, desc: null, resolve: false, clarify: true, options: [
@@ -10828,6 +11497,7 @@ function renderIcdLookupResults(container) {
   container.appendChild(listWrap);
 
   icdLookupResults.forEach(function(item, idx) {
+    try {
     const row = document.createElement('div');
     row.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem';
     row.id = 'icd-row-' + idx;
@@ -10968,6 +11638,13 @@ function renderIcdLookupResults(container) {
     }
 
     listWrap.appendChild(row);
+    } catch(err) {
+      // Show error row so we can see exactly what's failing
+      const errRow = document.createElement('div');
+      errRow.style.cssText = 'padding:8px 14px;background:#fdf2f1;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--red)';
+      errRow.textContent = '⚠ Render error for "' + (item.diagnosis || '?') + '" [source:' + (item.source || '?') + ']: ' + err.message;
+      listWrap.appendChild(errRow);
+    }
   });
 
   updateIcdSendButton(container);
@@ -11216,6 +11893,9 @@ function clearIcdLookup() {
 .ai-field textarea{min-height:80px}
 .ai-hint{font-size:.78rem;color:var(--text-lt);margin-top:4px;font-style:italic}
 .ai-btn-row{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.cp-flag-label{display:flex;align-items:center;gap:7px;font-size:.84rem;font-weight:400;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--row-alt);transition:background .12s}
+.cp-flag-label:hover{background:var(--gold-pale);border-color:var(--gold)}
+.cp-flag-label input[type=checkbox]{accent-color:var(--navy);width:14px;height:14px;flex-shrink:0}
 .ai-submit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:background .14s}
 .ai-submit-btn:hover{background:var(--navy-mid)}
 .ai-submit-btn:disabled{background:var(--text-lt);cursor:not-allowed}
@@ -11265,13 +11945,19 @@ function clearIcdLookup() {
 
     <div class="ai-field">
       <label>Care Plan Problem / Diagnosis</label>
-      <input type="text" id="cp-problem" placeholder="e.g. Chronic pain related to end-stage lung cancer, Dyspnea related to CHF, Anxiety related to terminal diagnosis">
+      <input type="text" id="cp-problem" placeholder="e.g. Chronic pain related to end-stage lung cancer, Dyspnea related to CHF, Anxiety related to terminal diagnosis" oninput="toggleCaregiverField()">
       <div class="ai-hint">Be specific — include the symptom and the underlying diagnosis it relates to</div>
     </div>
 
     <div class="ai-field">
       <label>Primary Hospice Diagnosis</label>
-      <input type="text" id="cp-primary-dx" placeholder="e.g. End-stage COPD, Lung adenocarcinoma, End-stage CHF">
+      <input type="text" id="cp-primary-dx" placeholder="e.g. End-stage COPD, Lung adenocarcinoma, End-stage CHF" oninput="toggleCaregiverField()">
+    </div>
+
+    <div class="ai-field" id="cp-caregiver-field" style="display:none">
+      <label>Medication Responsible Party <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(required under primary DX care plan)</span></label>
+      <input type="text" id="cp-caregiver" placeholder="e.g. daughter Jane Smith, son Michael Jones, patient self-administers">
+      <div class="ai-hint">Name and relationship of person responsible for administering medications — will be included in required interventions</div>
     </div>
 
     <div class="ai-field">
@@ -11281,14 +11967,38 @@ function clearIcdLookup() {
     </div>
 
     <div class="ai-field">
+      <label>Problem Type</label>
+      <select id="cp-problem-type" onchange="updateGoalsForType()">
+        <option value="clinical">🩺 Clinical Diagnosis / Symptom</option>
+        <option value="coordination">📋 Care Coordination / Planning</option>
+        <option value="safety">🛡️ Safety / Crisis</option>
+        <option value="psychosocial">💙 Psychosocial / Emotional</option>
+      </select>
+      <div class="ai-hint" id="cp-type-hint">Standard hospice care plan — comfort-focused goal, ASSESS / EDUCATE / PERFORM interventions.</div>
+    </div>
+
+    <div class="ai-field">
       <label>Goals of Care Direction</label>
       <select id="cp-goals" required>
         <option value="" selected disabled>— Select goals of care direction —</option>
         <option value="comfort">Comfort / Symptom Management</option>
-        <option value="family">Family/Caregiver Support & Education emphasis</option>
+        <option value="family">Family/Caregiver Support &amp; Education emphasis</option>
         <option value="spiritual">Spiritual / Psychosocial emphasis</option>
-        <option value="safety">Safety & Fall Prevention emphasis</option>
+        <option value="safety">Safety &amp; Fall Prevention emphasis</option>
       </select>
+    </div>
+
+    <!-- Patient Setting -->
+    <div class="ai-field">
+      <label>Patient Setting</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:8px 16px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="cp-setting-label-home"><input type="radio" name="cp-setting" id="cp-setting-home" value="home" checked onchange="toggleSettingFields();highlightSetting()"> 🏠 Home</label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:8px 16px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="cp-setting-label-facility"><input type="radio" name="cp-setting" id="cp-setting-facility" value="facility" onchange="toggleSettingFields();highlightSetting()"> 🏢 Facility / ALF</label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:600;cursor:pointer;padding:8px 16px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);white-space:nowrap;transition:all .14s" id="cp-setting-label-snf"><input type="radio" name="cp-setting" id="cp-setting-snf" value="snf" onchange="toggleSettingFields();highlightSetting()"> 🏥 SNF / LTC</label>
+      </div>
+      <div id="cp-snf-flag" style="display:none;margin-top:8px;padding:8px 12px;background:#fff3b0;border:1px solid #ffe082;border-radius:5px;font-size:.81rem;color:#7a4200">
+        ⚠ <strong>SNF/LTC patients:</strong> A Facility Delineation Form is required — ensure this is completed and on file.
+      </div>
     </div>
 
     <div class="ai-btn-row">
