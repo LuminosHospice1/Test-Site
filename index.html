@@ -8079,6 +8079,25 @@ SITUATIONAL — PATIENT LIVES ALONE (add safety interventions under the primary 
   return lines.join('\n');
 }
 
+var cpIsPrimaryDx = false;
+
+function toggleIsPrimary() {
+  cpIsPrimaryDx = !cpIsPrimaryDx;
+  var btn = document.getElementById('cp-is-primary-btn');
+  var hint = document.getElementById('cp-problem-hint');
+  var caregiverField = document.getElementById('cp-caregiver-field');
+  if (btn) {
+    btn.textContent = cpIsPrimaryDx ? '⭐ Primary Diagnosis' : '☆ Mark as Primary Diagnosis';
+    btn.style.background = cpIsPrimaryDx ? 'var(--navy)' : 'var(--row-alt)';
+    btn.style.color = cpIsPrimaryDx ? '#fff' : 'var(--text-mid)';
+    btn.style.borderColor = cpIsPrimaryDx ? 'var(--navy)' : 'var(--border)';
+  }
+  if (hint) hint.textContent = cpIsPrimaryDx
+    ? '⭐ Primary DX mode — goal will be broad and hospice-focused; required interventions will be included automatically.'
+    : 'Be specific — include the symptom and the underlying diagnosis it relates to';
+  if (caregiverField) caregiverField.style.display = cpIsPrimaryDx ? 'block' : 'none';
+}
+
 function updateGoalsForType() {
   var type = document.getElementById('cp-problem-type').value;
   var goalsEl = document.getElementById('cp-goals');
@@ -8140,10 +8159,10 @@ async function runCarePlanBuilder() {
   const caregiver = (document.getElementById('cp-caregiver') ? document.getElementById('cp-caregiver').value.trim() : '');
   const flags = getCpFlags();
 
-  const isPrimaryDxPlan = primaryDx && problem && (
+  const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && (
     problem.toLowerCase().includes(primaryDx.toLowerCase()) ||
     primaryDx.toLowerCase().includes(problem.toLowerCase()) ||
-    normalizeForLookup(problem) === normalizeForLookup(primaryDx));
+    normalizeForLookup(problem) === normalizeForLookup(primaryDx)));
 
   const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver);
 
@@ -8331,8 +8350,11 @@ CRITICAL: This care plan is for the specific problem "${problem}" — NOT for th
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused and specific to "${problem}". Use this EXACT format:
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problem}], and trends in caregiver feedback by the end of the current benefit period."
+1. GOAL: ${isPrimaryDxPlan
+  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom. Use this EXACT format:
+"Patient will experience optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible, as evidenced by patient/caregiver report of comfort and absence of unnecessary suffering throughout the benefit period."`
+  : `Must be comfort-focused and specific to "${problem}". Use this EXACT format:
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problem}], and trends in caregiver feedback by the end of the current benefit period."`}
 
 2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}":
    ASSESS — Nurse will assess [specific symptom or indicator related to ${problem}] at each visit
@@ -8393,6 +8415,16 @@ function clearCarePlan() {
   if (sel) sel.selectedIndex = 0;
   document.getElementById('cp-output-wrap').classList.remove('show');
   document.getElementById('cp-error').classList.remove('show');
+  // Reset primary DX toggle
+  cpIsPrimaryDx = false;
+  const btn = document.getElementById('cp-is-primary-btn');
+  if (btn) { btn.textContent = '☆ Mark as Primary Diagnosis'; btn.style.background = 'var(--row-alt)'; btn.style.color = 'var(--text-mid)'; btn.style.borderColor = 'var(--border)'; }
+  const hint = document.getElementById('cp-problem-hint');
+  if (hint) hint.textContent = 'Be specific — include the symptom and the underlying diagnosis it relates to';
+  const caregiverField = document.getElementById('cp-caregiver-field');
+  if (caregiverField) caregiverField.style.display = 'none';
+  const sitHint = document.getElementById('cp-situational-hint');
+  if (sitHint) sitHint.style.display = 'none';
 }
 
 const CP_PRESETS = {
@@ -8433,6 +8465,61 @@ const CP_PRESETS = {
     goals: 'comfort'
   }
 };
+
+function cpQuickFillSituational(key) {
+  var presets = {
+    bereavement: { problem: 'Pre-bereavement assessment and support for family/caregiver', type: 'psychosocial', goals: 'grief', hint: 'Required on every admission — add under primary DX or as standalone problem.' },
+    fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add as a secondary goal under the primary diagnosis problem, not as a new problem.' },
+    oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
+    foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
+    fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
+    skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
+    wound: { problem: 'Wound care — assessment, treatment, and healing support', type: 'clinical', goals: 'comfort', hint: 'Add as a separate problem per wound. Ensure wound care order and supplies are entered. QAPI event required if wound present on admission.' },
+    discharge: { problem: 'Discharge planning — transition coordination and caregiver readiness', type: 'coordination', goals: 'transition', hint: 'Use for planning a safe transition from a facility or acute setting back to home hospice.' },
+    respite: { problem: 'Respite admission — caregiver relief and patient safety during temporary placement', type: 'coordination', goals: 'respite', hint: 'Use when patient is being admitted for a short-term respite level of care.' },
+    gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
+    nlq: { problem: 'Live discharge / NLQ — discharge planning and community resource coordination', type: 'coordination', goals: 'transition', hint: 'No Longer Qualifies (NLQ) or voluntary withdrawal — coordinate safe discharge from hospice services.' },
+    imminence: { problem: 'Imminence of death — comfort, dignity, and family support in final hours/days', type: 'psychosocial', goals: 'grief', hint: 'Add when patient shows signs of active dying. Focus on comfort, dignity, and family preparation.' },
+    facility: { problem: 'Facility collaboration and coordination of care', type: 'coordination', goals: 'facility', hint: 'For patients residing in a SNF, LTC, or ALF. Ensure Facility Delineation Form is on file for SNF/LTC.' },
+    druginteraction: { problem: 'Z91.89 Drug-to-drug interaction monitoring and safety', type: 'safety', goals: 'safety_general', hint: 'Required when any drug-to-drug interaction is identified. Use the Drug Interaction Parser to generate the full Z91.89 care plan with specific interaction details.' },
+  };
+
+  var p = presets[key];
+  if (!p) return;
+
+  var problemEl = document.getElementById('cp-problem');
+  var typeEl = document.getElementById('cp-problem-type');
+  var goalsEl = document.getElementById('cp-goals');
+  var outputWrap = document.getElementById('cp-output-wrap');
+  var errorEl = document.getElementById('cp-error');
+
+  if (problemEl) problemEl.value = p.problem;
+  if (typeEl) { typeEl.value = p.type; updateGoalsForType(); }
+  if (goalsEl) { goalsEl.value = p.goals; if (!goalsEl.value) goalsEl.selectedIndex = 0; }
+  if (outputWrap) outputWrap.classList.remove('show');
+  if (errorEl) errorEl.classList.remove('show');
+  toggleCaregiverField();
+
+  // Show a hint banner about this care plan type
+  var hintBanner = document.getElementById('cp-situational-hint');
+  if (!hintBanner) {
+    hintBanner = document.createElement('div');
+    hintBanner.id = 'cp-situational-hint';
+    hintBanner.style.cssText = 'margin-bottom:12px;padding:8px 12px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.81rem;color:#7a4200;display:flex;align-items:flex-start;gap:8px';
+    var problemField = document.getElementById('cp-problem');
+    if (problemField && problemField.parentElement && problemField.parentElement.parentElement) {
+      problemField.parentElement.parentElement.insertBefore(hintBanner, problemField.parentElement);
+    }
+  }
+  hintBanner.innerHTML = '<strong>💡 ' + p.problem.split('—')[0].trim() + ':</strong> ' + p.hint;
+  hintBanner.style.display = 'flex';
+
+  // Scroll to problem field
+  setTimeout(function() {
+    if (problemEl) problemEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (problemEl) problemEl.focus();
+  }, 100);
+}
 
 function cpQuickFill(key) {
   const p = CP_PRESETS[key];
@@ -10598,8 +10685,11 @@ CRITICAL: This care plan is for the specific problem "${it.diagnosis}" — NOT f
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused and specific to "${it.diagnosis}". Use this EXACT format, filling in clinical indicators relevant to "${it.diagnosis}":
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback by the end of the current benefit period."
+1. GOAL: ${isPrimary
+  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom. Use this EXACT format:
+"Patient will experience optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible, as evidenced by patient/caregiver report of comfort and absence of unnecessary suffering throughout the benefit period."`
+  : `Must be comfort-focused and specific to "${it.diagnosis}". Use this EXACT format, filling in clinical indicators relevant to "${it.diagnosis}":
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback by the end of the current benefit period."`}
 
 2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${it.diagnosis}" and follow this exact structure:
 
@@ -11943,10 +12033,42 @@ function clearIcdLookup() {
       <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Click any scenario to pre-fill the fields — edit as needed to match your patient</div>
     </div>
 
+    <!-- Required Care Plans -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:.78rem;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📌 Required — Every Admission</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button type="button" onclick="cpQuickFillSituational('bereavement')" style="padding:5px 11px;background:#fdf2f1;border:1px solid #e8b4b0;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#c0392b;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fae5e3'" onmouseout="this.style.background='#fdf2f1'">😢 Bereavement</button>
+      </div>
+    </div>
+
+    <!-- Situational Care Plans -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:.78rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">⚠️ Situational — When Applicable</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button type="button" onclick="cpQuickFillSituational('fullcode')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🆘 Full Code Status</button>
+        <button type="button" onclick="cpQuickFillSituational('oxygen')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💨 Oxygen Dependence (Z99.81)</button>
+        <button type="button" onclick="cpQuickFillSituational('foley')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💧 Foley Catheter (Y84.6)</button>
+        <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
+        <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
+        <button type="button" onclick="cpQuickFillSituational('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wound Care</button>
+        <button type="button" onclick="cpQuickFillSituational('discharge')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge Planning</button>
+        <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
+        <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
+        <button type="button" onclick="cpQuickFillSituational('nlq')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🚪 Live Discharge / NLQ</button>
+        <button type="button" onclick="cpQuickFillSituational('imminence')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🕊️ Imminence of Death</button>
+        <button type="button" onclick="cpQuickFillSituational('facility')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏢 Facility Collaboration</button>
+        <button type="button" onclick="cpQuickFillSituational('druginteraction')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💊 Drug Interaction (Z91.89)</button>
+      </div>
+      <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Pre-fills the problem type, problem text, and goals direction — add your primary diagnosis and patient details then generate</div>
+    </div>
+
     <div class="ai-field">
-      <label>Care Plan Problem / Diagnosis</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+        <label style="margin:0">Care Plan Problem / Diagnosis</label>
+        <button type="button" id="cp-is-primary-btn" onclick="toggleIsPrimary()" style="padding:4px 12px;background:var(--row-alt);border:2px solid var(--border);border-radius:20px;font-family:inherit;font-size:.76rem;font-weight:700;color:var(--text-mid);cursor:pointer;transition:all .15s;white-space:nowrap">☆ Mark as Primary Diagnosis</button>
+      </div>
       <input type="text" id="cp-problem" placeholder="e.g. Chronic pain related to end-stage lung cancer, Dyspnea related to CHF, Anxiety related to terminal diagnosis" oninput="toggleCaregiverField()">
-      <div class="ai-hint">Be specific — include the symptom and the underlying diagnosis it relates to</div>
+      <div class="ai-hint" id="cp-problem-hint">Be specific — include the symptom and the underlying diagnosis it relates to</div>
     </div>
 
     <div class="ai-field">
