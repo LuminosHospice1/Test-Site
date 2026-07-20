@@ -8475,10 +8475,9 @@ function cpQuickFillSituational(key) {
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
     skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
     wound: { problem: 'Wound care — assessment, treatment, and healing support', type: 'clinical', goals: 'comfort', hint: 'Add as a separate problem per wound. Ensure wound care order and supplies are entered. QAPI event required if wound present on admission.' },
-    discharge: { problem: 'Discharge planning — transition coordination and caregiver readiness', type: 'coordination', goals: 'transition', hint: 'Use for planning a safe transition from a facility or acute setting back to home hospice.' },
+    discharge: { problem: 'Z71.89 – Encounter for other specified counseling (Discharge Planning / Live Discharge)', type: 'coordination', goals: 'transition', hint: 'Use when patient is anticipated to discharge from hospice services, or when a patient no longer qualifies (NLQ/voluntary withdrawal). Generates instantly using approved QA language.', hardcoded: true },
     respite: { problem: 'Respite admission — caregiver relief and patient safety during temporary placement', type: 'coordination', goals: 'respite', hint: 'Use when patient is being admitted for a short-term respite level of care.' },
     gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
-    nlq: { problem: 'Live discharge / NLQ — discharge planning and community resource coordination', type: 'coordination', goals: 'transition', hint: 'No Longer Qualifies (NLQ) or voluntary withdrawal — coordinate safe discharge from hospice services.' },
     imminence: { problem: 'Imminence of death — comfort, dignity, and family support in final hours/days', type: 'psychosocial', goals: 'grief', hint: 'Add when patient shows signs of active dying. Focus on comfort, dignity, and family preparation.' },
     facility: { problem: 'Facility collaboration and coordination of care', type: 'coordination', goals: 'facility', hint: 'For patients residing in a SNF, LTC, or ALF. Ensure Facility Delineation Form is on file for SNF/LTC.' },
     druginteraction: { problem: 'Z91.89 Drug-to-drug interaction monitoring and safety', type: 'safety', goals: 'safety_general', hint: 'Required when any drug-to-drug interaction is identified. Use the Drug Interaction Parser to generate the full Z91.89 care plan with specific interaction details.' },
@@ -8514,11 +8513,65 @@ function cpQuickFillSituational(key) {
   hintBanner.innerHTML = '<strong>💡 ' + p.problem.split('—')[0].trim() + ':</strong> ' + p.hint;
   hintBanner.style.display = 'flex';
 
-  // Scroll to problem field
+  // If hardcoded — render output immediately without AI call
+  if (p.hardcoded) {
+    var hardcodedOutput = getHardcodedCarePlan(key);
+    if (hardcodedOutput) {
+      var outputWrap2 = document.getElementById('cp-output-wrap');
+      var outputEl2 = document.getElementById('cp-output');
+      if (outputEl2) outputEl2.innerHTML = renderCarePlan(hardcodedOutput);
+      if (outputWrap2) {
+        outputWrap2.classList.add('show');
+        setTimeout(function() { outputWrap2.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+      }
+      return;
+    }
+  }
+
+  // Scroll to problem field for AI-generated types
   setTimeout(function() {
     if (problemEl) problemEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (problemEl) problemEl.focus();
   }, 100);
+}
+
+function getHardcodedCarePlan(key) {
+  var setting = 'home';
+  var tierSetting = document.querySelector('input[name="tier-setting"]:checked');
+  var cpSetting = document.querySelector('input[name="cp-setting"]:checked');
+  if (tierSetting) setting = tierSetting.value;
+  else if (cpSetting) setting = cpSetting.value;
+
+  var isFacility = (setting === 'facility' || setting === 'snf');
+
+  var facilityInterventions = isFacility ? `
+**PERFORM** — Nurse will notify and collaborate with facility staff regarding the anticipated discharge, communicate the discharge timeline, and coordinate the transfer of care plan documentation, medication orders, and DME needs with the facility care team.
+**PERFORM** — Nurse will coordinate with facility administration and nursing staff to ensure a smooth transition, confirm understanding of the discharge plan, and document facility collaboration in the patient record.` : '';
+
+  var plans = {
+    discharge: `## CARE PLAN PROBLEM
+Z71.89 – Encounter for other specified counseling (Discharge Planning / Live Discharge)
+
+Patient is anticipated to discharge from hospice services and requires discharge planning and counseling to promote a safe and coordinated transition of care. This includes both planned discharges and situations where the patient no longer meets hospice eligibility criteria (NLQ) or is voluntarily withdrawing from hospice services.
+
+## GOAL
+Patient/caregiver will participate in discharge planning and verbalize understanding of the discharge plan and available resources prior to discharge.
+
+## INTERVENTIONS
+**ASSESS** — Nurse will assess patient/caregiver needs related to anticipated discharge and transition of care, including clinical status, caregiver readiness, and post-discharge support requirements.
+**ASSESS** — Nurse will assess and document current clinical status, functional changes, and objective findings relevant to hospice eligibility to support IDG and physician review of discharge appropriateness.
+**EDUCATE** — Nurse will provide counseling and education regarding the discharge process, anticipated plan of care following hospice discharge, and available community resources and support services.
+**EDUCATE** — Nurse will educate patient/caregiver on their right to request an expedited review and provide the required Notice of Medicare Non-Coverage (NOMNC) at least two days prior to discharge when applicable.
+**PERFORM** — Nurse will coordinate with the IDG, attending provider, and other healthcare providers or community resources as appropriate to facilitate continuity of care.
+**PERFORM** — Nurse will assist with referrals to appropriate services, including primary care, home health, palliative care, or other community resources, as indicated.
+**PERFORM** — Nurse will review and coordinate ongoing medication, DME, supply, and care needs prior to discharge, including medication refills as appropriate.
+**PERFORM** — Nurse will provide patient/caregiver with applicable discharge instructions, resources, and contact information.
+**PERFORM** — Nurse will complete required discharge documentation and communicate the discharge plan to appropriate providers and members of the care team.${facilityInterventions}
+
+## PHYSICIAN/IDT COORDINATION
+Coordinate with attending physician and IDG to confirm discharge eligibility determination, ensure all required discharge documentation (including NOMNC when applicable) is completed, and establish continuity of care with the receiving provider or next level of care prior to the patient's transition.`,
+  };
+  return plans[key] || null;
 }
 
 function cpQuickFill(key) {
@@ -12051,10 +12104,9 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
         <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
         <button type="button" onclick="cpQuickFillSituational('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wound Care</button>
-        <button type="button" onclick="cpQuickFillSituational('discharge')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge Planning</button>
+        <button type="button" onclick="cpQuickFillSituational('discharge')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
         <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
         <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
-        <button type="button" onclick="cpQuickFillSituational('nlq')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🚪 Live Discharge / NLQ</button>
         <button type="button" onclick="cpQuickFillSituational('imminence')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🕊️ Imminence of Death</button>
         <button type="button" onclick="cpQuickFillSituational('facility')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏢 Facility Collaboration</button>
         <button type="button" onclick="cpQuickFillSituational('druginteraction')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💊 Drug Interaction (Z91.89)</button>
