@@ -1066,7 +1066,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <div class="wf-num">6</div>
         <div class="wf-content">
           <div class="wf-title">Before signing — run through the Admission Checklist</div>
-          <div class="wf-desc">Switch to the Admission Checklist and work through each section from top to bottom — starting with the ★ Consents review, then sections 1 through 5. Check off every item. Do not sign the admission until all critical (red REQ-tagged) items are complete. Pay special attention to the Verbal Certification and narrative CTI attachment steps. Section 5 (After Every Admission) must be completed after every visit regardless of outcome.</div>
+          <div class="wf-desc">Switch to the Admission Checklist and work through each section from top to bottom — starting with the ★ Consents review, then sections 1 through 5. Check off every item. Do not sign the admission until all critical (red REQ-tagged) items are complete. Pay special attention to the Verbal Certification step. Section 5 (After Every Admission) must be completed after every visit regardless of outcome.</div>
         </div>
       </div>
     </div>
@@ -1109,7 +1109,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <tr><td>4</td><td>Symptoms</td><td>HOPE Symptom Impact Screening — covers the past 2 days only. Day-of requirement; 24-hour documentation deadline</td></tr>
         <tr><td>5</td><td>Observations</td><td>Comprehensive assessment including pain, functional/cognitive status (PPS, FAST), nutrition, skin, fall risk, caregiver, medications, and bereavement</td></tr>
         <tr><td>6</td><td>Care Plan</td><td>Problem list structure, Assess/Educate/Perform requirement, grouping diagnoses, AI tools, aide care plan rules, medication responsibility interventions</td></tr>
-        <tr><td>7</td><td>Nursing Narrative</td><td>Required narrative elements, depression screening (both paths), CTI attachment instructions, Copilot prompt</td></tr>
+        <tr><td>7</td><td>Nursing Narrative</td><td>Required narrative elements, depression screening (both paths), Copilot prompt</td></tr>
         <tr><td>8</td><td>Coordination of Care</td><td>Required IDG coordination statement — all disciplines named, agreement with plan of care</td></tr>
         <tr><td>9</td><td>HOPE Assessment</td><td>Key compliance points, comorbid-only scoring guidance, common mistakes to avoid</td></tr>
         <tr><td>10</td><td>Review &amp; Finish</td><td>Final verification checklist, RapidChart editing guidance, what "Performed" means for SNP, common last-minute errors</td></tr>
@@ -1159,7 +1159,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <tr><td>1</td><td>Admitting MD Contact</td><td>Call required before or during visit: verbal certification, primary diagnosis confirmation, relatedness and medication review with MD, documenting outcome of call</td></tr>
         <tr><td>2</td><td>Required Entries in Firenote</td><td>All orders (admission, diet, medications, O2, wound, catheter), diagnosis list with relatedness marked, QAPI entries for wounds/infections present on admission, required medication responsibility interventions</td></tr>
         <tr><td>3</td><td>Assessments &amp; Narrative</td><td>Pain assessment, bowel assessment, depression screening in narrative, fall risk, wound assessment, medication responsibility, IDG coordination, bereavement, HOPE, verbal certification</td></tr>
-        <tr><td>4</td><td>Before You Close the Visit</td><td>Final confirmation items before signing — SNP marked Performed, narrative copied to CTI, verbal cert complete, all required elements confirmed. Do not submit until all are complete.</td></tr>
+        <tr><td>4</td><td>Before You Close the Visit</td><td>Final confirmation items before signing — SNP marked Performed, narrative complete, verbal cert entered, all required elements confirmed. Do not submit until all are complete.</td></tr>
         <tr><td>5</td><td>After Every Admission</td><td>Required notifications after every visit regardless of outcome — notify intake of admission status and post brief narrative summary in your location's Admissions channel in Teams</td></tr>
       </tbody>
     </table>
@@ -1439,7 +1439,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <div class="wf-num">5</div>
         <div class="wf-content">
           <div class="wf-title">Copy Copilot's output into Firenote and review</div>
-          <div class="wf-desc">Paste into the Nursing Narrative field. Review every line for accuracy. Then remember to also copy the narrative to the <strong>Verbal Certification page → "Nursing Narrative (RN)" tab</strong> to attach it to the CTI.</div>
+          <div class="wf-desc">Paste into the Nursing Narrative field. Review every line for accuracy before saving.</div>
         </div>
       </div>
     </div>
@@ -1538,7 +1538,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       </li>
       <li>
         <span class="icon">🚫</span>
-        <div><strong>Not attaching the narrative to the CTI.</strong> After writing your nursing narrative, you must navigate to the Verbal Certification page → click "Nursing Narrative (RN)" tab → paste your full narrative there. Without this step, the physician does not have your clinical documentation when completing the attestation.</div>
+        <div><strong>Not pasting AI-generated care plan content without reviewing it.</strong> Always verify every line reflects your actual patient before entering into Firenote.</div>
       </li>
       <li>
         <span class="icon">🚫</span>
@@ -1595,7 +1595,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <tbody>
         <tr><td>Depression Screening</td><td>Both PHQ-2 questions (or observational note if unable). Document result regardless of outcome.</td><td>Typed manually in Nursing Narrative</td></tr>
         <tr><td>Verbal Certification</td><td>Within 48 hours. Transfer patients: not required (prior hospice certification carries over).</td><td>Verbal Certification page</td></tr>
-        <tr><td>Narrative → CTI</td><td>Full nursing narrative must be pasted into the "Nursing Narrative (RN)" tab on the Verbal Certification page.</td><td>Verbal Certification → RN tab</td></tr>
+        
         <tr><td>Relatedness Classification</td><td>Every diagnosis must be marked Related or Non-Related. Physician must document reason for Non-Related in the chart.</td><td>Diagnosis List</td></tr>
         <tr><td>MAC Measurement</td><td>Bi-weekly per Luminos policy.</td><td>Assessment / Vitals</td></tr>
         <tr><td>Symptom Impact Screening</td><td>Must be completed day-of admission. If not possible, document reason in narrative within 24 hours.</td><td>HOPE Section I</td></tr>
@@ -1738,7 +1738,8 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
 <div class="sub-navy">Code Status</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:6px">Enter code status: <strong>DNR</strong> or <strong>Full Code</strong>.</p>
-<div class="alert warning" style="margin-bottom:8px"><span>⚠</span><div><strong>If the patient is Full Code</strong>, add the following interventions directly under the <em>primary diagnosis</em> care plan problem (do not create a separate problem for full code status):<br><br>
+<div class="alert warning" style="margin-bottom:8px"><span>⚠</span><div><strong>If the patient is Full Code</strong>, add the following secondary goal and custom interventions directly under the <em>primary diagnosis</em> care plan problem (do not create a separate problem for full code status):<br><br>
+<strong>Secondary Goal:</strong> Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.<br><br>
 <strong>Add these as custom interventions under the primary dx problem:</strong><br>
 • Assess for risk of hospitalization d/t full code status<br>
 • Educate patient/family on code statuses, what they look like at EOL, and confirm understanding<br>
@@ -1930,6 +1931,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="sub-navy" style="margin-top:12px">Bereavement Risk Evaluation for Family / Caregivers</div>
 <p style="font-size:.87rem;color:var(--text-mid);margin-bottom:6px">All patients must be assessed by the admission nurse for initial bereavement risk.</p>
 <div class="alert info"><span>📝</span><div>There is a section further on in the assessment that helps with calculating a risk score. Ensure that the answer marked here <strong>matches</strong> the answer in that section.</div></div>
+<div class="alert warning"><span>⚠</span><div><strong>You are assessing the family/caregiver — NOT the patient.</strong> This is one of the most common errors on admission. The bereavement assessment evaluates the grief risk of the person who will be bereaved after the patient's death. Do not complete this section about the patient.</div></div>
+<div class="alert info"><span>💡</span><div><strong>Nurse judgment outranks the tool's score.</strong> If clinical observation indicates higher risk than the calculated score suggests, you may assign a higher risk level — but document your clinical reasoning clearly in the notes field.</div></div>
 <table class="dtable"><thead><tr><th>Level</th><th>What It Means</th></tr></thead><tbody><tr><td><strong>Low Risk</strong></td><td>The family or caregiver is assessed as having minimal bereavement risk. Default "Risk Level Low" tasks are used for follow-up.</td></tr><tr><td><strong>Moderate Risk</strong></td><td>The family or caregiver is assessed as having a noticeable level of bereavement risk. Default "Risk Level Moderate" tasks are used for follow-up.</td></tr><tr><td><strong>High Risk</strong></td><td>The family or caregiver is assessed as having significant bereavement risk. Default "Risk Level High" tasks are used for follow-up.</td></tr></tbody></table>
 
 <div class="sub-navy" style="margin-top:12px">Need for Referrals or Further Evaluation</div>
@@ -2024,7 +2027,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 
 <div style="margin-top:4px"></div>
 <div class="obs-row"><div>› Nutrition <span class="req">★</span></div></div>
-<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">Only answer items that reflect DECLINE in this section. If there is no decline in a given area, leave that option blank — do NOT select "No decrease" or "No weight loss."</div></div>
+<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">To get an accurate nutritional assessment score, answer ALL questions first to generate the correct score. Note that score. Then remove any answers that do not reflect actual decline. Once the non-applicable answers are removed, use <strong>Lock &amp; Edit RapidChart Contents</strong> to replace the incorrect auto-generated score with the score you noted before removing answers.</div></div>
 <table class="dtable"><thead><tr><th>Question</th><th>How to Answer</th></tr></thead><tbody><tr><td><strong>Decrease in food intake over the past 3 months?</strong></td><td>Leave blank if no decrease. Select "Moderate or Severe" if applicable — do not select "No Decrease."</td></tr><tr><td><strong>Weight loss during the last 3 months?</strong></td><td>Leave blank if no weight loss. Select: Weight loss 2–7 lbs &nbsp;|&nbsp; Weight loss &gt; 7 lbs &nbsp;|&nbsp; Unknown weight loss (if reported but amount unknown — see note below).</td></tr><tr><td><strong>Patient's level of mobility?</strong></td><td>Goes out: Leaves home regularly &nbsp;|&nbsp; Limited – does not go out: Primarily stays home &nbsp;|&nbsp; Bed/Chair bound: Does not leave the home.</td></tr><tr><td><strong>Psychological stress or acute illness in the past 3 months?</strong></td><td>Yes/No. If yes, document <strong>WHAT</strong> happened in the narrative.</td></tr><tr><td><strong>Neuropsychological problems?</strong></td><td>No problems &nbsp;|&nbsp; Mild/Severe Dementia/Depression. If dementia or depression are present, these <strong>MUST</strong> be added to the problem list.</td></tr><tr><td><strong>Assessment method?</strong></td><td>BMI → move to BMI screening tool &nbsp;|&nbsp; Calf Circumference &nbsp;|&nbsp; MAC → ensure your selection matches the MAC measurement in Vital Signs.</td></tr></tbody></table>
 <div class="alert info"><span>📝</span><div>When documenting <strong>Unknown weight loss</strong>, ensure your narrative clearly describes the clinical indicators: e.g., "Decreased appetite with reduced portion intake, looser fitting clothing, visible muscle wasting, and caregiver report of ongoing weight loss."</div></div>
 <div class="alert tip"><span>💡</span><div>The answers in this section will generate a nutritional assessment score viewable in the Rapid Chart Narration. Review it to confirm it accurately reflects your clinical assessment. Edit and adjust using "Lock &amp; Edit RapidChart Contents" if needed.</div></div>
@@ -2147,6 +2150,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div style="margin-top:4px"></div>
 <div class="obs-row"><div>› Bereavement Assessment <span class="req">★</span></div></div>
 <div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">A bereavement assessment is required to be completed on EVERY admission by the admitting nurse. Mark "Performed" and complete the full assessment.</div></div>
+<div class="alert warning"><span>⚠</span><div><strong>You are assessing the family/caregiver — NOT the patient.</strong> This is one of the most common errors on admission. Select the family member or caregiver who will be bereaved — not the patient — and complete the assessment from their perspective.</div></div>
+<div class="alert info"><span>💡</span><div><strong>Nurse judgment outranks the tool's score.</strong> If your clinical assessment indicates a higher risk level than the tool generates, you may assign the higher level — document why in the notes field.</div></div>
 <p style="font-size:.87rem;color:var(--text-mid);margin:6px 0">Select "Pre-bereavement assessment" for admissions. If the person being assessed is not in the list, add them in Patient Info first.</p>
 <p style="font-size:.87rem;color:var(--text-mid);margin-bottom:6px">Complete each area of the assessment — select all that apply:</p>
 <ul class="blist"><li>Other Losses</li><li>Mental Health</li><li>Physical Health</li><li>Family System</li><li>Dependents in the home — click "+ Add New Dependent" for each dependent; add their specific age (Under 18 / Adult)</li><li>Socioeconomic Risks</li><li>Support Network</li><li>Caregiver's Coping</li></ul>
@@ -2372,17 +2377,6 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <p>Depression Assessment: Patient unable to participate in depression screening due to [reason — e.g., advanced cognitive impairment, unresponsiveness, aphasia]. No observable signs of depression were noted at time of visit. Caregiver/family report was reviewed for any history of or current concerns regarding depression — [document what was reported, or "none reported at this time"]. Patient will continue to be monitored for non-verbal indicators of emotional distress at each visit and reassessed as condition allows.</p>
 </div>
 
-<div class="sub-gold" style="margin-top:14px">Attaching Your Narrative to the CTI</div>
-<p style="font-size:.88rem;color:var(--text-mid);margin-bottom:8px">Once your nursing narrative is complete, copy and paste it into the Verbal Certification page so it is attached to the CTI for the physician to use when completing their attestation.</p>
-<div class="alert warning" style="margin-bottom:10px"><span>⚠</span><div>
-<strong>Steps to attach your narrative to the CTI:</strong><br><br>
-1. Complete and finalize your admission nursing narrative<br>
-2. Navigate to the <strong>Verbal Certification</strong> page in Firenote<br>
-3. Click the <strong>"Nursing Narrative (RN)"</strong> tab on the certification page<br>
-4. Copy and paste your full admission nursing narrative into this field<br><br>
-<strong>This is required on every admission.</strong> Without it, the physician does not have your clinical narrative available when completing their attestation.
-</div></div>
-
 <div class="sub-gold" style="margin-top:14px">Using AI (Microsoft Copilot) to Build Your Nursing Narrative</div>
 <div class="alert info" style="margin-bottom:8px;border-left:3px solid var(--gold)"><span>🛠</span><div><strong>For a streamlined experience</strong>, use the <a href="#" onclick="switchToNarrativeFromCheckers(document.getElementById('checker-tab-narrative'));return false;" style="color:var(--navy);font-weight:700;text-decoration:underline">✍️ Narrative Strengthener</a> tab — enter your draft notes and it builds a compliant Copilot prompt automatically, then opens directly in Microsoft Copilot.</div></div>
 <ul class="blist"><li>Copy your full assessment narrative from the "Review and Finish" section</li><li>Paste it into Copilot and use the prompt below</li><li>Review and edit as needed to ensure accuracy</li></ul>
@@ -2438,7 +2432,6 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>All orders entered and accurate</strong><span class="note">Admission · Diet · Medications · O2 · Wound care · Catheter</span></div></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Diagnosis list complete — every problem classified as Related or Non-Related</strong></div></div>
 <div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>Verbal Certification entered, dated, and signed</strong><span class="note">Must be obtained within 48 hours of admission. <strong>Exception: Transfer patients from another hospice do not require a new verbal certification — the transferring hospice's certification carries over.</strong></span></div><span class="tag req">REQ</span></div>
-<div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>RN narrative copied into the "Nursing Narrative (RN)" tab on the Verbal Certification page</strong><span class="note">Navigate to the Verbal Certification page → click "Nursing Narrative (RN)" tab → paste your full admission narrative. This attaches the clinical picture to the CTI for the physician's attestation.</span></div><span class="tag req">REQ</span></div>
 <div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>QAPI events entered for wounds or infections present on admission</strong></div><span class="tag req">REQ</span></div>
 <div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>IDG coordination statement documented in Care Coordination section</strong></div><span class="tag req">REQ</span></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>HOPE assessment completed and consistent with care plan, narrative, and medications</strong></div></div>
@@ -2501,7 +2494,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
     <div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">No verbal certification documented = certification deficiency. This directly affects hospice eligibility.</div></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>Verbal order for admission</strong> from hospice physician</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>Verbal certification of terminal illness</strong><span class="note">Physician certifies ≤ 6 months — document in narrative and on CTI within 48 hours. <strong>Transfer patients from another hospice: a new verbal certification is not required — the transferring hospice's certification carries over.</strong></span></div><span class="tag req">REQ</span></div>
-    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>RN admission narrative copied into "Nursing Narrative (RN)" tab on Verbal Certification page</strong><span class="note">Verbal Certification page → "Nursing Narrative (RN)" tab → paste full admission narrative. Attaches your clinical documentation to the CTI for the physician's attestation.</span></div><span class="tag req">REQ</span></div>
+    
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>Primary hospice diagnosis confirmed</strong> with MD agreement</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>Related vs. non-related diagnoses reviewed</strong> with MD<span class="note">Mark each accordingly in Firenote</span></div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs1')"><div class="chk-box"></div><div class="chk-text"><strong>Full medication list reviewed</strong> with MD<span class="note">Deprescribing · Formulary substitutions · Covered vs. non-covered · Interactions</span></div><span class="tag req">REQ</span></div>
@@ -2608,7 +2601,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>Depression screening</strong> documented in the nursing narrative</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>Diagnosis list complete</strong> — Related/Unrelated on every problem</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>Verbal Certification</strong> entered, dated, and signed <span class="note">Must be obtained within 48 hours of admission. <strong>Exception: Transfer patients from another hospice do not require a new verbal certification — the transferring hospice's certification carries over.</strong></span></div><span class="tag req">REQ</span></div>
-    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>RN narrative pasted into "Nursing Narrative (RN)" tab on Verbal Certification page</strong><span class="note">Required — attaches your clinical narrative to the CTI for the physician</span></div><span class="tag req">REQ</span></div>
+    
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>QAPI events entered</strong> for wounds or infections present on admission</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>HOPE assessment consistent</strong> with care plan, narrative, and medications</div><span class="tag req">REQ</span></div>
     <div class="alert tip" style="margin-top:10px"><span>💡</span><div><strong>Final Rule:</strong> Assessment = Care Plan = Narrative = HOPE. Everything must match.</div></div>
@@ -9442,7 +9435,7 @@ SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires
 The patient's PRIMARY HOSPICE DIAGNOSIS is: ${primaryDx}
 
 Active problem list to tier:
-${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}n('\n')}
+${lines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')}
 
 For each diagnosis on the list, determine:
 1. The most appropriate tier (1, 2, or 3)
@@ -9776,7 +9769,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
           + '<li>All DME (hospice-ordered, facility-provided, and patient-owned) and all supplies not tied to another diagnosis</li>'
           + '</ul>'
           + '<div style="margin-top:7px;padding:6px 10px;background:#fff8e1;border:1px solid #ffe082;border-radius:5px;font-size:.79rem;color:#7a4200">'
-          + '<strong>⚠ If patient is Full Code:</strong> Add an additional goal under this primary diagnosis problem (not a new problem) — "Patient\'s code status is Full Code and will be honored per patient/caregiver wishes" — with a PERFORM intervention: "Nurse will document and honor patient\'s Full Code status; ensure code status is communicated to all IDG members and emergency contacts."'
+          + '<strong>⚠ If patient is Full Code:</strong> Add the following secondary goal and custom interventions directly under the primary diagnosis problem (do not create a separate problem for full code status):<br><br><strong>Secondary Goal:</strong> Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.<br><br>• ASSESS: Nurse will assess for risk of hospitalization due to Full Code status<br>• EDUCATE: Nurse will educate patient/caregiver regarding Full Code status implications and risk of hospitalization, and when to contact hospice prior to seeking emergency treatment<br>• PERFORM: Nurse will document and communicate patient\'s Full Code status to all IDG members and emergency contacts'
           + '</div>'
           + '</div>';
       }
@@ -11614,7 +11607,16 @@ async function runIcdLookup() {
         if (!api && k.toLowerCase() === lineLower) api = apiResults[k];
       });
     }
-    if (api) { api.source = 'api'; return api; }
+    if (api) {
+      api.source = 'api';
+      // Normalize: ensure options is always a real array or null, needsClarification is boolean
+      if (api.options !== null && api.options !== undefined && !Array.isArray(api.options)) {
+        api.options = null;
+      }
+      if (api.options && api.options.length === 0) api.options = null;
+      api.needsClarification = api.needsClarification === true && Array.isArray(api.options) && api.options.length > 0;
+      return api;
+    }
     // No match from local or API — show as clarification needed with manual entry prompt
     return { diagnosis: line, code: null, description: null, needsClarification: true, options: [{ code: '__manual__', label: 'Enter code manually using the ICD-10 Reference' }], source: 'none' };
   });
