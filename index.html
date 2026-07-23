@@ -9481,10 +9481,18 @@ CRITICAL: You must process every single diagnosis in the list above and include 
       ? 'After reviewing this batch, identify up to 2 commonly-related diagnoses NOT on the full list that are often associated with diagnoses in this batch. Keep reasoning to 10 words max.'
       : 'For "missing": return empty array [].';
 
-    const batchPrompt = prompt.replace(
-      /Active problem list to tier[\s\S]*$/,
-      'Active problem list to tier (process ALL ' + batchLines.length + ' items — do not skip any):\n' + listSection + '\n\n' + missingInstruction
-    );
+    // Build batchPrompt by preserving the format instructions that follow the diagnosis list
+    const splitMarker = 'For each diagnosis on the list, determine:';
+    const listMarker = 'Active problem list to tier:';
+    const splitIdx = prompt.indexOf(splitMarker);
+    const listIdx = prompt.indexOf(listMarker);
+    const preamble = listIdx > -1 ? prompt.slice(0, listIdx) : prompt;
+    const formatInstructions = splitIdx > -1 ? prompt.slice(splitIdx) : '';
+    const batchPrompt = preamble
+      + 'Active problem list to tier (process ALL ' + batchLines.length + ' items — do not skip any):\n'
+      + listSection + '\n\n'
+      + missingInstruction + '\n\n'
+      + formatInstructions;
 
     const resp = await fetch('/.netlify/functions/claude', {
       method: 'POST',
