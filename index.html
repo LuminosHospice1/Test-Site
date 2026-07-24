@@ -10846,7 +10846,7 @@ function buildSituationalCards(flags, primaryDx) {
         sec.items.forEach(function(iv) {
           var prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
           var prefix = prefixMatch ? prefixMatch[0].toUpperCase() : '';
-          var text = iv.replace(/^(ASSESS|EDUCATE|PERFORM):\s*/i, '');
+          var text = iv.replace(/^(ASSESS|EDUCATE|PERFORM)[:\s\u2014\-]+\s*/i, '');
           var color2 = prefix === 'ASSESS' ? '#1a6a9a' : prefix === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
           var ivRow = document.createElement('div');
           ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid ' + color2 + ';padding:7px 10px;margin-bottom:5px;background:#fafbfd;border-radius:0 5px 5px 0';
@@ -11047,7 +11047,7 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   (result.interventions || []).forEach(function(iv) {
     const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
     const prefixLabel = prefixMatch ? prefixMatch[0].toUpperCase() : '';
-    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM):\s*/i, '');
+    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM)[:\s\u2014\-]+\s*/i, '');
     const color = prefixLabel === 'ASSESS' ? '#1a6a9a' : prefixLabel === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
 
     const ivRow = document.createElement('div');
