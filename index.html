@@ -7844,8 +7844,31 @@ function renderCarePlan(text) {
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
           + makeCpBtn(txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
+      } else if (lt.startsWith('**INTERVENE**')) {
+        const txt = lt.replace(/\*\*INTERVENE\*\*/, '').replace(/^[\s—-]+/, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:#f5eef8;border-radius:6px;border-left:3px solid #7b2d8b">'
+          + '<span style="font-size:.72rem;font-weight:700;color:#5a1a6e;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">INTERVENE</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
+          + makeCpBtn(txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (lt.startsWith('**DOCUMENT**')) {
+        const txt = lt.replace(/\*\*DOCUMENT\*\*/, '').replace(/^[\s—-]+/, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:#eef5f5;border-radius:6px;border-left:3px solid #2a7a7a">'
+          + '<span style="font-size:.72rem;font-weight:700;color:#1a5a5a;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">DOCUMENT</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
+          + makeCpBtn(txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^INTERVENTION\s+\d+[:\.]/.test(lt)) {
+        return ''; // Strip numbered intervention group headers
       } else if (lt === '' || /^-{3,}$/.test(lt) || /^\*{3,}$/.test(lt)) {
         return '';
+      } else if (lt.startsWith('### ')) {
+        return '<div style="font-size:.8rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--border)">' + escHtml(lt.slice(4)) + '</div>';
+      } else if (lt.startsWith('## ')) {
+        return '<div style="font-size:.85rem;font-weight:700;color:var(--navy);margin:10px 0 4px">' + escHtml(lt.slice(3)) + '</div>';
+      } else if (/^(IF APPLICABLE|FLAG|REQUIRED) —/.test(lt)) {
+        const ln = escHtml(lt).replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
+        return '<div style="font-size:.8rem;font-weight:700;color:var(--gold-dark,#7a4200);background:var(--amber-bg,#fff8ee);border-left:3px solid var(--gold,#c9972c);padding:6px 10px;margin:12px 0 4px;border-radius:4px">' + ln + '</div>';
       } else {
         const ln = escHtml(l).replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
         return '<p style="margin:3px 0;font-size:.9rem;color:var(--text)">' + ln + '</p>';
@@ -8223,14 +8246,12 @@ REQUIREMENTS:
 1. GOAL: Must be measurable and safety-focused. Format:
 "Patient/caregiver will [demonstrate/verbalize/maintain] [specific safety behavior or risk reduction outcome] as evidenced by [measurable indicator] throughout the benefit period."
 
-2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / INTERVENE / DOCUMENT labels (NOT Perform/Educate). Every intervention must be specific to "${problem}":
+2. INTERVENTIONS: Generate a minimum of one ASSESS, one INTERVENE, and one DOCUMENT intervention. You may add additional individual interventions (up to 6 total lines) if clinically appropriate. Every intervention must be a single standalone line — do NOT group them into numbered sections or categories. Do NOT use Perform or Educate labels. Use only ASSESS, INTERVENE, DOCUMENT.
    ASSESS — Nurse will assess [specific safety risk or indicator] at each visit
    INTERVENE — Nurse will [specific safety action or de-escalation strategy]
    DOCUMENT — Nurse will document [specific finding, action taken, or response]
 
-3. Do NOT use Perform or Educate labels in this care plan type. Use only ASSESS, INTERVENE, DOCUMENT.
-
-4. Format EXACTLY:
+3. Format EXACTLY — flat list of individual intervention lines, no numbering, no grouped sections:
 ## CARE PLAN PROBLEM
 [problem statement]
 
@@ -8239,9 +8260,9 @@ REQUIREMENTS:
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess [...]
+**ASSESS** — Nurse will assess [...]
 **INTERVENE** — Nurse will [...]
 **DOCUMENT** — Nurse will document [...]
-[additional interventions as needed]
 
 ## PHYSICIAN/IDT COORDINATION
 [Who to notify and what to communicate re: this safety concern]${situationalContent ? '\n\n## ADDITIONAL REQUIRED/SITUATIONAL ITEMS\n' + situationalContent : ''}`;
@@ -8264,7 +8285,7 @@ REQUIREMENTS:
 1. GOAL: Must be coordination-focused and measurable. Format:
 "Patient/family/caregiver will [achieve specific coordination outcome — e.g. verbalize understanding of, complete, successfully transition to] [specific goal] as evidenced by [measurable indicator] by [timeframe or throughout the benefit period]."
 
-2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / EDUCATE / PERFORM labels, all specific to "${problem}" coordination needs:
+2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}" coordination needs:
    ASSESS — Nurse will assess [specific coordination need, readiness, or barrier]
    EDUCATE — Nurse will educate patient/caregiver/facility on [specific coordination topic]
    PERFORM — Nurse will perform or coordinate [specific coordination action]
@@ -8305,7 +8326,7 @@ REQUIREMENTS:
 1. GOAL: Must be psychosocial and measurable. Format:
 "Patient/family/caregiver will [verbalize/demonstrate/utilize] [specific coping strategy, emotional outcome, or support utilization] as evidenced by [observable indicator] throughout the benefit period."
 
-2. INTERVENTIONS: Generate 4-6 interventions using ASSESS / EDUCATE / PERFORM labels, all specific to "${problem}":
+2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}":
    ASSESS — Nurse will assess [specific psychosocial or emotional indicator]
    EDUCATE — Nurse will educate patient/caregiver on [specific coping or support topic]
    PERFORM — Nurse will perform [specific supportive or referral action]
@@ -10849,7 +10870,7 @@ function buildSituationalCards(flags, primaryDx) {
         sec.items.forEach(function(iv) {
           var prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
           var prefix = prefixMatch ? prefixMatch[0].toUpperCase() : '';
-          var text = iv.replace(/^(ASSESS|EDUCATE|PERFORM)[:\s\u2014\-]+\s*/i, '');
+          var text = iv.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '');
           var color2 = prefix === 'ASSESS' ? '#1a6a9a' : prefix === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
           var ivRow = document.createElement('div');
           ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid ' + color2 + ';padding:7px 10px;margin-bottom:5px;background:#fafbfd;border-radius:0 5px 5px 0';
@@ -11048,9 +11069,9 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   ivSec.appendChild(ivLabel);
 
   (result.interventions || []).forEach(function(iv) {
-    const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM)/i);
+    const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)/i);
     const prefixLabel = prefixMatch ? prefixMatch[0].toUpperCase() : '';
-    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM)[:\s\u2014\-]+\s*/i, '');
+    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '');
     const color = prefixLabel === 'ASSESS' ? '#1a6a9a' : prefixLabel === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
 
     const ivRow = document.createElement('div');
