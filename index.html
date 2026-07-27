@@ -7817,7 +7817,7 @@ function renderCarePlan(text) {
     // Build plain-text version of section content for copying
     const plainLines = sec.lines.map(l => {
       return l.replace(/\*\*([^*]+?)\*\*/g, '$1').trim();
-    }).filter(l => l.length > 0);
+    }).filter(l => l.length > 0 && !/^-{3,}$/.test(l) && !/^\*{3,}$/.test(l));
     const plainText = sec.title + '\n' + plainLines.join('\n');
 
     // Render section content HTML
@@ -7844,8 +7844,8 @@ function renderCarePlan(text) {
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
           + makeCpBtn(txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
-      } else if (lt === '') {
-        return '<div style="margin-top:3px"></div>';
+      } else if (lt === '' || /^-{3,}$/.test(lt) || /^\*{3,}$/.test(lt)) {
+        return '';
       } else {
         const ln = escHtml(l).replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>');
         return '<p style="margin:3px 0;font-size:.9rem;color:var(--text)">' + ln + '</p>';
@@ -10676,6 +10676,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
 
   const patientDetails = (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '');
 
+  // Normalize dx strings for comparison: strip ICD code prefix, lowercase, trim
+  function normDx(s) { return (s||'').replace(/^[A-Z][0-9][0-9A-Z]\.?[0-9A-Z]*\s*/i,'').toLowerCase().trim(); }
+
   // Create a card placeholder for each Tier 1 item
   const cards = tier1Items.map(function(it, idx) {
     const card = document.createElement('div');
@@ -10684,7 +10687,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
 
     const hdr = document.createElement('div');
     hdr.style.cssText = 'padding:10px 14px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none';
-    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(it.diagnosis) + (it.diagnosis === primaryDx ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span>' : '') + '</span>'
+    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(it.diagnosis) + (normDx(it.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(it.diagnosis).includes(normDx(primaryDx))) ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span>' : '') + '</span>'
       + '<span class="card-chevron" style="font-size:.8rem;transition:transform .2s">▼</span>';
     hdr.addEventListener('click', function() {
       const body = card.querySelector('.all-cp-body');
@@ -10708,7 +10711,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
   // Fire all AI calls in parallel
   await Promise.all(cards.map(async function(c) {
     const it = c.item;
-    const isPrimary = it.diagnosis === primaryDx;
+    const isPrimary = normDx(it.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(it.diagnosis).includes(normDx(primaryDx))) || (primaryDx && normDx(primaryDx).includes(normDx(it.diagnosis)));
 
     const goalsMap = {
       comfort: 'comfort and symptom management',
