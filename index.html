@@ -10795,6 +10795,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
     return { card: card, body: body, item: it };
   });
 
+  // Get flags before Promise.all so they're available inside the async callbacks
+  const flags = getCpFlags();
+
   // Fire all AI calls in parallel
   await Promise.all(cards.map(async function(c) {
     const it = c.item;
@@ -10876,7 +10879,6 @@ Respond ONLY with valid JSON, no markdown, no extra text:
   btn.disabled = false;
 
   // Append situational/required care plan cards
-  const flags = getCpFlags();
   const sitCards = buildSituationalCards(flags, primaryDx);
   sitCards.forEach(function(sc) { wrap.appendChild(sc); });
 
