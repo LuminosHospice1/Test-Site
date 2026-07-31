@@ -2653,7 +2653,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 
 <div class="container">
 <div class="intro-strip"><strong>Use this reference when building the problem list at admission.</strong> Search by diagnosis name or ICD-10 code. Filter by category. Always code to the highest level of specificity — confirm codes are valid for the current fiscal year.</div>
-<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">F Codes (F01.xx, F02.xx) may NOT be used as a primary hospice diagnosis. They must be secondary to a specific dementia code: G30.9 (Alzheimer's) · G31.83 (Lewy body) · G31.1 (Senile degeneration).</div></div>
+<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body"><strong>F-Code Sequencing Rules:</strong> F02.8x (dementia in other diseases) is a manifestation code — it can NEVER be listed alone or as a primary diagnosis. The etiology code (G30.x, G20, G31.83, etc.) must always be listed FIRST. F01.5x (vascular dementia) stands alone and does not require a separate etiology code. F03.9x (unspecified dementia) should only be used when no cause is documented anywhere in the chart — it is a fallback, not a default. Use the <strong>ICD-10 Code Lookup F-Code Builder</strong> to construct the exact F-code based on severity and documented symptoms.</div></div>
 <div class="alert warning" style="margin-bottom:14px"><span>⚠</span><div>Under CMS guidance, hospice is expected to cover virtually all conditions related to the terminal prognosis. Conditions marked as unrelated should be RARE, well-justified, and clearly documented. This is an area of increased audit scrutiny.</div></div>
 
 <div class="search-wrap">
@@ -2707,26 +2707,49 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Elimination" data-search="personal history of uti z87.440 include even without active infection"><td>Personal history of UTI</td><td class="code-cell">Z87.440</td><td>Include even without active infection</td></tr>
 <tr class="icd-data-row" data-cat="Elimination" data-search="urinary tract infection n39.0 requires physician documentation"><td>Urinary tract infection</td><td class="code-cell">N39.0</td><td>Requires physician documentation</td></tr>
 <tr class="icd-data-row" data-cat="Elimination" data-search="presence of urogenital implants z96.0 permanent implanted device artificial sphincter implanted prosthetic"><td>Presence of urogenital implants</td><td class="code-cell">Z96.0</td><td>For permanent implanted urogenital devices (e.g. artificial sphincter, implanted prosthetic) — NOT for foley/indwelling catheters. Use Y84.6 for foley catheters.</td></tr>
-<tr class="icd-cat-row" data-cat="Cognitive &amp; Neurological"><td colspan="3">Cognitive &amp; Neurological</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, unspecified g30.9 always pair with f02.80 or f02.81"><td>Alzheimer's disease, unspecified</td><td class="code-cell">G30.9</td><td>Always pair with F02.80 or F02.81</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's, early onset g30.0 pair with f02.80 or f02.81"><td>Alzheimer's, early onset</td><td class="code-cell">G30.0</td><td>Pair with F02.80 or F02.81</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="dementia — no behavioral disturbance f02.80 secondary code — never primary"><td>Dementia — no behavioral disturbance</td><td class="code-cell">F02.80</td><td>Secondary code — never primary</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="dementia with behavioral disturbance f02.81 agitation, wandering, combativeness"><td>Dementia with behavioral disturbance</td><td class="code-cell">F02.81</td><td>Agitation, wandering, combativeness</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="vascular dementia — no behavioral disturbance f01.50 "><td>Vascular dementia — no behavioral disturbance</td><td class="code-cell">F01.50</td><td></td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="vascular dementia — with behavioral disturbance f01.51 "><td>Vascular dementia — with behavioral disturbance</td><td class="code-cell">F01.51</td><td></td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="senile degeneration of the brain g31.1 general cognitive decline without specific dx"><td>Senile degeneration of the brain</td><td class="code-cell">G31.1</td><td>General cognitive decline without specific dx</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="lewy body dementia g31.83 pair with f02.80 or f02.81"><td>Lewy body dementia</td><td class="code-cell">G31.83</td><td>Pair with F02.80 or F02.81</td></tr>
+<tr class="icd-cat-row" data-cat="Cognitive &amp; Neurological"><td colspan="3">Cognitive &amp; Neurological — Dementia Etiology Codes (code FIRST before F-code companion)</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, unspecified g30.9 etiology first then f02.8x companion required never use f03"><td>Alzheimer's disease, unspecified</td><td class="code-cell">G30.9</td><td>Etiology first — requires F02.8x companion. Never use F03 once Alzheimer's is documented</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, early onset g30.0 etiology first then f02.8x companion"><td>Alzheimer's disease, early onset</td><td class="code-cell">G30.0</td><td>Etiology first — requires F02.8x companion</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, late onset g30.1 etiology first then f02.8x companion"><td>Alzheimer's disease, late onset</td><td class="code-cell">G30.1</td><td>Etiology first — requires F02.8x companion</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="lewy body dementia g31.83 etiology first then f02.8x visual hallucinations psychotic disturbance f02.82"><td>Lewy body dementia</td><td class="code-cell">G31.83</td><td>Etiology first — requires F02.8x companion. Visual hallucinations are hallmarks — consider F02.82</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="frontotemporal dementia ftd g31.09 etiology first then f02.8x behavioral disturbance f02.81x common"><td>Frontotemporal dementia (FTD)</td><td class="code-cell">G31.09</td><td>Etiology first — requires F02.8x companion. Behavioral disturbance is common — consider F02.811</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="pick's disease g31.01 etiology first then f02.8x behavioral disturbance common"><td>Pick's disease</td><td class="code-cell">G31.01</td><td>Etiology first — requires F02.8x companion</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="parkinson's disease g20 etiology first then f02.8x hallucinations psychosis f02.82 common"><td>Parkinson's disease</td><td class="code-cell">G20</td><td>Etiology first — requires F02.8x companion when dementia is documented. Hallucinations/psychosis common — check for F02.82</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="huntington's disease g10 etiology first then f02.8x mood disturbance f02.83 common"><td>Huntington's disease</td><td class="code-cell">G10</td><td>Etiology first — requires F02.8x companion. Mood disturbance/depression common — consider F02.83</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="senile degeneration of brain g31.1 etiology first then f02.8x not f03"><td>Senile degeneration of brain</td><td class="code-cell">G31.1</td><td>Etiology first — requires F02.8x companion. NOT F03 — G31.1 is a documented etiology</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="normal pressure hydrocephalus g91.2 etiology first then f02.8x classic triad cognitive gait incontinence"><td>Normal pressure hydrocephalus (NPH)</td><td class="code-cell">G91.2</td><td>Etiology first — requires F02.8x companion. Classic triad: cognitive decline + gait disturbance + incontinence</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="corticobasal degeneration g31.85 etiology first then f02.8x asymmetric rigidity apraxia"><td>Corticobasal degeneration</td><td class="code-cell">G31.85</td><td>Etiology first — requires F02.8x companion. Asymmetric rigidity/apraxia are hallmarks</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="progressive supranuclear palsy psp g23.1 etiology first then f02.8x"><td>Progressive supranuclear palsy (PSP)</td><td class="code-cell">G23.1</td><td>Etiology first — requires F02.8x companion</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="creutzfeldt-jakob disease cjd prion a81.00 etiology first then f02.8x rapidly progressive"><td>Creutzfeldt-Jakob disease (CJD)</td><td class="code-cell">A81.00</td><td>Etiology first — requires F02.8x companion. Rapidly progressive</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="anoxic brain injury hypoxic encephalopathy g93.1 etiology first then f02.8x after cardiac arrest"><td>Anoxic brain injury</td><td class="code-cell">G93.1</td><td>Etiology first — requires F02.8x companion. Common after cardiac arrest</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="als amyotrophic lateral sclerosis g12.21 f02.8x only if ftd overlap dementia specifically documented"><td>ALS (Amyotrophic lateral sclerosis)</td><td class="code-cell">G12.21</td><td>F02.8x companion only if dementia is specifically documented (ALS-FTD overlap) — do NOT add F02.8x for all ALS patients</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="multiple sclerosis g35 f02.8x only if true dementia documented not just cognitive difficulty"><td>Multiple sclerosis</td><td class="code-cell">G35</td><td>F02.8x companion only when true dementia is documented — not just "cognitive difficulty" or memory complaints</td></tr>
+<tr class="icd-cat-row" data-cat="Cognitive &amp; Neurological"><td colspan="3">F-Code Companion Codes — Dementia Manifestation (code SECOND, after etiology)</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02 dementia in other diseases classified elsewhere f02.8x manifestation code never listed alone always after etiology"><td>F02.8x — Dementia in other diseases (family)</td><td class="code-cell">F02.8x</td><td>Manifestation code — NEVER listed alone. Always sequenced after etiology (G30.x, G20, G31.83, etc.). Use F-Code Builder in ICD-10 Lookup to build the exact code</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.80 dementia no disturbance no behavioral psychotic mood anxiety documented"><td>F02.80 — Dementia, unspecified severity, no disturbance</td><td class="code-cell">F02.80</td><td>No behavioral, psychotic, mood disturbance, or anxiety documented</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.811 dementia with behavioral disturbance agitation combativeness pacing yelling"><td>F02.811 — Dementia with behavioral disturbance, agitation</td><td class="code-cell">F02.811</td><td>Agitation specifically: combativeness, pacing, yelling, resisting care</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.818 dementia with behavioral disturbance other wandering disinhibition exit-seeking"><td>F02.818 — Dementia with behavioral disturbance, other</td><td class="code-cell">F02.818</td><td>Other behavioral disturbance: wandering, disinhibition, exit-seeking (not agitation)</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.82 dementia with psychotic disturbance hallucinations delusions paranoia"><td>F02.82 — Dementia with psychotic disturbance</td><td class="code-cell">F02.82</td><td>Hallucinations (visual, auditory), delusions, paranoia. Common in Lewy body and PD</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.83 dementia with mood disturbance depression apathy tearfulness lability"><td>F02.83 — Dementia with mood disturbance</td><td class="code-cell">F02.83</td><td>Depression, tearfulness, apathy, emotional lability tied to the dementia. Common in Huntington's</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.84 dementia with anxiety restlessness worry fear"><td>F02.84 — Dementia with anxiety</td><td class="code-cell">F02.84</td><td>Documented anxious behavior, restlessness tied to fear/worry</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f02.b11 moderate dementia with behavioral disturbance agitation alzheimer's moderate severity"><td>F02.B11 — Moderate dementia with behavioral disturbance, agitation</td><td class="code-cell">F02.B11</td><td>B = moderate severity; behavioral disturbance with agitation specifically. Common example: Alzheimer's, moderate, with agitation</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f01 vascular dementia f01.5x stands alone no separate etiology code required stroke cerebrovascular"><td>F01.5x — Vascular dementia (family)</td><td class="code-cell">F01.5x</td><td>Stands alone — no mandatory separate etiology code. Caused by stroke or cerebrovascular disease. NOT a manifestation code like F02</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f01.50 vascular dementia no behavioral disturbance history multiple strokes"><td>F01.50 — Vascular dementia, no disturbance</td><td class="code-cell">F01.50</td><td>Unspecified severity, no behavioral/psychotic/mood/anxiety symptoms</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f01.511 vascular dementia with behavioral disturbance agitation"><td>F01.511 — Vascular dementia with behavioral disturbance, agitation</td><td class="code-cell">F01.511</td><td>Agitation specifically documented</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f01.54 vascular dementia with anxiety"><td>F01.54 — Vascular dementia with anxiety</td><td class="code-cell">F01.54</td><td>Documented anxiety tied to the vascular dementia</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f03.9x unspecified dementia no cause documented fallback code cdi query"><td>F03.9x — Unspecified dementia (family)</td><td class="code-cell">F03.9x</td><td>ONLY when NO cause is documented anywhere in the chart. Should trigger a CDI query — never use as a default</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f03.90 unspecified dementia no behavioral disturbance no cause documented"><td>F03.90 — Unspecified dementia, no disturbance</td><td class="code-cell">F03.90</td><td>No etiology documented, no behavioral/psychotic/mood/anxiety symptoms</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f03.91 unspecified dementia with behavioral disturbance no cause documented"><td>F03.91 — Unspecified dementia with behavioral disturbance</td><td class="code-cell">F03.91</td><td>No etiology documented; behavioral disturbance present</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="f-code severity 5th character mild moderate severe unspecified a b c"><td>F-Code Severity — 5th character reference</td><td class="code-cell">See note</td><td>Unspecified: F01=5, F02=8, F03=9 · Mild=A · Moderate=B · Severe=C (e.g. F02.B11 = moderate + behavioral + agitation)</td></tr>
+<tr class="icd-cat-row" data-cat="Cognitive &amp; Neurological"><td colspan="3">Cognitive &amp; Neurological — Other</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="encephalopathy, unspecified g93.40 document etiology if known"><td>Encephalopathy, unspecified</td><td class="code-cell">G93.40</td><td>Document etiology if known</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="toxic metabolic encephalopathy g92.9 common in multi-medication patients"><td>Toxic metabolic encephalopathy</td><td class="code-cell">G92.9</td><td>Common in multi-medication patients</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="sequela of cerebrovascular disease i69.398 use instead of i63.xxx for prior stroke"><td>Sequela of cerebrovascular disease</td><td class="code-cell">I69.398</td><td>Use INSTEAD of I63.XXX for prior stroke</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="parkinson&amp;#39;s disease g20 pair with dysphagia, fall risk, dementia codes"><td>Parkinson&amp;#39;s disease</td><td class="code-cell">G20</td><td>Pair with dysphagia, fall risk, dementia codes</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="als (amyotrophic lateral sclerosis) g12.21 pair with dysphagia, respiratory failure, weakness"><td>ALS (Amyotrophic lateral sclerosis)</td><td class="code-cell">G12.21</td><td>Pair with dysphagia, respiratory failure, weakness</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="multiple sclerosis g35 pair with fatigue, weakness, neurogenic bladder"><td>Multiple sclerosis</td><td class="code-cell">G35</td><td>Pair with fatigue, weakness, neurogenic bladder</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="epilepsy, unspecified, not intractable g40.909 active/ongoing seizure history"><td>Epilepsy, unspecified, not intractable</td><td class="code-cell">G40.909</td><td>Active/ongoing seizure history</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="hemiplegia/hemiparesis following cva — dominant i69.351 sequela code — specify side"><td>Hemiplegia/hemiparesis following CVA — dominant</td><td class="code-cell">I69.351</td><td>Sequela code — specify side</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="hemiplegia/hemiparesis following cva — non-dominant i69.352 "><td>Hemiplegia/hemiparesis following CVA — non-dominant</td><td class="code-cell">I69.352</td><td></td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="anxiety disorder, unspecified f41.9 very commonly missed — include with dementia"><td>Anxiety disorder, unspecified</td><td class="code-cell">F41.9</td><td>Very commonly missed — include with dementia</td></tr>
-<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="agitation / psychomotor agitation r45.1 pair with f02.81"><td>Agitation / psychomotor agitation</td><td class="code-cell">R45.1</td><td>Pair with F02.81</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="hemiplegia/hemiparesis following cva — non-dominant i69.352"><td>Hemiplegia/hemiparesis following CVA — non-dominant</td><td class="code-cell">I69.352</td><td></td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="anxiety disorder, unspecified f41.9 very commonly missed include with dementia"><td>Anxiety disorder, unspecified</td><td class="code-cell">F41.9</td><td>Very commonly missed — include with dementia when anxiety is documented</td></tr>
+<tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="agitation psychomotor agitation r45.1 pair with f02.811"><td>Agitation / psychomotor agitation</td><td class="code-cell">R45.1</td><td>Pair with F02.811 when agitation is the documented behavioral disturbance</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="insomnia, unspecified g47.00 frequently overlooked"><td>Insomnia, unspecified</td><td class="code-cell">G47.00</td><td>Frequently overlooked</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="delirium due to known physiological condition f05 distinguish from dementia at admission"><td>Delirium due to known physiological condition</td><td class="code-cell">F05</td><td>Distinguish from dementia at admission</td></tr>
 <tr class="icd-cat-row" data-cat="Cardiac"><td colspan="3">Cardiac</td></tr>
@@ -7858,6 +7881,12 @@ function renderCarePlan(text) {
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(txt) + '</span>'
           + makeCpBtn(txt, '📋 Copy', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
+      } else if (/^---\s+.+\s+---$/.test(lt)) {
+        var divLabel = lt.replace(/^-+\s+/, '').replace(/\s+-+$/, '');
+        return '<div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px;padding:6px 10px;background:#eef2fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0">' + escHtml(divLabel) + '</div>';
+      } else if (/^SECONDARY GOAL:/i.test(lt)) {
+        var goalTxt = lt.replace(/^SECONDARY GOAL:\s*/i, '');
+        return '<div style="background:var(--amber-bg,#fff8ee);border:1px solid var(--gold,#c9972c);border-radius:6px;padding:8px 12px;margin:6px 0"><div style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.88rem;color:var(--text)">' + escHtml(goalTxt) + '</div></div>';
       } else if (/^INTERVENTION\s+\d+[:\.]/.test(lt)) {
         return ''; // Strip numbered intervention group headers
       } else if (lt === '' || /^-{3,}$/.test(lt) || /^\*{3,}$/.test(lt)) {
@@ -7962,28 +7991,7 @@ function getCpFlags() {
 function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
   const lines = [];
 
-  // ── Bereavement (always required under primary DX) ──────────────
-  if (isPrimaryDxPlan) {
-    lines.push(`
-REQUIRED — BEREAVEMENT CARE PLAN (add under primary DX, required on every admission):
-Goal: [Patient's family/caregiver] will receive a pre-bereavement assessment to help identify risk factors for complicated grief, and utilize available support systems and hospice bereavement services within 48 hours of admission.
-Interventions (add all four):
-• ASSESS: Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
-• PERFORM: Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.
-• PERFORM: Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.
-• EDUCATE: Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.`);
-  }
-
-  // ── Full Code ───────────────────────────────────────────────────
-  if (flags.fullCode && isPrimaryDxPlan) {
-    lines.push(`
-REQUIRED — FULL CODE STATUS (add as a secondary goal under primary DX, not a new problem):
-Secondary Goal: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.
-Interventions (add all three as custom interventions under primary DX):
-• ASSESS: Nurse will assess for risk of hospitalization due to Full Code status.
-• EDUCATE: Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.
-• PERFORM: Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.`);
-  }
+  // Bereavement and Full Code are now hardcoded into requiredPrimaryBlock — not passed to AI prompt
 
   // ── Patient Setting — medication administration language ─────────
   const medLang = {
@@ -8219,12 +8227,26 @@ async function runCarePlanBuilder() {
   const goalsLabel = goalsMap[goals] || goals || 'comfort and symptom management';
 
   // Required interventions block for primary DX
+  const fullCodeBlock = (flags && flags.fullCode) ? `
+
+--- FULL CODE STATUS (secondary goal and interventions — add under this primary DX problem) ---
+SECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.
+   ASSESS — Nurse will assess for risk of hospitalization due to Full Code status.
+   EDUCATE — Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.
+   PERFORM — Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.` : '';
+
   const requiredPrimaryBlock = isPrimaryDxPlan ? `
 3. REQUIRED ADDITIONAL INTERVENTIONS — This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:
    PERFORM — Nurse will enter admission order as directed.
    PERFORM — Nurse will enter nutrition order as directed (document as "Nutrition" in Firenote, not "Diet").
    PERFORM — Nurse will identify and document${caregiver ? ' ' + caregiver + ' as' : ''} the responsible party for medication administration. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.` : '';
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.
+${fullCodeBlock}
+--- BEREAVEMENT ASSESSMENT (required on every admission — add these interventions under this primary DX problem, mark each Performed) ---
+   ASSESS — Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
+   PERFORM — Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.
+   PERFORM — Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.
+   EDUCATE — Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.` : '';
 
   let prompt;
 
@@ -9437,17 +9459,29 @@ REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diag
 
 CRITICAL — use the CORRECT F-code companion based on the specific G-code diagnosis. Do NOT use F02.x for non-Alzheimer's diagnoses:
 - G30.x (Alzheimer's disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
-- G31.1 (Senile degeneration of the brain) → F03.91 (with behavioral disturbance) or F03.90 (without behavioral disturbance). Do NOT suggest F02.x for G31.1 — that is Alzheimer's-specific.
-- G31.83 (Lewy body disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
-- G31.09 (Frontotemporal dementia) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
-- G31.0x (other frontotemporal) → F02.81 or F02.80
-- F01.x (Vascular dementia) — already an F-code, no companion needed
-- G20 (Parkinson's disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
-- Unspecified dementia → F03.91 (with behavioral disturbance) or F03.90 (without behavioral disturbance)
+F-CODE COMPANION RULES (etiology → correct F-code family):
+- G30.x (Alzheimer's) → F02.8x family (NEVER F03)
+- G20/G20.x (Parkinson's) → F02.8x family. Hallucinations are common — F02.82 may apply
+- G31.83 (Lewy body) → F02.8x family. Visual hallucinations are hallmarks — F02.82 likely
+- G31.01 (Pick's) / G31.09 (FTD) → F02.8x family. Behavioral disturbance common — F02.81x likely
+- G31.85 (Corticobasal) / G23.1 (PSP) → F02.8x family
+- G10 (Huntington's) → F02.8x family. Mood disturbance common — F02.83 likely
+- A81.00 (CJD/prion) → F02.8x family
+- G91.2 (NPH) → F02.8x family
+- G31.1 (Senile degeneration of brain) → F02.8x family (NOT F03)
+- G93.1 (Anoxic brain injury) → F02.8x family
+- B20 (HIV) → F02.8x family
+- G35 (MS with dementia) → F02.8x family
+- G12.21 (ALS-FTD overlap) → F02.8x family only if dementia specifically documented
+- F01.5x (Vascular dementia) — already an F-code, stands alone, no companion needed
+- Unspecified dementia (no documented etiology) → F03.9x family
+- G31.1 (Senile degeneration) → F02.8x (NOT F03, NOT F02.80 by default — check for behavioral symptoms)
+
+IMPORTANT: When flagging a missing F-code, set icd10 to the FAMILY placeholder only (e.g. "F02.8x") — the exact code will be built by a separate tool based on severity and symptoms. Never hardcode F02.80 or F02.81 — those require clinical confirmation.
 
 If an F-code companion IS present on the list: tier it as Tier 2 under the neurocognitive primary diagnosis. Set associatedSymptom to false (it is a required coding companion, not a symptom). Do NOT give it a standalone care plan.
 
-If an F-code companion is NOT present on the list: add it to the "missing" array and mark it as required (set "required": true in the missing item). The suggestion and icd10 fields must reflect the CORRECT F-code for the specific G-code diagnosis as listed above — never suggest F02.x for a G31.1 diagnosis.
+If an F-code companion is NOT present on the list: add it to the "missing" array and mark it as required (set "required": true in the missing item). Use the F-code family placeholder in the icd10 field (e.g. "F02.8x") and name the specific family in the suggestion field.
 
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
@@ -9862,29 +9896,41 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
       requiredItems.forEach(function(m, mi) {
         const globalMi = data.missing.indexOf(m);
 
-        // If suggestion contains multiple F-codes (e.g. "F03.91 ... or F03.90"), split into separate rows
-        const fCodeMatches = m.suggestion.match(/F\d{2}\.\d{1,2}/g);
-        if (fCodeMatches && fCodeMatches.length >= 2) {
-          const labels = {
-            'F02.80': 'Dementia in disease classified elsewhere — without behavioral disturbance',
-            'F02.81': 'Dementia in disease classified elsewhere — with behavioral disturbance',
-            'F03.90': 'Unspecified dementia — without behavioral disturbance',
-            'F03.91': 'Unspecified dementia — with behavioral disturbance'
-          };
-          const hdrRow = document.createElement('div');
-          hdrRow.style.cssText = 'padding:8px 14px;background:#fdf0ef;border-bottom:1px solid #f5c6c2;font-size:.82rem;color:#c0392b;font-weight:600';
-          hdrRow.textContent = 'Select the appropriate companion F-code for this patient:';
-          reqSection.appendChild(hdrRow);
-          fCodeMatches.forEach(function(code) {
-            const optRow = document.createElement('div');
-            optRow.style.cssText = 'padding:9px 14px;border-bottom:1px solid #f5c6c2;font-size:.86rem;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff8f7';
-            const label = labels[code] || 'Companion F-code';
-            const codeBadge = '<span style="font-family:monospace;font-size:.74rem;background:#fdf0ef;border:1px solid #e8b4b0;color:#c0392b;padding:1px 7px;border-radius:4px;margin-right:8px;font-weight:700">' + escapeHtml(code) + '</span>';
-            optRow.innerHTML = '<div style="flex:1">' + codeBadge + '<strong style="color:#c0392b">' + escapeHtml(label) + '</strong>'
-              + '<div style="color:var(--text-mid);margin-top:2px;font-size:.82rem">' + escapeHtml(m.reasoning || '') + '</div></div>'
-              + '<button class="tier-queue-btn" data-mi="' + globalMi + '-' + code + '" data-suggestion="' + escapeHtml(code + ' ' + label).replace(/"/g,'&quot;') + '" data-icd10="' + escapeHtml(code) + '" style="flex-shrink:0;padding:5px 12px;background:#fdf0ef;color:#c0392b;border:1px solid #e8b4b0;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap">+ Add to Problem List</button>';
-            reqSection.appendChild(optRow);
+        // If this is an F-code companion suggestion, use the full F-code builder
+        const isFCodeSuggestion = m.required && (/F0[123]/.test(m.icd10 || '') || /F.?code/i.test(m.suggestion) || /companion/i.test(m.suggestion));
+        if (isFCodeSuggestion) {
+          const fcHdrRow = document.createElement('div');
+          fcHdrRow.style.cssText = 'padding:8px 14px;background:#fdf0ef;border-bottom:1px solid #f5c6c2;font-size:.82rem;color:#c0392b;font-weight:600';
+          fcHdrRow.textContent = '⚕ F-code companion required — ' + (m.suggestion || 'dementia manifestation code');
+          reqSection.appendChild(fcHdrRow);
+          const fcBuilderRow = document.createElement('div');
+          fcBuilderRow.style.cssText = 'padding:10px 14px;background:#fff8f7;border-bottom:1px solid #f5c6c2';
+          // Detect which etiology is on the problem list
+          const tierLines = (document.getElementById('tier-input') ? document.getElementById('tier-input').value : '');
+          const tierEtiology = detectDementiaEtiology(tierLines.split('\n').find(function(l) {
+            return detectDementiaEtiology(l);
+          }) || '');
+          // Determine family from the suggested code if available
+          var tierFcFamily = 'F02';
+          if (m.icd10 && /^F01/.test(m.icd10)) tierFcFamily = 'F01_STANDALONE';
+          else if (m.icd10 && /^F03/.test(m.icd10)) tierFcFamily = 'F03';
+          if (tierEtiology) tierFcFamily = tierEtiology.family;
+          window._fcFamily = tierFcFamily;
+          renderFCodeBuilder(fcBuilderRow, tierEtiology || { family: tierFcFamily }, null, m.suggestion, function(fcCode, fcDesc) {
+            if (fcCode) {
+              fcBuilderRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0">'
+                + '<span style="font-family:monospace;font-size:.82rem;background:#c0392b;color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span>'
+                + '<span style="color:#c0392b;font-weight:600">' + escapeHtml(fcDesc) + '</span>'
+                + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Built — add this to the problem list in Firenote after the etiology code</span>'
+                + '</div>';
+              // Add to tier input
+              const ti = document.getElementById('tier-input');
+              if (ti) { ti.value = (ti.value.trim() ? ti.value.trim() + '\n' : '') + fcCode + ' ' + fcDesc; }
+            } else {
+              fcBuilderRow.innerHTML = '<div style="font-size:.8rem;color:var(--text-mid);font-style:italic;padding:4px 0">F-code skipped.</div>';
+            }
           });
+          reqSection.appendChild(fcBuilderRow);
           return;
         }
 
@@ -10902,28 +10948,7 @@ function buildSituationalCards(flags, primaryDx) {
   var red = '#c0392b';
   var teal = '#0e7490';
 
-  // ── Bereavement (always) ────────────────────────────────────────
-  cards.push(makeCard('😢 Bereavement Care Plan', 'REQUIRED — All Admissions', navy, [
-    { type: 'goal', text: "[Patient's family/caregiver] will receive a pre-bereavement assessment to help identify risk factors for complicated grief, and utilize available support systems and hospice bereavement services within 48 hours of admission." },
-    { type: 'interventions', items: [
-      'ASSESS: Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family\'s ability to provide mutual support.',
-      'PERFORM: Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.',
-      'PERFORM: Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.',
-      'EDUCATE: Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.'
-    ]}
-  ]));
-
-  // ── Full Code ────────────────────────────────────────────────────
-  if (flags.fullCode) {
-    cards.push(makeCard('🆘 Full Code Status', 'Add under Primary DX — Secondary Goal', red, [
-      { type: 'goal', isSecondary: true, text: "Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period." },
-      { type: 'interventions', items: [
-        'ASSESS: Nurse will assess for risk of hospitalization due to Full Code status.',
-        'EDUCATE: Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.',
-        'PERFORM: Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
-      ]}
-    ]));
-  }
+  // ── Bereavement + Full Code now auto-inject under primary DX card via requiredPrimaryBlock ──
 
   // ── Continuous Oxygen ────────────────────────────────────────────
   if (flags.oxygen) {
@@ -11069,6 +11094,24 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   ivSec.appendChild(ivLabel);
 
   (result.interventions || []).forEach(function(iv) {
+    // Section divider: --- LABEL ---
+    if (/^---\s+.+\s+---$/.test(iv.trim())) {
+      var divEl = document.createElement('div');
+      var divLabel = iv.trim().replace(/^-+\s+/, '').replace(/\s+-+$/, '');
+      divEl.style.cssText = 'font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 5px;padding:5px 9px;background:#eef2fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0';
+      divEl.textContent = divLabel;
+      ivSec.appendChild(divEl);
+      return;
+    }
+    // Secondary goal line
+    if (/^SECONDARY GOAL:/i.test(iv.trim())) {
+      var sgEl = document.createElement('div');
+      sgEl.style.cssText = 'background:var(--amber-bg,#fff8ee);border:1px solid var(--gold,#c9972c);border-radius:6px;padding:8px 12px;margin:6px 0';
+      sgEl.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.85rem">' + iv.trim().replace(/^SECONDARY GOAL:\s*/i, '') + '</div>';
+      ivSec.appendChild(sgEl);
+      return;
+    }
+
     const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)/i);
     const prefixLabel = prefixMatch ? prefixMatch[0].toUpperCase() : '';
     const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '');
@@ -11507,6 +11550,235 @@ function normalizeForLookup(s) {
     .trim();
 }
 
+
+// ─── F-CODE DEMENTIA ENGINE ────────────────────────────────────────────────
+// Built from Luminos F-Code Dementia Coding Cheat Sheet (FY2026)
+// Maps underlying etiology → F-code family, severity chars, symptom chars
+
+var FCODE_ETIOLOGY_MAP = {
+  // Alzheimer's
+  'g30.0': { family: 'F02', etiologyDesc: "Alzheimer's disease, early onset" },
+  'g30.1': { family: 'F02', etiologyDesc: "Alzheimer's disease, late onset" },
+  'g30.8': { family: 'F02', etiologyDesc: "Other Alzheimer's disease" },
+  'g30.9': { family: 'F02', etiologyDesc: "Alzheimer's disease, unspecified" },
+  // Parkinson's
+  'g20':   { family: 'F02', etiologyDesc: "Parkinson's disease" },
+  'g20.a': { family: 'F02', etiologyDesc: "Parkinson's disease" },
+  'g20.b': { family: 'F02', etiologyDesc: "Parkinson's disease" },
+  'g20.c': { family: 'F02', etiologyDesc: "Parkinson's disease" },
+  // Lewy Body
+  'g31.83': { family: 'F02', etiologyDesc: "Lewy body dementia" },
+  // FTD / Pick's
+  'g31.01': { family: 'F02', etiologyDesc: "Pick's disease" },
+  'g31.09': { family: 'F02', etiologyDesc: "Frontotemporal dementia" },
+  // Corticobasal / PSP
+  'g31.85': { family: 'F02', etiologyDesc: "Corticobasal degeneration" },
+  'g23.1':  { family: 'F02', etiologyDesc: "Progressive supranuclear palsy" },
+  // Huntington's
+  'g10':    { family: 'F02', etiologyDesc: "Huntington's disease" },
+  // Prion / CJD
+  'a81.00': { family: 'F02', etiologyDesc: "Creutzfeldt-Jakob disease" },
+  'a81.01': { family: 'F02', etiologyDesc: "Variant Creutzfeldt-Jakob disease" },
+  // NPH
+  'g91.2':  { family: 'F02', etiologyDesc: "Normal pressure hydrocephalus" },
+  // Senile degeneration of brain
+  'g31.1':  { family: 'F02', etiologyDesc: "Senile degeneration of brain" },
+  // TBI sequela (S06.xxS pattern handled separately)
+  // Anoxic brain injury
+  'g93.1':  { family: 'F02', etiologyDesc: "Anoxic brain injury" },
+  // HIV
+  'b20':    { family: 'F02', etiologyDesc: "HIV disease" },
+  // MS
+  'g35':    { family: 'F02', etiologyDesc: "Multiple sclerosis" },
+  // ALS-FTD
+  'g12.21': { family: 'F02', etiologyDesc: "ALS with cognitive impairment" },
+  // Vascular dementia (F01 — stands alone)
+  'f01.50': { family: 'F01_STANDALONE', etiologyDesc: "Vascular dementia" },
+  'f01.51': { family: 'F01_STANDALONE', etiologyDesc: "Vascular dementia" },
+};
+
+// Etiology term → ICD code mapping for dementia detection by name
+var FCODE_ETIOLOGY_TERMS = [
+  { terms: ["alzheimer", "alzheimers"], codes: ["G30.9","G30.0","G30.1","G30.8"], family: "F02", note: "Select the G30 subtype first, then the F-code will be built" },
+  { terms: ["parkinson", "parkinsons", "parkinson's"], codes: ["G20"], family: "F02", note: "PD-related hallucinations are common — check for F02.82 before defaulting to F02.80" },
+  { terms: ["lewy body", "lewy-body", "lbd", "diffuse lewy"], codes: ["G31.83"], family: "F02", note: "Fluctuating cognition and visual hallucinations are hallmarks — consider F02.82" },
+  { terms: ["frontotemporal", "ftd", "pick's", "picks disease", "behavioral variant ftd", "bvftd"], codes: ["G31.09","G31.01"], family: "F02", note: "Behavioral variant FTD often has behavioral disturbance — consider F02.81x" },
+  { terms: ["primary progressive aphasia", "ppa"], codes: ["G31.09"], family: "F02", note: "Only use F02.8x once dementia (not just aphasia) is documented" },
+  { terms: ["corticobasal", "cbd"], codes: ["G31.85"], family: "F02", note: null },
+  { terms: ["progressive supranuclear palsy", "psp"], codes: ["G23.1"], family: "F02", note: null },
+  { terms: ["huntington", "huntingtons"], codes: ["G10"], family: "F02", note: "Mood and behavioral disturbance are common — check for F02.83" },
+  { terms: ["creutzfeldt", "cjd", "prion"], codes: ["A81.00"], family: "F02", note: null },
+  { terms: ["normal pressure hydrocephalus", "nph"], codes: ["G91.2"], family: "F02", note: null },
+  { terms: ["senile degeneration of brain", "senile brain degeneration"], codes: ["G31.1"], family: "F02", note: null },
+  { terms: ["anoxic brain", "anoxic encephalopathy", "hypoxic brain", "hypoxic encephalopathy"], codes: ["G93.1"], family: "F02", note: null },
+  { terms: ["vascular dementia", "multi-infarct dementia", "multiinfarct dementia"], codes: ["F01.50"], family: "F01_STANDALONE", note: "F01 stands alone — no separate etiology code required unless specific cerebrovascular disease is also being tracked" },
+  { terms: ["dementia with parkinsonism", "dementia parkinsonism"], codes: ["G31.83"], family: "F02", note: "Consider Lewy body dementia — confirm with provider" },
+  { terms: ["hiv dementia", "aids dementia", "hiv encephalopathy"], codes: ["B20"], family: "F02", note: "B20 must always be sequenced first" },
+  { terms: ["ms dementia", "multiple sclerosis with dementia"], codes: ["G35"], family: "F02", note: "Only use F02.8x when true dementia is documented — not just cognitive difficulty" },
+];
+
+// Severity options — same for F01/F02/F03 (different placeholder 5th char)
+var FCODE_SEVERITY = [
+  { label: "Unspecified severity", f02char: "8", f01char: "5", f03char: "9" },
+  { label: "Mild",     f02char: "A", f01char: "A", f03char: "A" },
+  { label: "Moderate", f02char: "B", f01char: "B", f03char: "B" },
+  { label: "Severe",   f02char: "C", f01char: "C", f03char: "C" },
+];
+
+// 6th character — associated symptom
+var FCODE_SYMPTOM = [
+  { label: "No behavioral, psychotic, mood disturbance, or anxiety documented", char6: "0", char7: null },
+  { label: "Behavioral disturbance — Agitation (combativeness, pacing, yelling, resisting care)", char6: "1", char7: "1" },
+  { label: "Behavioral disturbance — Other (wandering, disinhibition, exit-seeking)", char6: "1", char7: "8" },
+  { label: "Psychotic disturbance (hallucinations, delusions, paranoia)", char6: "2", char7: null },
+  { label: "Mood disturbance (depression, tearfulness, apathy, emotional lability)", char6: "3", char7: null },
+  { label: "Anxiety (restlessness tied to fear/worry, documented anxiety co-occurring with dementia)", char6: "4", char7: null },
+];
+
+// Build an F02.8x, F01.5x, or F03.9x code from parts
+function buildFCode(family, severity, symptom) {
+  if (family === 'F01_STANDALONE' || family === 'F01') {
+    // F01.5[sev][sym][char7]
+    var sev = FCODE_SEVERITY.find(function(s) { return s.label === severity; });
+    var sym = FCODE_SYMPTOM.find(function(s) { return s.label === symptom; });
+    if (!sev || !sym) return null;
+    var code = 'F01.' + sev.f01char + sym.char6;
+    if (sym.char7) code += sym.char7;
+    return code;
+  } else if (family === 'F02') {
+    // F02.[sev][sym][char7]
+    var sev2 = FCODE_SEVERITY.find(function(s) { return s.label === severity; });
+    var sym2 = FCODE_SYMPTOM.find(function(s) { return s.label === symptom; });
+    if (!sev2 || !sym2) return null;
+    var code2 = 'F02.' + sev2.f02char + sym2.char6;
+    if (sym2.char7) code2 += sym2.char7;
+    return code2;
+  } else if (family === 'F03') {
+    var sev3 = FCODE_SEVERITY.find(function(s) { return s.label === severity; });
+    var sym3 = FCODE_SYMPTOM.find(function(s) { return s.label === symptom; });
+    if (!sev3 || !sym3) return null;
+    var code3 = 'F03.' + sev3.f03char + sym3.char6;
+    if (sym3.char7) code3 += sym3.char7;
+    return code3;
+  }
+  return null;
+}
+
+// Detect if a diagnosis string is a dementia/neurocognitive condition
+function detectDementiaEtiology(diagnosis) {
+  var norm = (diagnosis || '').toLowerCase().trim();
+  for (var i = 0; i < FCODE_ETIOLOGY_TERMS.length; i++) {
+    var entry = FCODE_ETIOLOGY_TERMS[i];
+    for (var j = 0; j < entry.terms.length; j++) {
+      if (norm.indexOf(entry.terms[j]) !== -1) return entry;
+    }
+  }
+  return null;
+}
+
+// Check if a problem list already has an F-code companion
+function hasFCodeCompanion(lines) {
+  return (lines || []).some(function(l) {
+    return /\bF0[123]\b/.test(l) || /\bf0[123]/i.test(l);
+  });
+}
+
+// Render the F-code builder UI into a container element
+// onComplete(code, label) called when nurse confirms
+function renderFCodeBuilder(container, etiologyEntry, etiologyCode, diagnosisText, onComplete) {
+  var family = etiologyEntry ? etiologyEntry.family : 'F02';
+  var isFO1 = family === 'F01_STANDALONE' || family === 'F01';
+  var isF03 = family === 'F03';
+
+  var seqNote = isFO1
+    ? '<div style="font-size:.78rem;background:#e8f4f8;border-left:3px solid #2a7a9a;padding:6px 10px;border-radius:4px;margin-bottom:10px"><strong>F01 stands alone</strong> — no separate etiology code needed. Code the specific cerebrovascular disease separately only if also being tracked.</div>'
+    : isF03
+    ? '<div style="font-size:.78rem;background:#fff3cd;border-left:3px solid var(--gold);padding:6px 10px;border-radius:4px;margin-bottom:10px"><strong>F03 = Unspecified dementia</strong> — only use when no cause is documented anywhere in the record. Consider a CDI query first.</div>'
+    : '<div style="font-size:.78rem;background:#e8f4f8;border-left:3px solid #2a7a9a;padding:6px 10px;border-radius:4px;margin-bottom:10px"><strong>Sequencing:</strong> ' + (etiologyCode ? etiologyCode + ' (etiology) must be listed <em>first</em>, then the F02 manifestation code second.' : 'The underlying etiology code must be listed <em>first</em>, then F02.8x second.') + (etiologyEntry && etiologyEntry.note ? '<br><em>' + etiologyEntry.note + '</em>' : '') + '</div>';
+
+  var sevHtml = '<div style="margin-bottom:12px"><div style="font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:6px">Step 1 — Severity documented in the chart:</div>';
+  FCODE_SEVERITY.forEach(function(s, si) {
+    sevHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+      + '<input type="radio" name="fc-sev" value="' + s.label + '" onchange="fcUpdatePreview()" ' + (si === 0 ? 'checked' : '') + '>'
+      + '<span>' + s.label + '</span></label>';
+  });
+  sevHtml += '</div>';
+
+  var symHtml = '<div style="margin-bottom:12px"><div style="font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:6px">Step 2 — Associated symptoms documented in the chart:</div>';
+  FCODE_SYMPTOM.forEach(function(s, si) {
+    symHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:5px;cursor:pointer;font-size:.85rem">'
+      + '<input type="radio" name="fc-sym" value="' + s.label + '" onchange="fcUpdatePreview()" ' + (si === 0 ? 'checked' : '') + '>'
+      + '<span>' + s.label + '</span></label>';
+  });
+  symHtml += '</div>';
+
+  container.innerHTML = '<div style="background:#f4f7fb;border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:8px">'
+    + '<div style="font-size:.82rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📋 F-Code Builder — ' + (diagnosisText || 'Dementia Companion Code') + '</div>'
+    + seqNote
+    + sevHtml + symHtml
+    + '<div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:10px">'
+    + '<div style="font-size:.75rem;color:var(--text-mid);margin-bottom:4px">Generated code:</div>'
+    + '<div id="fc-preview" style="font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--navy)">—</div>'
+    + '<div id="fc-preview-desc" style="font-size:.8rem;color:var(--text-mid);margin-top:2px"></div>'
+    + '</div>'
+    + '<button onclick="fcConfirm()" style="padding:6px 18px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer;margin-right:8px">✓ Use This Code</button>'
+    + '<button onclick="fcCancel()" style="padding:6px 14px;background:none;color:var(--text-mid);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.82rem;cursor:pointer">Skip</button>'
+    + '</div>';
+
+  // Store state on window for the callbacks
+  window._fcFamily = family;
+  window._fcOnComplete = onComplete;
+
+  // Initial preview
+  fcUpdatePreview();
+}
+
+function fcGetSeverity() {
+  var el = document.querySelector('input[name="fc-sev"]:checked');
+  return el ? el.value : FCODE_SEVERITY[0].label;
+}
+function fcGetSymptom() {
+  var el = document.querySelector('input[name="fc-sym"]:checked');
+  return el ? el.value : FCODE_SYMPTOM[0].label;
+}
+
+function fcUpdatePreview() {
+  var sev = fcGetSeverity();
+  var sym = fcGetSymptom();
+  var code = buildFCode(window._fcFamily || 'F02', sev, sym);
+  var preview = document.getElementById('fc-preview');
+  var previewDesc = document.getElementById('fc-preview-desc');
+  if (!preview) return;
+  if (code) {
+    preview.textContent = code;
+    // Build a plain-English description
+    var sevShort = sev === 'Unspecified severity' ? 'unspecified severity' : sev.toLowerCase();
+    var symShort = sym.indexOf('No behavioral') !== -1 ? 'no behavioral/psychotic/mood disturbance or anxiety' : sym.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+    var famLabel = (window._fcFamily === 'F01_STANDALONE' || window._fcFamily === 'F01') ? 'Vascular dementia' : (window._fcFamily === 'F03' ? 'Unspecified dementia' : 'Dementia in other disease');
+    previewDesc.textContent = famLabel + ', ' + sevShort + ', ' + symShort;
+  } else {
+    preview.textContent = '—';
+    previewDesc.textContent = '';
+  }
+}
+
+function fcConfirm() {
+  var sev = fcGetSeverity();
+  var sym = fcGetSymptom();
+  var code = buildFCode(window._fcFamily || 'F02', sev, sym);
+  if (!code) return;
+  var sevShort = sev === 'Unspecified severity' ? 'unspecified severity' : sev.toLowerCase();
+  var symShort = sym.indexOf('No behavioral') !== -1 ? 'no disturbance' : sym.split(' — ')[0].trim().toLowerCase();
+  var desc = 'Dementia, ' + sevShort + ', ' + symShort;
+  if (window._fcOnComplete) window._fcOnComplete(code, desc);
+}
+
+function fcCancel() {
+  if (window._fcOnComplete) window._fcOnComplete(null, null);
+}
+
+// ─── END F-CODE ENGINE ─────────────────────────────────────────────────────
+
 function localIcdLookup(diagnosis) {
   var norm = normalizeForLookup(diagnosis);
   var orig = diagnosis.toLowerCase().trim();
@@ -11587,7 +11859,7 @@ async function runIcdLookup() {
   if (needsApi.length > 0) {
     btn.textContent = '⏳ Coding ' + needsApi.length + ' remaining via AI...';
     const needsApiLines = needsApi;
-    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration. F03.91/F03.90=unspecified dementia. F02.81/F02.80=dementia in Alzheimers/Lewy/Parkinson. F-codes are separate entries.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimer's/Parkinson's/Lewy Body/FTD/vascular dementia — return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes — these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
     let parsed = null; let errMsg = '';
     try {
       const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: apiPrompt, max_tokens: 4000 }) });
@@ -11860,6 +12132,58 @@ function resolveIcdOption(idx, code, label) {
 
   const container = document.getElementById('icd-lookup-results');
   updateIcdSendButton(container);
+
+  // F-CODE COMPANION CHECK
+  // If the resolved diagnosis is a dementia etiology, offer to build the F-code companion
+  const dxText = icdLookupResults[idx].diagnosis || '';
+  const etiologyEntry = detectDementiaEtiology(dxText);
+  const existingLines = icdLookupResults.map(function(r) { return (r.code || '') + ' ' + (r.diagnosis || ''); });
+  const alreadyHasFCode = hasFCodeCompanion(existingLines);
+
+  if (etiologyEntry && !alreadyHasFCode) {
+    // Add a new companion row to the results list
+    const fcIdx = icdLookupResults.length;
+    icdLookupResults.push({
+      diagnosis: 'F-code companion for ' + dxText,
+      code: null,
+      description: null,
+      needsClarification: false,
+      source: 'fcode',
+      _fcPending: true,
+      _fcEtiologyEntry: etiologyEntry,
+      _fcEtiologyCode: code,
+      _fcDiagnosisText: dxText,
+    });
+
+    const listWrap = container ? container.querySelector('.icd-results-list') || container : container;
+    const fcRow = document.createElement('div');
+    fcRow.id = 'icd-row-' + fcIdx;
+    fcRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);background:#f0f5ff';
+    fcRow.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px">📋 F-code companion required for ' + escapeHtml(dxText) + '</div>';
+    renderFCodeBuilder(fcRow, etiologyEntry, code, dxText, function(fcCode, fcDesc) {
+      if (fcCode) {
+        icdLookupResults[fcIdx].code = fcCode;
+        icdLookupResults[fcIdx].description = fcDesc;
+        icdLookupResults[fcIdx].diagnosis = fcCode + ' — ' + fcDesc;
+        icdLookupResults[fcIdx]._fcPending = false;
+        fcRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          + '<span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span>'
+          + '<span style="color:var(--navy);font-weight:600">F-code companion — ' + escapeHtml(dxText) + '</span>'
+          + '<span style="color:var(--text-lt);font-size:.8rem">— ' + escapeHtml(fcDesc) + '</span>'
+          + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Added</span>'
+          + '<div style="font-size:.74rem;background:#e8f4f8;border-left:3px solid #2a7a9a;padding:4px 8px;border-radius:3px;margin-left:4px">'
+          + (etiologyEntry.family === 'F01_STANDALONE' ? 'F01 stands alone — no separate etiology code required' : 'Enter in Firenote after ' + escapeHtml(code) + ' (etiology first, F-code second)')
+          + '</div>'
+          + '</div>';
+      } else {
+        // Skipped — remove the placeholder row
+        icdLookupResults.splice(fcIdx, 1);
+        fcRow.remove();
+      }
+      updateIcdSendButton(container);
+    });
+    if (listWrap) listWrap.appendChild(fcRow);
+  }
 }
 
 function showIcdOtherInput(idx) {
