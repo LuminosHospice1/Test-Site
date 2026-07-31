@@ -2534,14 +2534,14 @@ Keep the Monitor For intervention active unless the medication causing the inter
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Every active medication linked to associated diagnosis</div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">All medications entered — interactions reviewed with MD<span class="note">Red box above med list — each item must be addressed and outcome documented</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Covered vs. non-covered determination communicated to family</div></div>
-        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Responsible party for medications documented<span class="note">Add as intervention under primary DX care plan: identify and document who is responsible, medication education assessed and provided (purpose, dosing, administration, side effects)</span></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Responsible party for medications documented<span class="note">Add as intervention under primary DX care plan. Replace the bracketed placeholder with the actual name and relationship: "Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects."</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Patient/family verbalized understanding of medications<span class="note">Add as intervention under primary DX care plan and mark Performed: patient/caregiver verbalized understanding of all current medications, purpose, dosing, and potential side effects</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">All performed interventions marked <strong>"Performed"</strong> in care plan</div></div>
         <div class="chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text">Every active problem has ≥ 1 goal and ≥ 3 interventions (Assess · Educate · Perform)</div></div>
       </div>
     </div>
     <div class="grp-lbl" style="margin-top:8px">D2 — Required Interventions Under Primary Care Plan Problem (complete at admission)</div>
-    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Responsible party for medication administration identified, documented, and education assessed</strong><span class="note">Add as an intervention under the primary dx care plan problem. Example: "Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects."</span></div><span class="tag req">REQ</span></div>
+    <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Responsible party for medication administration identified, documented, and education assessed</strong><span class="note">Add as an intervention under the primary dx care plan problem. Replace the bracketed placeholder with the actual name and relationship. Example: "Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects."</span></div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Patient and family verbalized understanding of medications and potential side effects — confirmed and documented</strong><span class="note">Add as an intervention under the primary dx care plan problem and mark Performed. Example: "Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects."</span></div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Bereavement assessment interventions entered under primary DX care plan and marked Performed</strong><span class="note">All four interventions must be added under the primary diagnosis care plan problem — not as a separate problem. Mark each Performed: (1) Assess family system and dynamics · (2) Perform and document bereavement assessment · (3) Communicate needs to IDG and initiate referrals · (4) Educate family on hospice bereavement resources. The Care Plan Builder generates these automatically at the bottom of the primary DX card.</span></div><span class="tag req">REQ</span></div>
     <div class="grp-lbl" style="margin-top:8px">E — Conditional Items (complete only if applicable)</div>
@@ -3940,6 +3940,7 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:6px">
           <label class="cp-flag-label"><input type="checkbox" id="cpf-fullcode"> 🆘 Patient is Full Code</label>
           <label class="cp-flag-label"><input type="checkbox" id="cpf-oxygen"> 💨 Continuous supplemental O₂</label>
+          <label class="cp-flag-label"><input type="checkbox" id="cpf-oxygen-prn"> 💨 Intermittent / PRN O₂ use</label>
           <label class="cp-flag-label"><input type="checkbox" id="cpf-foley"> 💧 Foley catheter present</label>
           <label class="cp-flag-label"><input type="checkbox" id="cpf-fallrisk"> ⚠️ Moderate/High fall risk</label>
           <label class="cp-flag-label"><input type="checkbox" id="cpf-skinrisk"> 🩹 Risk for skin breakdown</label>
@@ -7980,6 +7981,7 @@ function getCpFlags() {
     setting: setting,
     fullCode: get('cpf-fullcode'),
     oxygen: get('cpf-oxygen'),
+    oxygenPrn: get('cpf-oxygen-prn'),
     foley: get('cpf-foley'),
     fallRisk: get('cpf-fallrisk'),
     skinRisk: get('cpf-skinrisk'),
@@ -8023,6 +8025,22 @@ Interventions:
 • PERFORM: Nurse will assist with positioning to promote ease of breathing (elevated HOB, tripod position as tolerated).
 • PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider if repair or replacement is needed.
 (Also include oxygen order and DME supplies under this code.)`);
+  }
+
+  // ── Intermittent / PRN Oxygen ──────────────────────────────────
+  if (flags.oxygenPrn) {
+    lines.push(`
+SITUATIONAL — INTERMITTENT / PRN OXYGEN USE (add these interventions under the most clinically relevant respiratory diagnosis — e.g. COPD, dyspnea, lung cancer. Do NOT add Z99.81; this patient does not rely on continuous oxygen):
+Interventions:
+• ASSESS: Nurse will assess respiratory status at each visit including rate, depth, work of breathing, oxygen saturation, lung sounds, and level of dyspnea at rest and with activity.
+• ASSESS: Nurse will assess patient/caregiver understanding of when to apply supplemental oxygen and ability to correctly operate oxygen delivery equipment.
+• ASSESS: Nurse will assess the home/facility environment for oxygen safety hazards at each visit, including proximity to heat sources, open flames, and flammable materials.
+• EDUCATE: Nurse will educate patient/caregiver on recognizing symptoms that indicate the need for supplemental oxygen, including increased shortness of breath, anxiety, restlessness, confusion, or cyanosis.
+• EDUCATE: Nurse will educate on oxygen safety precautions: no smoking near oxygen equipment, keep at least 6 feet from heat sources and open flames, avoid flammable products (aerosol sprays, oil-based lotions), and ensure tubing is placed safely to prevent falls.
+• EDUCATE: Nurse will educate patient/caregiver on correct use of oxygen delivery device (nasal cannula or mask), proper flow rate settings per order, and when to contact hospice if symptoms are not relieved by oxygen use.
+• PERFORM: Nurse will verify oxygen equipment function and correct flow rate at each visit, and ensure supplies (tubing, cannula, masks) are adequate and in good condition.
+• PERFORM: Nurse will perform skin assessment at oxygen device contact points (nares, ears, face) and provide comfort measures to prevent pressure-related irritation from device use.
+• PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider for repair or replacement as needed.`);
   }
 
   // ── Foley Catheter ──────────────────────────────────────────────
@@ -8240,10 +8258,8 @@ SECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progre
 
   const requiredPrimaryBlock = isPrimaryDxPlan ? `
 3. REQUIRED ADDITIONAL INTERVENTIONS — This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:
-   PERFORM — Nurse will enter admission order as directed.
-   PERFORM — Nurse will enter nutrition order as directed (document as "Nutrition" in Firenote, not "Diet").
-   PERFORM — Nurse will identify and document${caregiver ? ' ' + caregiver + ' as' : ''} the responsible party for medication administration. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.
+   PERFORM — Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.
 ${fullCodeBlock}
 --- BEREAVEMENT ASSESSMENT (required on every admission — add these interventions under this primary DX problem, mark each Performed) ---
    ASSESS — Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
@@ -8510,6 +8526,7 @@ function cpQuickFillSituational(key) {
     bereavement: { problem: 'Pre-bereavement assessment and support for family/caregiver', type: 'psychosocial', goals: 'grief', hint: 'Required on every admission — add under primary DX or as standalone problem.' },
     fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add as a secondary goal under the primary diagnosis problem, not as a new problem.' },
     oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
+    oxygenprn: { problem: 'Intermittent / PRN oxygen use — safety and monitoring', type: 'clinical', goals: 'comfort', hint: 'Do NOT add Z99.81 — this patient does not rely on continuous oxygen. Add these interventions under the most clinically relevant respiratory problem (e.g. COPD, Dyspnea, Lung Cancer). No separate ICD-10 code needed.' },
     foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
     skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
@@ -10794,10 +10811,8 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
     const requiredPrimaryInterventions = isPrimary ? `
 
 This is the PRIMARY hospice diagnosis — also include these required interventions in addition to the clinically-relevant ones:
-   PERFORM — Nurse will enter admission order as directed.
-   PERFORM — Nurse will enter nutrition order as directed (document as "Nutrition" in Firenote, not "Diet").
-   PERFORM — Nurse will identify and document the responsible party for medication administration. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects — mark Performed.` : '';
+   PERFORM — Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
+   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.` : '';
 
     const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
 
@@ -10968,6 +10983,24 @@ function buildSituationalCards(flags, primaryDx) {
         'PERFORM: Nurse will verify and adjust oxygen equipment to ensure proper function and correct flow rate per order.',
         'PERFORM: Nurse will assist with positioning to promote ease of breathing as tolerated (elevated HOB, tripod position).',
         'PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider if repair or replacement is needed.'
+      ]}
+    ]));
+  }
+
+  // ── Intermittent / PRN Oxygen ──────────────────────────────────
+  if (flags.oxygenPrn) {
+    cards.push(makeCard('💨 Intermittent / PRN Oxygen — Safety Interventions', 'Add under most relevant respiratory diagnosis (e.g. COPD, Dyspnea, Lung Cancer)', amber, [
+      { type: 'flag', label: 'Do NOT add Z99.81 — this patient does not use continuous oxygen', text: 'Add these interventions under whichever respiratory care plan problem best fits (COPD, dyspnea, lung cancer, etc.). No separate ICD-10 code is needed for PRN oxygen use.' },
+      { type: 'interventions', items: [
+        'ASSESS: Nurse will assess respiratory status at each visit including rate, depth, work of breathing, oxygen saturation, lung sounds, and level of dyspnea at rest and with activity.',
+        'ASSESS: Nurse will assess patient/caregiver understanding of when to apply supplemental oxygen and ability to correctly operate oxygen delivery equipment.',
+        'ASSESS: Nurse will assess the home/facility environment for oxygen safety hazards at each visit, including proximity to heat sources, open flames, and flammable materials.',
+        'EDUCATE: Nurse will educate patient/caregiver on recognizing symptoms that indicate the need for supplemental oxygen, including increased shortness of breath, anxiety, restlessness, confusion, or cyanosis.',
+        'EDUCATE: Nurse will educate on oxygen safety precautions: no smoking near oxygen equipment, keep at least 6 feet from heat sources and open flames, avoid flammable products (aerosol sprays, oil-based lotions), and ensure tubing is placed safely to prevent falls.',
+        'EDUCATE: Nurse will educate patient/caregiver on correct use of oxygen delivery device (nasal cannula or mask), proper flow rate settings per order, and when to contact hospice if symptoms are not relieved by oxygen use.',
+        'PERFORM: Nurse will verify oxygen equipment function and correct flow rate at each visit, and ensure supplies (tubing, cannula, masks) are adequate and in good condition.',
+        'PERFORM: Nurse will perform skin assessment at oxygen device contact points (nares, ears, face) and provide comfort measures to prevent pressure-related irritation from device use.',
+        'PERFORM: Nurse will troubleshoot equipment issues and coordinate with the DME provider for repair or replacement as needed.'
       ]}
     ]));
   }
@@ -12468,6 +12501,7 @@ function clearIcdLookup() {
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         <button type="button" onclick="cpQuickFillSituational('fullcode')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🆘 Full Code Status</button>
         <button type="button" onclick="cpQuickFillSituational('oxygen')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💨 Oxygen Dependence (Z99.81)</button>
+        <button type="button" onclick="cpQuickFillSituational('oxygenprn')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💨 Intermittent / PRN O₂</button>
         <button type="button" onclick="cpQuickFillSituational('foley')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💧 Foley Catheter (Y84.6)</button>
         <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
         <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
