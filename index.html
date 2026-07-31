@@ -1739,7 +1739,6 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div class="sub-navy">Code Status</div>
 <p style="font-size:.88rem;color:var(--text-mid);margin-bottom:6px">Enter code status: <strong>DNR</strong> or <strong>Full Code</strong>.</p>
 <div class="alert warning" style="margin-bottom:8px"><span>⚠</span><div><strong>If the patient is Full Code</strong>, add the following secondary goal and custom interventions directly under the <em>primary diagnosis</em> care plan problem (do not create a separate problem for full code status):<br><br>
-<strong>Secondary Goal:</strong> Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.<br><br>
 <strong>Add these as custom interventions under the primary dx problem:</strong><br>
 • Assess for risk of hospitalization d/t full code status<br>
 • Educate patient/family on code statuses, what they look like at EOL, and confirm understanding<br>
@@ -8249,7 +8248,7 @@ async function runCarePlanBuilder() {
 
   // Required interventions block for primary DX
   const fullCodeBlock = (flags && flags.fullCode)
-    ? '\n\n--- FULL CODE STATUS (secondary goal and interventions -- add under this primary DX problem) ---\nSECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
+    ? '\n\n--- FULL CODE STATUS (add these interventions under this primary DX problem) ---\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
     : '';
 
   const bereavementBlockCp = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission -- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
@@ -8517,7 +8516,7 @@ const CP_PRESETS = {
 function cpQuickFillSituational(key) {
   var presets = {
     bereavement: { problem: 'Pre-bereavement assessment and support for family/caregiver', type: 'psychosocial', goals: 'grief', hint: 'Required on every admission — add under primary DX or as standalone problem.' },
-    fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add as a secondary goal under the primary diagnosis problem, not as a new problem.' },
+    fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add these interventions under the primary diagnosis problem, not as a new problem. No separate goal needed.' },
     oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
     oxygenprn: { problem: 'Intermittent / PRN oxygen use — safety and monitoring', type: 'clinical', goals: 'comfort', hint: 'Do NOT add Z99.81 — this patient does not rely on continuous oxygen. Add these interventions under the most clinically relevant respiratory problem (e.g. COPD, Dyspnea, Lung Cancer). No separate ICD-10 code needed.' },
     foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
@@ -9852,7 +9851,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
           + '• EDUCATE: Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.'
           + '</div>'
           + '<div style="margin-top:7px;padding:6px 10px;background:#fff8e1;border:1px solid #ffe082;border-radius:5px;font-size:.79rem;color:#7a4200">'
-          + '<strong>⚠ If patient is Full Code:</strong> Add the following secondary goal and custom interventions directly under the primary diagnosis problem (do not create a separate problem for full code status):<br><br><strong>Secondary Goal:</strong> Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.<br><br>• ASSESS: Nurse will assess for risk of hospitalization due to Full Code status<br>• EDUCATE: Nurse will educate patient/caregiver regarding Full Code status implications and risk of hospitalization, and when to contact hospice prior to seeking emergency treatment<br>• PERFORM: Nurse will document and communicate patient\'s Full Code status to all IDG members and emergency contacts'
+          + '<strong>⚠ If patient is Full Code:</strong> Add the following interventions directly under the primary diagnosis problem (do not create a separate problem for full code status — no separate goal needed):<br><br>• ASSESS: Nurse will assess for risk of hospitalization due to Full Code status<br>• EDUCATE: Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life<br>• PERFORM: Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care'
           + '</div>'
           + '</div>';
       }
@@ -10812,7 +10811,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
     const goalsEmphasis = goalsMap['comfort']; // Build All defaults to comfort-focused, matching Tier Checker's primary use case
 
     const fullCodeBlockAll = (flags && flags.fullCode)
-      ? '\n\n--- FULL CODE STATUS (secondary goal and interventions --- add under this primary DX problem) ---\nSECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
+      ? '\n\n--- FULL CODE STATUS (add these interventions under this primary DX problem) ---\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
       : '';
 
     const bereavementBlock = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission --- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
@@ -10880,9 +10879,8 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
       if (flags && flags.fullCode) {
         result._requiredGroups.push({
-          label: 'Full Code Status',
+          label: 'Full Code Status — Interventions Only (no separate goal needed)',
           badge: 'REQUIRED — WHEN APPLICABLE',
-          secondaryGoal: 'Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.',
           items: [
             { prefix: 'ASSESS',   text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
             { prefix: 'EDUCATE',  text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
