@@ -10848,7 +10848,8 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
    EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${it.diagnosis}]
    PERFORM — Nurse will perform [specific skilled nursing task relevant to ${it.diagnosis}]
 
-   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.${requiredPrimaryInterventions}
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
+   IMPORTANT: Do NOT include interventions about medication administration responsibility, bereavement assessment, or Full Code status in this list -- those are added separately.
 
 3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
 
@@ -10871,6 +10872,45 @@ Respond ONLY with valid JSON, no markdown, no extra text:
         try { result = JSON.parse(clean); } catch(e) {}
       }
     } catch(e) {}
+
+    // Attach required intervention groups directly to result so renderAllCpCard
+    // can separate them from AI-generated clinical interventions
+    if (isPrimary && result) {
+      result._requiredGroups = [];
+
+      if (flags && flags.fullCode) {
+        result._requiredGroups.push({
+          label: 'Full Code Status',
+          badge: 'REQUIRED — WHEN APPLICABLE',
+          secondaryGoal: 'Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.',
+          items: [
+            { prefix: 'ASSESS',   text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
+            { prefix: 'EDUCATE',  text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
+            { prefix: 'PERFORM',  text: 'Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.' }
+          ]
+        });
+      }
+
+      result._requiredGroups.push({
+        label: 'Medication Administration & Education',
+        badge: 'REQUIRED — ALL ADMISSIONS',
+        items: [
+          { prefix: 'PERFORM', text: 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.' },
+          { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
+        ]
+      });
+
+      result._requiredGroups.push({
+        label: 'Bereavement Assessment',
+        badge: 'REQUIRED — ALL ADMISSIONS',
+        items: [
+          { prefix: 'ASSESS',   text: 'Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.' },
+          { prefix: 'PERFORM',  text: 'Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.' },
+          { prefix: 'PERFORM',  text: 'Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.' },
+          { prefix: 'EDUCATE',  text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
+        ]
+      });
+    }
 
     renderAllCpCard(c.body, result, it.diagnosis, patientDetails);
   }));
@@ -11137,35 +11177,25 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   ivLabel.textContent = 'Interventions';
   ivSec.appendChild(ivLabel);
 
-  // Split interventions into clinical (before any --- marker) and required groups
+  // Clinical interventions -- all AI-generated (required groups come from result._requiredGroups)
   var clinicalIvs = [];
-  var requiredGroups = []; // [{label, items:[{prefix,text}], isFullCode}]
-  var currentGroup = null;
-  var inRequired = false;
+  var requiredGroups = result._requiredGroups || [];
 
   (result.interventions || []).forEach(function(iv) {
     var trimmed = iv.trim();
-    if (/^---\s+.+\s+---$/.test(trimmed)) {
-      var grpLabel = trimmed.replace(/^-+\s+/, '').replace(/\s+-+$/, '');
-      var isFullCode = /FULL CODE/i.test(grpLabel);
-      currentGroup = { label: grpLabel, items: [], isFullCode: isFullCode };
-      requiredGroups.push(currentGroup);
-      inRequired = true;
-      return;
-    }
-    if (/^SECONDARY GOAL:/i.test(trimmed)) {
-      if (currentGroup) currentGroup.secondaryGoal = trimmed.replace(/^SECONDARY GOAL:\s*/i, '');
-      return;
-    }
+    // Skip divider markers or secondary goal lines that may have slipped through
+    if (/^---/.test(trimmed) || /^SECONDARY GOAL:/i.test(trimmed)) return;
     var prefixMatch = trimmed.match(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)/i);
     if (!prefixMatch) return;
     var prefix = prefixMatch[0].toUpperCase();
-    var text = trimmed.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s—\-]+\s*/i, '');
-    if (inRequired && currentGroup) {
-      currentGroup.items.push({ prefix: prefix, text: text });
-    } else {
-      clinicalIvs.push({ prefix: prefix, text: text });
-    }
+    var text = trimmed.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '');
+    // Skip interventions that duplicate required content (dedup by first 50 chars)
+    var isDuplicate = requiredGroups.some(function(g) {
+      return g.items.some(function(item) {
+        return item.text.slice(0, 50).toLowerCase() === text.slice(0, 50).toLowerCase();
+      });
+    });
+    if (!isDuplicate) clinicalIvs.push({ prefix: prefix, text: text });
   });
 
   // Render clinical interventions first
@@ -11202,7 +11232,7 @@ function renderAllCpCard(body, result, dx, patientDetails) {
     grpTitle.textContent = grp.label;
     var reqBadge = document.createElement('span');
     reqBadge.style.cssText = 'font-size:.68rem;font-weight:700;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;letter-spacing:.04em;white-space:nowrap';
-    reqBadge.textContent = 'REQUIRED — ALL ADMISSIONS';
+    reqBadge.textContent = grp.badge || 'REQUIRED — ALL ADMISSIONS';
     grpHdr.appendChild(grpTitle);
     grpHdr.appendChild(reqBadge);
     grpWrap.appendChild(grpHdr);
