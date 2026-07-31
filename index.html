@@ -8248,24 +8248,17 @@ async function runCarePlanBuilder() {
   const goalsLabel = goalsMap[goals] || goals || 'comfort and symptom management';
 
   // Required interventions block for primary DX
-  const fullCodeBlock = (flags && flags.fullCode) ? `
+  const fullCodeBlock = (flags && flags.fullCode)
+    ? '\n\n--- FULL CODE STATUS (secondary goal and interventions -- add under this primary DX problem) ---\nSECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
+    : '';
 
---- FULL CODE STATUS (secondary goal and interventions — add under this primary DX problem) ---
-SECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.
-   ASSESS — Nurse will assess for risk of hospitalization due to Full Code status.
-   EDUCATE — Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.
-   PERFORM — Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.` : '';
+  const bereavementBlockCp = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission -- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
 
-  const requiredPrimaryBlock = isPrimaryDxPlan ? `
-3. REQUIRED ADDITIONAL INTERVENTIONS — This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:
-   PERFORM — Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.
-${fullCodeBlock}
---- BEREAVEMENT ASSESSMENT (required on every admission — add these interventions under this primary DX problem, mark each Performed) ---
-   ASSESS — Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
-   PERFORM — Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.
-   PERFORM — Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.
-   EDUCATE — Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.` : '';
+  const requiredPrimaryBlock = isPrimaryDxPlan
+    ? '\n3. REQUIRED ADDITIONAL INTERVENTIONS -- This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:\n   PERFORM -- Nurse has identified and documented that [Name/Relationship -- e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
+      + fullCodeBlock
+      + bereavementBlockCp
+    : '';
 
   let prompt;
 
@@ -10815,25 +10808,17 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
     };
     const goalsEmphasis = goalsMap['comfort']; // Build All defaults to comfort-focused, matching Tier Checker's primary use case
 
-    const fullCodeBlockAll = (flags && flags.fullCode) ? `
+    const fullCodeBlockAll = (flags && flags.fullCode)
+      ? '\n\n--- FULL CODE STATUS (secondary goal and interventions --- add under this primary DX problem) ---\nSECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.\n   ASSESS -- Nurse will assess for risk of hospitalization due to Full Code status.\n   EDUCATE -- Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.\n   PERFORM -- Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.'
+      : '';
 
---- FULL CODE STATUS (secondary goal and interventions — add under this primary DX problem) ---
-SECONDARY GOAL: Patient/caregiver will verbalize understanding of disease progression, Full Code implications, and when to contact hospice prior to seeking emergency treatment throughout the benefit period.
-   ASSESS — Nurse will assess for risk of hospitalization due to Full Code status.
-   EDUCATE — Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.
-   PERFORM — Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.` : '';
+    const bereavementBlock = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission --- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
 
-    const requiredPrimaryInterventions = isPrimary ? `
-
-This is the PRIMARY hospice diagnosis — also include these required interventions in addition to the clinically-relevant ones:
-   PERFORM — Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.
-   PERFORM — Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.
-${fullCodeBlockAll}
---- BEREAVEMENT ASSESSMENT (required on every admission — add these interventions under this primary DX problem, mark each Performed) ---
-   ASSESS — Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family's ability to provide mutual support.
-   PERFORM — Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.
-   PERFORM — Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.
-   EDUCATE — Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.` : '';
+    const requiredPrimaryInterventions = isPrimary
+      ? '\n\nThis is the PRIMARY hospice diagnosis -- also include these required interventions in addition to the clinically-relevant ones:\n   PERFORM -- Nurse has identified and documented that [Name/Relationship -- e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
+        + fullCodeBlockAll
+        + bereavementBlock
+      : '';
 
     const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
 
