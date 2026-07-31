@@ -11137,53 +11137,125 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   ivLabel.textContent = 'Interventions';
   ivSec.appendChild(ivLabel);
 
+  // Split interventions into clinical (before any --- marker) and required groups
+  var clinicalIvs = [];
+  var requiredGroups = []; // [{label, items:[{prefix,text}], isFullCode}]
+  var currentGroup = null;
+  var inRequired = false;
+
   (result.interventions || []).forEach(function(iv) {
-    // Section divider: --- LABEL ---
-    if (/^---\s+.+\s+---$/.test(iv.trim())) {
-      var divEl = document.createElement('div');
-      var divLabel = iv.trim().replace(/^-+\s+/, '').replace(/\s+-+$/, '');
-      divEl.style.cssText = 'font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 5px;padding:5px 9px;background:#eef2fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0';
-      divEl.textContent = divLabel;
-      ivSec.appendChild(divEl);
+    var trimmed = iv.trim();
+    if (/^---\s+.+\s+---$/.test(trimmed)) {
+      var grpLabel = trimmed.replace(/^-+\s+/, '').replace(/\s+-+$/, '');
+      var isFullCode = /FULL CODE/i.test(grpLabel);
+      currentGroup = { label: grpLabel, items: [], isFullCode: isFullCode };
+      requiredGroups.push(currentGroup);
+      inRequired = true;
       return;
     }
-    // Secondary goal line
-    if (/^SECONDARY GOAL:/i.test(iv.trim())) {
-      var sgEl = document.createElement('div');
-      sgEl.style.cssText = 'background:var(--amber-bg,#fff8ee);border:1px solid var(--gold,#c9972c);border-radius:6px;padding:8px 12px;margin:6px 0';
-      sgEl.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.85rem">' + iv.trim().replace(/^SECONDARY GOAL:\s*/i, '') + '</div>';
-      ivSec.appendChild(sgEl);
+    if (/^SECONDARY GOAL:/i.test(trimmed)) {
+      if (currentGroup) currentGroup.secondaryGoal = trimmed.replace(/^SECONDARY GOAL:\s*/i, '');
       return;
     }
+    var prefixMatch = trimmed.match(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)/i);
+    if (!prefixMatch) return;
+    var prefix = prefixMatch[0].toUpperCase();
+    var text = trimmed.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s—\-]+\s*/i, '');
+    if (inRequired && currentGroup) {
+      currentGroup.items.push({ prefix: prefix, text: text });
+    } else {
+      clinicalIvs.push({ prefix: prefix, text: text });
+    }
+  });
 
-    const prefixMatch = iv.match(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)/i);
-    const prefixLabel = prefixMatch ? prefixMatch[0].toUpperCase() : '';
-    const text = iv.replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '');
-    const color = prefixLabel === 'ASSESS' ? '#1a6a9a' : prefixLabel === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
-
-    const ivRow = document.createElement('div');
+  // Render clinical interventions first
+  function renderIvRow(prefix, text, container) {
+    var color = prefix === 'ASSESS' ? '#1a6a9a' : prefix === 'EDUCATE' ? '#1e7d4e' : '#7a4200';
+    var ivRow = document.createElement('div');
     ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid ' + color + ';padding:7px 10px;margin-bottom:5px;background:#fafbfd;border-radius:0 5px 5px 0';
-
-    const pfx = document.createElement('span');
+    var pfx = document.createElement('span');
     pfx.style.cssText = 'font-size:.72rem;font-weight:700;color:' + color + ';flex-shrink:0;padding-top:2px;min-width:60px';
-    pfx.textContent = prefixLabel;
-
-    const ivText = document.createElement('span');
+    pfx.textContent = prefix;
+    var ivText = document.createElement('span');
     ivText.style.cssText = 'flex:1;font-size:.86rem;line-height:1.5';
     ivText.textContent = text;
-
-    const ivCopy = document.createElement('button');
+    var ivCopy = document.createElement('button');
     ivCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
     ivCopy.textContent = '📋';
     ivCopy.addEventListener('click', function() { copyAllCpText(ivCopy, text); });
+    ivRow.appendChild(pfx); ivRow.appendChild(ivText); ivRow.appendChild(ivCopy);
+    container.appendChild(ivRow);
+  }
 
-    ivRow.appendChild(pfx);
-    ivRow.appendChild(ivText);
-    ivRow.appendChild(ivCopy);
-    ivSec.appendChild(ivRow);
+  clinicalIvs.forEach(function(iv) { renderIvRow(iv.prefix, iv.text, ivSec); });
+
+  // Render required groups
+  requiredGroups.forEach(function(grp) {
+    var grpWrap = document.createElement('div');
+    grpWrap.style.cssText = 'margin-top:16px;border:2px solid #c0392b;border-radius:7px;overflow:hidden';
+
+    // Group header
+    var grpHdr = document.createElement('div');
+    grpHdr.style.cssText = 'background:#c0392b;color:#fff;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px';
+    var grpTitle = document.createElement('span');
+    grpTitle.style.cssText = 'font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em';
+    grpTitle.textContent = grp.label;
+    var reqBadge = document.createElement('span');
+    reqBadge.style.cssText = 'font-size:.68rem;font-weight:700;background:rgba(255,255,255,.25);padding:2px 8px;border-radius:10px;letter-spacing:.04em;white-space:nowrap';
+    reqBadge.textContent = 'REQUIRED — ALL ADMISSIONS';
+    grpHdr.appendChild(grpTitle);
+    grpHdr.appendChild(reqBadge);
+    grpWrap.appendChild(grpHdr);
+
+    // Secondary goal if present (Full Code)
+    if (grp.secondaryGoal) {
+      var sgWrap = document.createElement('div');
+      sgWrap.style.cssText = 'background:#fff8e1;border-bottom:1px solid #f5c6a0;padding:8px 12px';
+      sgWrap.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:#7a4200;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.85rem;line-height:1.5;color:#333">' + grp.secondaryGoal + '</div>';
+      grpWrap.appendChild(sgWrap);
+    }
+
+    // Interventions
+    var grpBody = document.createElement('div');
+    grpBody.style.cssText = 'padding:8px 12px;background:#fff5f5';
+    grp.items.forEach(function(iv) {
+      var ivRow = document.createElement('div');
+      ivRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;border-left:3px solid #c0392b;padding:7px 10px;margin-bottom:5px;background:#fff;border-radius:0 5px 5px 0';
+      var pfx = document.createElement('span');
+      pfx.style.cssText = 'font-size:.72rem;font-weight:700;color:#c0392b;flex-shrink:0;padding-top:2px;min-width:60px';
+      pfx.textContent = iv.prefix;
+      var ivText = document.createElement('span');
+      ivText.style.cssText = 'flex:1;font-size:.86rem;line-height:1.5;color:#222';
+      ivText.textContent = iv.text;
+      var ivCopy = document.createElement('button');
+      ivCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:#c0392b;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+      ivCopy.textContent = '📋';
+      (function(t) { ivCopy.addEventListener('click', function() { copyAllCpText(ivCopy, t); }); })(iv.text);
+      var reqTag = document.createElement('span');
+      reqTag.style.cssText = 'font-size:.65rem;font-weight:700;color:#fff;background:#c0392b;padding:2px 6px;border-radius:3px;flex-shrink:0;align-self:center;letter-spacing:.03em';
+      reqTag.textContent = 'REQ';
+      ivRow.appendChild(pfx); ivRow.appendChild(ivText); ivRow.appendChild(ivCopy); ivRow.appendChild(reqTag);
+      grpBody.appendChild(ivRow);
+    });
+    grpWrap.appendChild(grpBody);
+    ivSec.appendChild(grpWrap);
   });
 
   body.appendChild(ivSec);
+
+  // DME/Supplies reminder -- only on primary DX card (has required groups)
+  if (requiredGroups.length > 0) {
+    var dmeReminder = document.createElement('div');
+    dmeReminder.style.cssText = 'margin-top:12px;padding:8px 12px;background:#eef2fa;border:1px solid #bfdbfe;border-radius:6px;font-size:.8rem;color:#1e3a8a;line-height:1.6';
+    dmeReminder.innerHTML = '<strong>\uD83D\uDCE6 Don\'t forget \u2014 also required under this primary DX problem:</strong>'
+      + '<ul style="margin:5px 0 0 16px;padding:0">'
+      + '<li>Admission order entered</li>'
+      + '<li>Nutrition order entered <em>(document as \"Nutrition\" in Firenote, not \"Diet\")</em></li>'
+      + '<li>All DME entered \u2014 hospice-ordered, facility-provided, and patient-owned</li>'
+      + '<li>All supplies not tied to another diagnosis entered under this problem</li>'
+      + '</ul>';
+    body.appendChild(dmeReminder);
+  }
 
   // Physician/IDT Coordination section
   if (result.physicianCoordination) {
