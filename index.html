@@ -9512,6 +9512,8 @@ If an F-code companion is NOT present on the list: add it to the "missing" array
 
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
+SPECIAL RULE — Neoplasm Related Pain (G89.3): If the primary diagnosis is a malignancy (any C-code) and G89.3 or any pain code is NOT already on the problem list, add G89.3 to the "missing" array as an optional (not required) suggestion with icd10: "G89.3" and suggestion: "Neoplasm related pain — consider adding if pain is documented". Do NOT add it if a pain code (G89.x, R52, M54.x, or similar) is already present.
+
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
 
 ${imminenceNote}
@@ -11210,6 +11212,17 @@ function buildSituationalCards(flags, primaryDx) {
     ]));
   }
 
+  // ── Cancer → G89.3 Neoplasm Related Pain suggestion ─────────────
+  var isCancerPrimary = primaryDx && /\bC[0-9][0-9]\b|\bmalignant\b|\bcancer\b|\bneoplasm\b|\bcarcinoma\b|\blymphoma\b|\bleukemia\b|\bmyeloma\b/i.test(primaryDx);
+  var hasPainAlready = (data && data.items || []).some(function(it) {
+    return /G89\.|neoplasm.*pain|cancer.*pain|pain.*cancer|pain.*neoplasm/i.test(it.diagnosis);
+  });
+  if (isCancerPrimary && !hasPainAlready) {
+    cards.push(makeCard('⚠ Consider Adding — G89.3 Neoplasm Related Pain', 'Cancer Diagnosis Detected', amber, [
+      { type: 'flag', label: 'G89.3 — Neoplasm related pain', text: 'A cancer diagnosis is present as the primary. If the patient has documented pain related to the malignancy, G89.3 (Neoplasm related pain) should be added as a separate active problem with its own care plan goal and interventions. This is distinct from general chronic pain (G89.29) and is highly relevant to hospice eligibility documentation.' }
+    ]));
+  }
+
   // ── Opioids → K59.03 flag ────────────────────────────────────────
   if (flags.opioids) {
     cards.push(makeCard('💊 Opioid-Induced Constipation', 'Consider Adding K59.03', amber, [
@@ -12623,6 +12636,36 @@ function resolveIcdOption(idx, code, label) {
   // If the resolved diagnosis is a dementia etiology, offer to build the F-code companion
   const dxText = icdLookupResults[idx].diagnosis || '';
   const resolvedCode = icdLookupResults[idx].code || '';
+
+  // CANCER PAIN COMPANION CHECK
+  // If a cancer code resolves and G89.3 isn't already on the list, suggest adding it
+  const isCancerCode = /^C[0-9][0-9]/i.test(resolvedCode);
+  const alreadyHasPain = icdLookupResults.some(function(r) {
+    return /^G89|^R52/i.test(r.code || '') || /neoplasm.*pain|cancer.*pain/i.test(r.diagnosis || '');
+  });
+  if (isCancerCode && !alreadyHasPain) {
+    const painRow = document.createElement('div');
+    painRow.style.cssText = 'padding:9px 14px;border-bottom:1px solid var(--border);background:#fff8ee';
+    painRow.innerHTML = '<div style="font-size:.79rem;color:#7a4200;margin-bottom:6px"><strong>💡 Consider adding — G89.3 Neoplasm Related Pain</strong></div>'
+      + '<div style="font-size:.78rem;color:#555;margin-bottom:8px;line-height:1.5">A cancer code was just resolved. If pain is documented and related to the malignancy, <strong>G89.3</strong> (Neoplasm related pain) should be added as a separate active problem.</div>'
+      + '<button id="pain-add-btn-' + idx + '" style="padding:4px 12px;background:#c9972c;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;margin-right:8px">+ Add G89.3 to list</button>'
+      + '<button class="pain-skip-btn" style="padding:4px 10px;background:none;color:var(--text-mid);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.78rem;cursor:pointer">Pain not documented — skip</button>';
+
+    const skipBtn = painRow.querySelector('.pain-skip-btn');
+    if (skipBtn) skipBtn.addEventListener('click', function() { painRow.remove(); });
+
+    const addBtn = painRow.querySelector('#pain-add-btn-' + idx);
+    if (addBtn) {
+      addBtn.addEventListener('click', function() {
+        icdLookupResults.push({ diagnosis: 'Neoplasm related pain', code: 'G89.3', description: 'Neoplasm related pain', needsClarification: false, source: 'local', options: null });
+        painRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">G89.3</span><span style="color:var(--navy);font-weight:600">Neoplasm related pain</span><span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Added</span></div>';
+        updateIcdSendButton(container);
+      });
+    }
+
+    const listWrap = container ? container.querySelector('.icd-results-list') || container : container;
+    if (listWrap) listWrap.appendChild(painRow);
+  }
   const etiologyEntry = detectDementiaEtiology(dxText);
   const existingLines = icdLookupResults.map(function(r) { return (r.code || '') + ' ' + (r.diagnosis || ''); });
   const alreadyHasFCode = hasFCodeCompanion(existingLines);
