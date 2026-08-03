@@ -11816,11 +11816,21 @@ var LOCAL_ICD_SYNONYMS = {
     { code: 'C34.90', label: 'Laterality not documented (C34.90) — avoid if possible' },
   ]},
   'metastatic lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.91', label: 'Primary lung cancer, right lung (if lung is the PRIMARY site of malignancy)' },
-    { code: 'C34.92', label: 'Primary lung cancer, left lung (if lung is the PRIMARY site of malignancy)' },
-    { code: 'C78.00', label: 'Secondary malignant neoplasm of unspecified lung (if cancer SPREAD TO the lung from elsewhere)' },
-    { code: 'C78.01', label: 'Secondary malignant neoplasm of right lung (if cancer SPREAD TO the lung from elsewhere)' },
-    { code: 'C78.02', label: 'Secondary malignant neoplasm of left lung (if cancer SPREAD TO the lung from elsewhere)' },
+    { code: '__cascade__', label: 'Lung IS the primary site of malignancy (primary lung cancer with spread elsewhere)', subOptions: [
+      { code: 'C34.11', label: 'Upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'Middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'Lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'Right lung — lobe not documented (C34.91)' },
+      { code: 'C34.12', label: 'Upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'Lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'Left lung — lobe not documented (C34.92)' },
+      { code: 'C34.90', label: 'Laterality not documented (C34.90)' },
+    ]},
+    { code: '__cascade__', label: 'Cancer SPREAD TO the lung from another primary site (secondary malignancy of lung)', subOptions: [
+      { code: 'C78.01', label: 'Secondary malignant neoplasm of right lung (C78.01)' },
+      { code: 'C78.02', label: 'Secondary malignant neoplasm of left lung (C78.02)' },
+      { code: 'C78.00', label: 'Secondary malignant neoplasm of unspecified lung (C78.00)' },
+    ]},
   ]},
   'non-small cell lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
     { code: '__cascade__', label: 'RIGHT lung', subOptions: [
