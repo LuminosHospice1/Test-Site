@@ -2801,6 +2801,10 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Cancer" data-search="pancreas, unspecified c25.9 specify head (c25.0), body (c25.1), or tail (c25.2)"><td>Pancreas, unspecified</td><td class="code-cell">C25.9</td><td>Specify head (C25.0), body (C25.1), or tail (C25.2)</td></tr>
 <tr class="icd-data-row" data-cat="Cancer" data-search="ovary — right c56.1 "><td>Ovary — right</td><td class="code-cell">C56.1</td><td></td></tr>
 <tr class="icd-data-row" data-cat="Cancer" data-search="ovary — left c56.2 "><td>Ovary — left</td><td class="code-cell">C56.2</td><td></td></tr>
+<tr class="icd-data-row" data-cat="Cancer" data-search="secondary malignancy of ovary c79.60 when ovary is the metastatic site — right c79.61, left c79.62"><td>Secondary malignancy of ovary</td><td class="code-cell">C79.60</td><td>When ovary is the metastatic site — right C79.61, left C79.62</td></tr>
+<tr class="icd-data-row" data-cat="Cancer" data-search="kidney — right c64.1 renal cell carcinoma"><td>Kidney — right</td><td class="code-cell">C64.1</td><td>Renal cell carcinoma</td></tr>
+<tr class="icd-data-row" data-cat="Cancer" data-search="kidney — left c64.2 renal cell carcinoma"><td>Kidney — left</td><td class="code-cell">C64.2</td><td>Renal cell carcinoma</td></tr>
+<tr class="icd-data-row" data-cat="Cancer" data-search="secondary malignancy of kidney and renal pelvis c79.00 when kidney is the metastatic site — right c79.01, left c79.02"><td>Secondary malignancy of kidney and renal pelvis</td><td class="code-cell">C79.00</td><td>When kidney is the metastatic site — right C79.01, left C79.02</td></tr>
 <tr class="icd-data-row" data-cat="Cancer" data-search="liver, primary (hepatocellular) c22.0 distinct from secondary/metastatic"><td>Liver, primary (hepatocellular)</td><td class="code-cell">C22.0</td><td>Distinct from secondary/metastatic</td></tr>
 <tr class="icd-data-row" data-cat="Cancer" data-search="secondary malignancy of liver c78.7 very common in hospice"><td>Secondary malignancy of liver</td><td class="code-cell">C78.7</td><td>Very common in hospice</td></tr>
 <tr class="icd-data-row" data-cat="Cancer" data-search="secondary malignancy of bone c79.51 specify site — c79.52 = vertebra"><td>Secondary malignancy of bone</td><td class="code-cell">C79.51</td><td>Specify site — C79.52 = vertebra</td></tr>
@@ -9512,7 +9516,7 @@ If an F-code companion is NOT present on the list: add it to the "missing" array
 
 TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requiring interventions, or impacting comfort. Examples: hyperlipidemia, stable hypothyroidism, osteoarthritis without pain, history of stroke without deficits, history of meningitis, stable hypertension.
 
-SPECIAL RULE — Neoplasm Related Pain (G89.3): If the primary diagnosis is a malignancy (any C-code) and G89.3 or any pain code is NOT already on the problem list, add G89.3 to the "missing" array as an optional (not required) suggestion with icd10: "G89.3" and suggestion: "Neoplasm related pain — consider adding if pain is documented". Do NOT add it if a pain code (G89.x, R52, M54.x, or similar) is already present.
+SPECIAL RULE — Neoplasm Related Pain (G89.3): If the primary diagnosis is a malignancy (any C-code) and G89.3 is NOT already on the problem list, add G89.3 to the "missing" array as an optional (not required) suggestion with icd10: "G89.3" and suggestion: "Neoplasm related pain — consider adding if pain is documented as related to the malignancy". A generic pain code that is NOT G89.3 (e.g. G89.29 other chronic pain, G89.4 chronic pain syndrome, G89.1 acute pain, R52, M54.x) does NOT satisfy this rule and should NOT suppress the suggestion — G89.29/G89.4 are distinct from G89.3 and do not indicate the pain has been confirmed as cancer-related. Only suppress the suggestion if G89.3 itself, or a diagnosis explicitly describing cancer/neoplasm/tumor-related pain, is already on the list.
 
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
 
@@ -11215,7 +11219,7 @@ function buildSituationalCards(flags, primaryDx) {
   // ── Cancer → G89.3 Neoplasm Related Pain suggestion ─────────────
   var isCancerPrimary = primaryDx && /\bC[0-9][0-9]\b|\bmalignant\b|\bcancer\b|\bneoplasm\b|\bcarcinoma\b|\blymphoma\b|\bleukemia\b|\bmyeloma\b/i.test(primaryDx);
   var hasPainAlready = (data && data.items || []).some(function(it) {
-    return /G89\.|neoplasm.*pain|cancer.*pain|pain.*cancer|pain.*neoplasm/i.test(it.diagnosis);
+    return /G89\.3\b|neoplasm.*pain|cancer.*pain|pain.*cancer|pain.*neoplasm|tumor.*pain|pain.*tumor/i.test(it.diagnosis);
   });
   if (isCancerPrimary && !hasPainAlready) {
     cards.push(makeCard('⚠ Consider Adding — G89.3 Neoplasm Related Pain', 'Cancer Diagnosis Detected', amber, [
@@ -11845,6 +11849,87 @@ var LOCAL_ICD_SYNONYMS = {
       { code: 'C78.00', label: 'Secondary malignant neoplasm of unspecified lung (C78.00)' },
     ]},
   ]},
+  // ── PAIN CODES — locked locally to prevent AI over-coding chronic pain as neoplasm-related without confirmed relatedness ──
+  'chronic pain': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'G89.29', label: 'Other chronic pain — use unless pain is specifically documented as related to the malignancy (G89.29)' },
+    { code: 'G89.3', label: 'Neoplasm related pain — use ONLY if pain is documented as related to the malignancy (G89.3)' },
+    { code: 'G89.4', label: 'Chronic pain syndrome (G89.4)' },
+  ]},
+  'chronic pain syndrome': { code: 'G89.4', desc: 'Chronic pain syndrome', resolve: true },
+  'other chronic pain': { code: 'G89.29', desc: 'Other chronic pain', resolve: true },
+  'cancer pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
+  'cancer related pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
+  'neoplasm related pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
+  'tumor pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
+  'malignancy related pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
+
+  'metastatic ovarian cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: '__cascade__', label: 'Ovary IS the primary site of malignancy (primary ovarian cancer with spread elsewhere)', subOptions: [
+      { code: 'C56.1', label: 'Right ovary (C56.1)' },
+      { code: 'C56.2', label: 'Left ovary (C56.2)' },
+      { code: 'C56.9', label: 'Ovary — laterality not documented (C56.9)' },
+    ]},
+    { code: '__cascade__', label: 'Cancer SPREAD TO the ovary from another primary site (secondary malignancy of ovary)', subOptions: [
+      { code: 'C79.61', label: 'Secondary malignant neoplasm of right ovary (C79.61)' },
+      { code: 'C79.62', label: 'Secondary malignant neoplasm of left ovary (C79.62)' },
+      { code: 'C79.63', label: 'Secondary malignant neoplasm of bilateral ovaries (C79.63)' },
+      { code: 'C79.60', label: 'Secondary malignant neoplasm of unspecified ovary (C79.60)' },
+    ]},
+  ]},
+  'metastatic colon cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: '__cascade__', label: 'Colon/rectum IS the primary site of malignancy (primary colorectal cancer with spread elsewhere)', subOptions: [
+      { code: 'C18.0', label: 'Cecum (C18.0)' },
+      { code: 'C18.2', label: 'Ascending (right) colon (C18.2)' },
+      { code: 'C18.4', label: 'Transverse colon (C18.4)' },
+      { code: 'C18.6', label: 'Descending (left) colon (C18.6)' },
+      { code: 'C18.7', label: 'Sigmoid colon (C18.7)' },
+      { code: 'C18.9', label: 'Colon, site not documented (C18.9)' },
+      { code: 'C19', label: 'Rectosigmoid junction (C19)' },
+      { code: 'C20', label: 'Rectum (C20)' },
+    ]},
+    { code: 'C78.5', label: 'Cancer SPREAD TO the colon/rectum from another primary site (secondary malignancy of large intestine and rectum) (C78.5)' },
+  ]},
+  'metastatic colorectal cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: '__cascade__', label: 'Colon/rectum IS the primary site of malignancy (primary colorectal cancer with spread elsewhere)', subOptions: [
+      { code: 'C18.0', label: 'Cecum (C18.0)' },
+      { code: 'C18.2', label: 'Ascending (right) colon (C18.2)' },
+      { code: 'C18.4', label: 'Transverse colon (C18.4)' },
+      { code: 'C18.6', label: 'Descending (left) colon (C18.6)' },
+      { code: 'C18.7', label: 'Sigmoid colon (C18.7)' },
+      { code: 'C18.9', label: 'Colon, site not documented (C18.9)' },
+      { code: 'C19', label: 'Rectosigmoid junction (C19)' },
+      { code: 'C20', label: 'Rectum (C20)' },
+    ]},
+    { code: 'C78.5', label: 'Cancer SPREAD TO the colon/rectum from another primary site (secondary malignancy of large intestine and rectum) (C78.5)' },
+  ]},
+  'metastatic rectal cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'C20', label: 'Rectum IS the primary site of malignancy (primary rectal cancer with spread elsewhere) (C20)' },
+    { code: 'C78.5', label: 'Cancer SPREAD TO the rectum from another primary site (secondary malignancy of large intestine and rectum) (C78.5)' },
+  ]},
+  'metastatic kidney cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: '__cascade__', label: 'Kidney IS the primary site of malignancy (primary kidney cancer with spread elsewhere)', subOptions: [
+      { code: 'C64.1', label: 'Right kidney (C64.1)' },
+      { code: 'C64.2', label: 'Left kidney (C64.2)' },
+      { code: 'C64.9', label: 'Kidney — laterality not documented (C64.9)' },
+    ]},
+    { code: '__cascade__', label: 'Cancer SPREAD TO the kidney from another primary site (secondary malignancy of kidney and renal pelvis)', subOptions: [
+      { code: 'C79.01', label: 'Secondary malignant neoplasm of right kidney and renal pelvis (C79.01)' },
+      { code: 'C79.02', label: 'Secondary malignant neoplasm of left kidney and renal pelvis (C79.02)' },
+      { code: 'C79.00', label: 'Secondary malignant neoplasm of unspecified kidney and renal pelvis (C79.00)' },
+    ]},
+  ]},
+  'metastatic renal cell carcinoma': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: '__cascade__', label: 'Kidney IS the primary site of malignancy (primary renal cell carcinoma with spread elsewhere)', subOptions: [
+      { code: 'C64.1', label: 'Right kidney (C64.1)' },
+      { code: 'C64.2', label: 'Left kidney (C64.2)' },
+      { code: 'C64.9', label: 'Kidney — laterality not documented (C64.9)' },
+    ]},
+    { code: '__cascade__', label: 'Cancer SPREAD TO the kidney from another primary site (secondary malignancy of kidney and renal pelvis)', subOptions: [
+      { code: 'C79.01', label: 'Secondary malignant neoplasm of right kidney and renal pelvis (C79.01)' },
+      { code: 'C79.02', label: 'Secondary malignant neoplasm of left kidney and renal pelvis (C79.02)' },
+      { code: 'C79.00', label: 'Secondary malignant neoplasm of unspecified kidney and renal pelvis (C79.00)' },
+    ]},
+  ]},
   'non-small cell lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
     { code: '__cascade__', label: 'RIGHT lung', subOptions: [
       { code: 'C34.11', label: 'NSCLC — upper lobe, right lung (C34.11)' },
@@ -12322,7 +12407,7 @@ async function runIcdLookup() {
   if (needsApi.length > 0) {
     btn.textContent = '⏳ Coding ' + needsApi.length + ' remaining via AI...';
     const needsApiLines = needsApi;
-    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain (\"chronic pain\", \"persistent pain\", \"generalized pain\") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. \"cancer pain\", \"tumor pain\", \"neoplasm related pain\"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
     let parsed = null; let errMsg = '';
     try {
       const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: apiPrompt, max_tokens: 4000 }) });
@@ -12641,7 +12726,7 @@ function resolveIcdOption(idx, code, label) {
   // If a cancer code resolves and G89.3 isn't already on the list, suggest adding it
   const isCancerCode = /^C[0-9][0-9]/i.test(resolvedCode);
   const alreadyHasPain = icdLookupResults.some(function(r) {
-    return /^G89|^R52/i.test(r.code || '') || /neoplasm.*pain|cancer.*pain/i.test(r.diagnosis || '');
+    return /^G89\.3\b/i.test(r.code || '') || /neoplasm.*pain|cancer.*pain|tumor.*pain/i.test(r.diagnosis || '');
   });
   if (isCancerCode && !alreadyHasPain) {
     const painRow = document.createElement('div');
