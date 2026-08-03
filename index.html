@@ -10865,6 +10865,23 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
       interventions: immInterventions,
       physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.',
       _requiredGroups: [
+        (flags && flags.fullCode) ? {
+          label: 'Full Code Status — Interventions Only (no separate goal needed)',
+          badge: 'REQUIRED — WHEN APPLICABLE',
+          items: [
+            { prefix: 'ASSESS',  text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
+            { prefix: 'EDUCATE', text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
+            { prefix: 'PERFORM', text: 'Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.' }
+          ]
+        } : null,
+        {
+          label: 'Medication Administration & Education',
+          badge: 'REQUIRED — ALL ADMISSIONS',
+          items: [
+            { prefix: 'PERFORM', text: 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.' },
+            { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
+          ]
+        },
         {
           label: 'Bereavement Assessment',
           badge: 'REQUIRED — ALL ADMISSIONS',
@@ -10875,7 +10892,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
             { prefix: 'EDUCATE', text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
           ]
         }
-      ]
+      ].filter(Boolean)
     };
 
     // Render primary card with imminence care plan
@@ -11606,9 +11623,23 @@ function clearTierChecker() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  const res = document.getElementById('tier-results');
+  // Clear all situational flag checkboxes
+  ['cpf-imminent','cpf-fullcode','cpf-oxygen','cpf-oxygen-prn','cpf-foley',
+   'cpf-fallrisk','cpf-skinrisk','cpf-opioids','cpf-anticoag','cpf-wound',
+   'cpf-infection','cpf-alone'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+  // Reset setting to Home
+  var homeRadio = document.querySelector('input[name="tier-setting"][value="home"]');
+  if (homeRadio) homeRadio.checked = true;
+  var res = document.getElementById('tier-results');
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
+  var buildWrap = document.getElementById('all-tier1-cp-wrap');
+  if (buildWrap) { buildWrap.innerHTML = ''; buildWrap.style.display = 'none'; }
   tierLockedItems = new Map();
+  tierCurrentData = null;
+  tierQueuedAdditions = new Map();
 }
 
 // ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
@@ -11645,6 +11676,15 @@ var LOCAL_ICD_SYNONYMS = {
   'essential hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
   'hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
   'urinary tract infection': { code: 'N39.0', desc: 'Urinary tract infection, site not specified', resolve: true },
+  'urinary incontinence': { code: 'R32', desc: 'Unspecified urinary incontinence', resolve: true },
+  'unspecified urinary incontinence': { code: 'R32', desc: 'Unspecified urinary incontinence', resolve: true },
+  'stress urinary incontinence': { code: 'N39.3', desc: 'Stress incontinence (female)', resolve: true },
+  'urge urinary incontinence': { code: 'N39.41', desc: 'Urge incontinence', resolve: true },
+  'mixed urinary incontinence': { code: 'N39.46', desc: 'Mixed incontinence', resolve: true },
+  'fecal incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
+  'bowel incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
+  'incontinence of feces': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
+  'fecal incontinence unspecified': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
   'uti': { code: 'N39.0', desc: 'Urinary tract infection, site not specified', resolve: true },
   'type 2 diabetes mellitus without complications': { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications', resolve: true },
   'type 2 diabetes without complications': { code: 'E11.9', desc: 'Type 2 diabetes mellitus without complications', resolve: true },
@@ -11848,19 +11888,19 @@ var FCODE_ETIOLOGY_TERMS = [
   { terms: ["alzheimer", "alzheimers"], codes: ["G30.9","G30.0","G30.1","G30.8"], family: "F02", note: "Select the G30 subtype first, then the F-code will be built" },
   { terms: ["parkinson", "parkinsons", "parkinson's"], codes: ["G20"], family: "F02", conditional: true, note: "F-code companion is NOT always required for Parkinson's disease. Only add an F-code if dementia, psychosis/hallucinations, or other neuropsychiatric symptoms are specifically documented. G20 alone is correct if no such symptoms are present." },
   { terms: ["lewy body", "lewy-body", "lbd", "diffuse lewy"], codes: ["G31.83"], family: "F02", note: "Fluctuating cognition and visual hallucinations are hallmarks — consider F02.82" },
-  { terms: ["frontotemporal", "ftd", "pick's", "picks disease", "behavioral variant ftd", "bvftd"], codes: ["G31.09","G31.01"], family: "F02", note: "Behavioral variant FTD often has behavioral disturbance — consider F02.81x" },
-  { terms: ["primary progressive aphasia", "ppa"], codes: ["G31.09"], family: "F02", note: "Only use F02.8x once dementia (not just aphasia) is documented" },
+  { terms: ["lewy body", "lewy-body", "lbd", "diffuse lewy", "dementia with lewy bodies", "dlb"], codes: ["G31.83"], family: "F02", note: "Visual hallucinations and fluctuating cognition are hallmarks of Lewy body dementia — F02.82 (psychotic disturbance) is frequently the most accurate code. Verify documentation." },
+  { terms: ["primary progressive aphasia", "ppa"], codes: ["G31.09"], family: "F02", conditional: true, note: "F02.8x companion only applies once dementia (not just aphasia) is specifically documented. If the patient has aphasia alone without a dementia diagnosis, no F-code is needed." },
   { terms: ["corticobasal", "cbd"], codes: ["G31.85"], family: "F02", note: null },
   { terms: ["progressive supranuclear palsy", "psp"], codes: ["G23.1"], family: "F02", note: null },
   { terms: ["huntington", "huntingtons"], codes: ["G10"], family: "F02", note: "Mood and behavioral disturbance are common — check for F02.83" },
-  { terms: ["creutzfeldt", "cjd", "prion"], codes: ["A81.00"], family: "F02", note: null },
+  { terms: ["huntington", "huntingtons", "huntington's disease", "huntington's chorea"], codes: ["G10"], family: "F02", note: "Mood disturbance (depression, irritability, apathy) is extremely common in Huntington's disease — consider F02.83 before defaulting to F02.80. Behavioral disturbance is also common in advanced stages." },
   { terms: ["normal pressure hydrocephalus", "nph"], codes: ["G91.2"], family: "F02", note: null },
   { terms: ["senile degeneration of brain", "senile brain degeneration"], codes: ["G31.1"], family: "F02", note: null },
   { terms: ["anoxic brain", "anoxic encephalopathy", "hypoxic brain", "hypoxic encephalopathy"], codes: ["G93.1"], family: "F02", note: null },
   { terms: ["vascular dementia", "multi-infarct dementia", "multiinfarct dementia"], codes: ["F01.50"], family: "F01_STANDALONE", note: "F01 stands alone — no separate etiology code required unless specific cerebrovascular disease is also being tracked" },
   { terms: ["dementia with parkinsonism", "dementia parkinsonism"], codes: ["G31.83"], family: "F02", note: "Consider Lewy body dementia — confirm with provider" },
   { terms: ["hiv dementia", "aids dementia", "hiv encephalopathy"], codes: ["B20"], family: "F02", note: "B20 must always be sequenced first" },
-  { terms: ["ms dementia", "multiple sclerosis with dementia"], codes: ["G35"], family: "F02", note: "Only use F02.8x when true dementia is documented — not just cognitive difficulty" },
+  { terms: ["ms dementia", "multiple sclerosis with dementia", "multiple sclerosis"], codes: ["G35"], family: "F02", conditional: true, note: "F02.8x companion only applies when true dementia is specifically documented — not just cognitive complaints or memory issues. Confirm with provider before adding." },
 ];
 
 // Severity options — same for F01/F02/F03 (different placeholder 5th char)
