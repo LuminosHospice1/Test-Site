@@ -3939,7 +3939,7 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
         <div id="imminent-flag-wrap" style="margin-bottom:10px;padding:10px 14px;background:#fff0f0;border:2px solid #c0392b;border-radius:7px;display:flex;align-items:flex-start;gap:10px">
           <input type="checkbox" id="cpf-imminent" style="margin-top:3px;flex-shrink:0;accent-color:#c0392b;width:16px;height:16px">
           <div>
-            <label for="cpf-imminent" style="font-weight:700;color:#c0392b;font-size:.9rem;cursor:pointer">💀 Patient is Imminent — death expected within 48–72 hours</label>
+            <label for="cpf-imminent" style="font-weight:700;color:#c0392b;font-size:.9rem;cursor:pointer">🕊️ Patient is Imminent — death expected within 48–72 hours</label>
             <div style="font-size:.77rem;color:#7a2020;margin-top:3px;line-height:1.5">Checking this will: focus the tier analysis on imminence, suppress full care plan generation for non-primary diagnoses, and build an imminence of death care plan under the primary diagnosis instead of the standard clinical care plan.</div>
           </div>
         </div>
@@ -8651,10 +8651,6 @@ function buildNarrativePrompt() {
 
   if (!draft) { alert('Please enter your draft narrative or notes first.'); return; }
 
-  const imminenceNote = isImminent
-    ? '\n\nIMPORTANT -- IMMINENCE MODE: This patient is believed to be within 48-72 hours of death. Analyze the problem list with these rules:\n- Only the primary diagnosis should be Tier 1 (standalone care plan). All other diagnoses should be Tier 2 or Tier 3.\n- For each non-primary Tier 1 or Tier 2 item, add to the reasoning: deprioritized due to patient imminence.\n- Diagnoses that are clinically irrelevant during active dying (hypertension, hyperlipidemia, chronic stable conditions, etc.) should be Tier 3 with reasoning: Not clinically relevant during active dying process -- recommend discontinuing this care plan.\n- The care plan for the primary diagnosis will be an imminence-focused comfort plan built separately -- do not include standard clinical interventions in the missing suggestions.'
-    : '';
-
   const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and NHPCO guidelines.
 
 A hospice admission nurse needs help strengthening a clinical nursing narrative. Please:
@@ -9413,6 +9409,7 @@ function cpQuickFillDirect(problem, primary, details) {
 
 async function runTierChecker() {
   const primaryDx = cleanDiagnosisLine(document.getElementById('tier-primary').value.trim());
+  const flags = getCpFlags();
   const isImminent = !!(flags && flags.imminent);
   const raw = document.getElementById('tier-input').value.trim();
   if (!primaryDx) { alert('Please enter the primary hospice diagnosis first.'); return; }
@@ -10681,6 +10678,7 @@ function toggleTierQueueItem(btn, suggestion, mi, icd10) {
 }
 
 async function reRunTierWithAdditions() {
+  const flags = getCpFlags();
   if (!tierCurrentData || tierQueuedAdditions.size === 0) return;
 
   const additions = Array.from(tierQueuedAdditions.values());
@@ -12759,7 +12757,7 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
         <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
         <button type="button" onclick="cpQuickFillSituational('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wound Care</button>
-        <button type="button" onclick="cpQuickFillSituational('imminent')" style="padding:5px 11px;background:#fff0f0;border:2px solid #c0392b;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:700;color:#c0392b;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#ffd5d5'" onmouseout="this.style.background='#fff0f0'">💀 Patient is Imminent</button>
+        <button type="button" onclick="cpQuickFillSituational('imminent')" style="padding:5px 11px;background:#fff0f0;border:2px solid #c0392b;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:700;color:#c0392b;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#ffd5d5'" onmouseout="this.style.background='#fff0f0'">🕊️ Patient is Imminent</button>
         <button type="button" onclick="cpQuickFillSituational('discharge')"  style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
         <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
         <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
