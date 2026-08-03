@@ -10880,11 +10880,11 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
     // Render primary card with imminence care plan
     cards.forEach(function(c) {
-      if (normDx(c.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(c.diagnosis).includes(normDx(primaryDx)))) {
+      var dx = c.item ? c.item.diagnosis : '';
+      if (normDx(dx) === normDx(primaryDx) || (primaryDx && normDx(dx).includes(normDx(primaryDx)))) {
         c.body.innerHTML = '';
-        renderAllCpCard(c.body, immResult, c.diagnosis, patientDetails);
+        renderAllCpCard(c.body, immResult, dx, patientDetails);
       } else {
-        // Non-primary cards — show imminence suppression notice
         c.body.innerHTML = '<div style="padding:10px 14px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.83rem;color:#7a4200;line-height:1.5">'
           + '<strong>⚠ Care plan suppressed — patient is imminent</strong><br>'
           + 'This diagnosis has been deprioritized due to patient imminence. Review whether this care plan should be discontinued in Firenote. Focus care plan documentation on the primary diagnosis imminence care plan only.'
@@ -10892,11 +10892,10 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
       }
     });
 
-    // Append situational care plan cards (bereavement standalone etc. are now under primary)
-    const flagCards = container.querySelector('#tier-flag-cards') || container;
-    // Skip bereavement standalone since it is injected under primary; add other flags if applicable
-    // Render all accumulated cards to DOM
-    cards.forEach(function(c) { container.appendChild(c); });
+    // Render all accumulated cards to DOM (cards are already appended to wrap above)
+    // Reset button state
+    btn.textContent = '✨ Build All Tier 1 Care Plans';
+    btn.disabled = false;
     return; // Skip the normal Promise.all path
   }
 
