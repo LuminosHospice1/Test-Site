@@ -9467,13 +9467,13 @@ DIAGNOSIS SUBSUMPTION — A second type of Tier 2 relationship exists when one d
 
 ABSOLUTE RULE — PRIMARY DIAGNOSIS: The patient's primary hospice diagnosis is ALWAYS Tier 1, without exception. No other logic, subsumption rule, or symptom routing overrides this. Even if the primary diagnosis is a manifestation of something else, it remains Tier 1 because it is the hospice-qualifying diagnosis and will always require its own goals and interventions.
 
-REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diagnosis (or any Tier 1 diagnosis) is a neurocognitive/neurodegenerative condition — including but not limited to Alzheimer's disease (G30.x), senile degeneration of the brain (G31.1), Lewy body dementia (G31.83), Parkinson's disease dementia (G31.83 or G20), frontotemporal dementia (G31.09), vascular dementia, or any other primary dementia — ICD-10 coding requires a companion F-code documenting the associated behavioral/psychological manifestation.
+REQUIRED COMPANION CODE RULE — NEUROCOGNITIVE DIAGNOSES: When the primary diagnosis (or any Tier 1 diagnosis) is a primary dementia — including Alzheimer's disease (G30.x), senile degeneration of the brain (G31.1), Lewy body dementia (G31.83), frontotemporal dementia (G31.09), vascular dementia, or any other primary dementia diagnosis — ICD-10 coding requires a companion F-code. EXCEPTION: Parkinson's disease (G20) does NOT always require an F-code companion. Only flag a missing F-code for G20 if dementia, psychosis, hallucinations, or other neuropsychiatric symptoms are specifically documented.
 
 CRITICAL — use the CORRECT F-code companion based on the specific G-code diagnosis. Do NOT use F02.x for non-Alzheimer's diagnoses:
 - G30.x (Alzheimer's disease) → F02.81 (with behavioral disturbance) or F02.80 (without behavioral disturbance)
 F-CODE COMPANION RULES (etiology → correct F-code family):
 - G30.x (Alzheimer's) → F02.8x family (NEVER F03)
-- G20/G20.x (Parkinson's) → F02.8x family. Hallucinations are common — F02.82 may apply
+- G20/G20.x (Parkinson's) → F-code companion is NOT always required. Only flag missing F-code if dementia, psychosis/hallucinations, or neuropsychiatric symptoms are specifically documented on the problem list or in the patient details. G20 alone is correct when no such symptoms are documented.
 - G31.83 (Lewy body) → F02.8x family. Visual hallucinations are hallmarks — F02.82 likely
 - G31.01 (Pick's) / G31.09 (FTD) → F02.8x family. Behavioral disturbance common — F02.81x likely
 - G31.85 (Corticobasal) / G23.1 (PSP) → F02.8x family
@@ -11744,7 +11744,7 @@ var FCODE_ETIOLOGY_MAP = {
 // Etiology term → ICD code mapping for dementia detection by name
 var FCODE_ETIOLOGY_TERMS = [
   { terms: ["alzheimer", "alzheimers"], codes: ["G30.9","G30.0","G30.1","G30.8"], family: "F02", note: "Select the G30 subtype first, then the F-code will be built" },
-  { terms: ["parkinson", "parkinsons", "parkinson's"], codes: ["G20"], family: "F02", note: "PD-related hallucinations are common — check for F02.82 before defaulting to F02.80" },
+  { terms: ["parkinson", "parkinsons", "parkinson's"], codes: ["G20"], family: "F02", conditional: true, note: "F-code companion is NOT always required for Parkinson's disease. Only add an F-code if dementia, psychosis/hallucinations, or other neuropsychiatric symptoms are specifically documented. G20 alone is correct if no such symptoms are present." },
   { terms: ["lewy body", "lewy-body", "lbd", "diffuse lewy"], codes: ["G31.83"], family: "F02", note: "Fluctuating cognition and visual hallucinations are hallmarks — consider F02.82" },
   { terms: ["frontotemporal", "ftd", "pick's", "picks disease", "behavioral variant ftd", "bvftd"], codes: ["G31.09","G31.01"], family: "F02", note: "Behavioral variant FTD often has behavioral disturbance — consider F02.81x" },
   { terms: ["primary progressive aphasia", "ppa"], codes: ["G31.09"], family: "F02", note: "Only use F02.8x once dementia (not just aphasia) is documented" },
@@ -12280,11 +12280,55 @@ function resolveIcdOption(idx, code, label) {
   // F-CODE COMPANION CHECK
   // If the resolved diagnosis is a dementia etiology, offer to build the F-code companion
   const dxText = icdLookupResults[idx].diagnosis || '';
+  const resolvedCode = icdLookupResults[idx].code || '';
   const etiologyEntry = detectDementiaEtiology(dxText);
   const existingLines = icdLookupResults.map(function(r) { return (r.code || '') + ' ' + (r.diagnosis || ''); });
   const alreadyHasFCode = hasFCodeCompanion(existingLines);
 
-  if (etiologyEntry && !alreadyHasFCode) {
+  // For conditional etiologies (e.g. Parkinson's) — offer as optional suggestion, not auto-trigger
+  const conditionalEtiology = detectDementiaEtiology(dxText);
+  if (conditionalEtiology && conditionalEtiology.conditional && !alreadyHasFCode) {
+    const suggRow = document.createElement('div');
+    suggRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);background:#fffbea';
+    suggRow.innerHTML = '<div style="font-size:.79rem;color:#7a4200;margin-bottom:6px"><strong>💡 F-code companion — conditional for ' + escapeHtml(dxText) + '</strong></div>'
+      + '<div style="font-size:.78rem;color:#555;margin-bottom:8px;line-height:1.5">' + escapeHtml(conditionalEtiology.note) + '</div>'
+      + '<button id="fcond-yes-' + idx + '" style="padding:4px 12px;background:#c9972c;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;margin-right:8px">Yes — build F-code</button>'
+      + '<button class="fcond-no-btn" style="padding:4px 10px;background:none;color:var(--text-mid);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.78rem;cursor:pointer">No — G20 only is correct</button>';
+    const noBtn = suggRow.querySelector('.fcond-no-btn');
+    if (noBtn) { noBtn.addEventListener('click', function() { suggRow.remove(); }); }
+    const yesBtn = suggRow.querySelector('#fcond-yes-' + idx);
+    if (yesBtn) {
+      yesBtn.addEventListener('click', function() {
+        suggRow.remove();
+        // Trigger the full F-code builder
+        const fcIdx = icdLookupResults.length;
+        icdLookupResults.push({ diagnosis: 'F-code companion for ' + dxText, code: null, description: null, needsClarification: false, source: 'fcode', _fcPending: true });
+        const fcRow = document.createElement('div');
+        fcRow.id = 'icd-row-' + fcIdx;
+        fcRow.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);background:#f0f5ff';
+        fcRow.innerHTML = '<div style="font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px">📋 F-code companion for ' + escapeHtml(dxText) + '</div>';
+        renderFCodeBuilder(fcRow, conditionalEtiology, resolvedCode, dxText, function(fcCode, fcDesc) {
+          if (fcCode) {
+            icdLookupResults[fcIdx].code = fcCode;
+            icdLookupResults[fcIdx].description = fcDesc;
+            icdLookupResults[fcIdx].diagnosis = fcCode + ' — ' + fcDesc;
+            icdLookupResults[fcIdx]._fcPending = false;
+            fcRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-family:monospace;font-size:.82rem;background:var(--navy);color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span><span style="color:var(--navy);font-weight:600">F-code companion — ' + escapeHtml(dxText) + '</span><span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Added</span></div>';
+          } else {
+            icdLookupResults.splice(fcIdx, 1);
+            fcRow.remove();
+          }
+          updateIcdSendButton(container);
+        });
+        const listWrap = container ? container.querySelector('.icd-results-list') || container : container;
+        if (listWrap) listWrap.appendChild(fcRow);
+      });
+    }
+    const listWrap2 = container ? container.querySelector('.icd-results-list') || container : container;
+    if (listWrap2) listWrap2.appendChild(suggRow);
+  }
+
+  if (etiologyEntry && !alreadyHasFCode && !etiologyEntry.conditional) {
     // Add a new companion row to the results list
     const fcIdx = icdLookupResults.length;
     icdLookupResults.push({
