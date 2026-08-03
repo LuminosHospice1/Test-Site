@@ -3936,6 +3936,13 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
 
       <div class="checker-field">
         <label>Situational Flags <span style="font-weight:400;font-size:.78rem;text-transform:none;color:var(--text-lt)">(check all that apply — adds required care plans to Build All output)</span></label>
+        <div id="imminent-flag-wrap" style="margin-bottom:10px;padding:10px 14px;background:#fff0f0;border:2px solid #c0392b;border-radius:7px;display:flex;align-items:flex-start;gap:10px">
+          <input type="checkbox" id="cpf-imminent" style="margin-top:3px;flex-shrink:0;accent-color:#c0392b;width:16px;height:16px">
+          <div>
+            <label for="cpf-imminent" style="font-weight:700;color:#c0392b;font-size:.9rem;cursor:pointer">💀 Patient is Imminent — death expected within 48–72 hours</label>
+            <div style="font-size:.77rem;color:#7a2020;margin-top:3px;line-height:1.5">Checking this will: focus the tier analysis on imminence, suppress full care plan generation for non-primary diagnoses, and build an imminence of death care plan under the primary diagnosis instead of the standard clinical care plan.</div>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:6px">
           <label class="cp-flag-label"><input type="checkbox" id="cpf-fullcode"> 🆘 Patient is Full Code</label>
           <label class="cp-flag-label"><input type="checkbox" id="cpf-oxygen"> 💨 Continuous supplemental O₂</label>
@@ -7989,6 +7996,7 @@ function getCpFlags() {
     wound: get('cpf-wound'),
     infection: get('cpf-infection'),
     alone: get('cpf-alone'),
+    imminent: get('cpf-imminent'),
   };
 }
 
@@ -8518,6 +8526,7 @@ function cpQuickFillSituational(key) {
     bereavement: { problem: 'Pre-bereavement assessment and support for family/caregiver', type: 'psychosocial', goals: 'grief', hint: 'Required on every admission — add under primary DX or as standalone problem.' },
     fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add these interventions under the primary diagnosis problem, not as a new problem. No separate goal needed.' },
     oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
+    imminent: { problem: 'Imminence of death — comfort-focused end-of-life care', type: 'clinical', goals: 'comfort', hint: 'Add under the primary diagnosis problem. This care plan replaces or supplements the standard primary DX care plan — focus entirely on comfort, symptom management, and family support. Discontinue care plans that are no longer clinically relevant during the dying process (hypertension, etc.).' },
     oxygenprn: { problem: 'Intermittent / PRN oxygen use — safety and monitoring', type: 'clinical', goals: 'comfort', hint: 'Do NOT add Z99.81 — this patient does not rely on continuous oxygen. Add these interventions under the most clinically relevant respiratory problem (e.g. COPD, Dyspnea, Lung Cancer). No separate ICD-10 code needed.' },
     foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
@@ -8641,6 +8650,10 @@ function buildNarrativePrompt() {
   const dx = document.getElementById('narr-dx').value.trim();
 
   if (!draft) { alert('Please enter your draft narrative or notes first.'); return; }
+
+  const imminenceNote = isImminent
+    ? '\n\nIMPORTANT -- IMMINENCE MODE: This patient is believed to be within 48-72 hours of death. Analyze the problem list with these rules:\n- Only the primary diagnosis should be Tier 1 (standalone care plan). All other diagnoses should be Tier 2 or Tier 3.\n- For each non-primary Tier 1 or Tier 2 item, add to the reasoning: deprioritized due to patient imminence.\n- Diagnoses that are clinically irrelevant during active dying (hypertension, hyperlipidemia, chronic stable conditions, etc.) should be Tier 3 with reasoning: Not clinically relevant during active dying process -- recommend discontinuing this care plan.\n- The care plan for the primary diagnosis will be an imminence-focused comfort plan built separately -- do not include standard clinical interventions in the missing suggestions.'
+    : '';
 
   const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and NHPCO guidelines.
 
@@ -9400,6 +9413,7 @@ function cpQuickFillDirect(problem, primary, details) {
 
 async function runTierChecker() {
   const primaryDx = cleanDiagnosisLine(document.getElementById('tier-primary').value.trim());
+  const isImminent = !!(flags && flags.imminent);
   const raw = document.getElementById('tier-input').value.trim();
   if (!primaryDx) { alert('Please enter the primary hospice diagnosis first.'); return; }
   if (!raw) { alert('Please paste the active problem list first.'); return; }
@@ -9499,6 +9513,7 @@ TIER 3 — Diagnosis List Only: Present but not currently causing symptoms, requ
 
 SPECIAL RULE — Oxygen Dependence (Z99.81): Tier 1 only if the patient requires CONTINUOUS oxygen. If PRN/intermittent, it should be Tier 2 under a respiratory problem (CHF, COPD, or Dyspnea).
 
+${imminenceNote}
 The patient's PRIMARY HOSPICE DIAGNOSIS is: ${primaryDx}
 
 Active problem list to tier:
@@ -9678,7 +9693,7 @@ CRITICAL: You must process every single diagnosis in the list above and include 
     tierLockedItems.set(it.diagnosis.toLowerCase().trim(), it);
   });
 
-  renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo);
+  renderTierResults(resultsEl, parsed, primaryDx, wasTruncated, debugInfo, flags);
 }
 
 function fixInvalidTierParents(data) {
@@ -9689,9 +9704,29 @@ function fixInvalidTierParents(data) {
   // no valid Tier 1 ancestor can be found.
   if (!data || !data.items) return;
 
-  const norm = function(s) { return (s || '').trim().toLowerCase(); };
+  const norm = function(s) {
+    return (s || '').trim().toLowerCase()
+      .replace(/^[a-z][0-9][0-9a-z\.]{0,6}\s+/i, '')  // strip leading ICD code
+      .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  };
   const byName = {};
   data.items.forEach(function(it) { byName[norm(it.diagnosis)] = it; });
+  // Also index by each significant word cluster for fuzzy parent matching
+  function findParentItem(parentProblem) {
+    var key = norm(parentProblem);
+    if (byName[key]) return byName[key];
+    // Fuzzy: find any item whose normalized diagnosis contains the parent key or vice versa
+    var keys = Object.keys(byName);
+    for (var ki = 0; ki < keys.length; ki++) {
+      if (keys[ki].indexOf(key) !== -1 || key.indexOf(keys[ki]) !== -1) return byName[keys[ki]];
+      // Word overlap: check if majority of words in parent match
+      var pWords = key.split(' ').filter(function(w) { return w.length > 3; });
+      var dWords = keys[ki].split(' ');
+      var matches = pWords.filter(function(w) { return dWords.indexOf(w) !== -1; }).length;
+      if (pWords.length > 0 && matches / pWords.length >= 0.6) return byName[keys[ki]];
+    }
+    return null;
+  }
 
   data.items.forEach(function(it) {
     if (it.tier !== 2 || !it.parentProblem) return;
@@ -9703,8 +9738,7 @@ function fixInvalidTierParents(data) {
 
     while (guard < 10) {
       guard++;
-      const parentKey = norm(current.parentProblem);
-      const parentItem = byName[parentKey];
+      const parentItem = findParentItem(current.parentProblem);
 
       if (!parentItem) {
         // Parent isn't in the list at all (e.g. AI referenced something not actually tiered) — bail to Tier 1
@@ -9737,8 +9771,21 @@ function fixInvalidTierParents(data) {
   });
 }
 
-function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) {
+function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, flags) {
+  const isImminent = !!(flags && flags.imminent);
   container.innerHTML = '';
+
+
+  // Imminence mode banner
+  if (isImminent) {
+    const immBanner = document.createElement('div');
+    immBanner.style.cssText = 'padding:12px 16px;background:#fff0f0;border:2px solid #c0392b;border-radius:7px;margin-bottom:10px;font-size:.83rem;color:#7a2020;line-height:1.6';
+    immBanner.innerHTML = '<strong style="font-size:.88rem;display:block;margin-bottom:4px">&#128480; Imminence Mode Active</strong>'
+      + 'The tier analysis below reflects imminence-focused prioritization. Only the primary diagnosis should have a standalone care plan. '
+      + 'Review each non-primary diagnosis and discontinue care plans that are no longer clinically relevant during the active dying process. '
+      + '<strong>When you click Build All, only the primary diagnosis will generate an imminence-focused comfort care plan.</strong>';
+    container.appendChild(immBanner);
+  }
 
   const disclaimer = document.createElement('div');
   disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:8px';
@@ -9750,7 +9797,7 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo) 
   buildAllBtn.id = 'build-all-tier1-btn';
   buildAllBtn.style.cssText = 'display:block;width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:14px';
   buildAllBtn.innerHTML = '✨ Build All Tier 1 Care Plans';
-  buildAllBtn.addEventListener('click', function() { buildAllTier1CarePlans(data, primaryDx, container); });
+  buildAllBtn.addEventListener('click', function() { buildAllTier1CarePlans(data, primaryDx, container, flags); });
   container.appendChild(buildAllBtn);
 
   // Care plan output area (populated by buildAllTier1CarePlans)
@@ -10744,10 +10791,10 @@ Respond ONLY with valid JSON, no markdown, no extra whitespace:
   tierQueuedAdditions = new Map();
 
   // Re-render the full combined results
-  renderTierResults(resultsEl, tierCurrentData, primaryDx, false, '');
+  renderTierResults(resultsEl, tierCurrentData, primaryDx, false, '', flags);
 }
 
-async function buildAllTier1CarePlans(data, primaryDx, container) {
+async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   const tier1Items = (data.items || []).filter(function(it) { return it.tier === 1; });
   if (tier1Items.length === 0) { alert('No Tier 1 diagnoses found.'); return; }
 
@@ -10795,7 +10842,61 @@ async function buildAllTier1CarePlans(data, primaryDx, container) {
   });
 
   // Get flags before Promise.all so they're available inside the async callbacks
-  const flags = getCpFlags();
+  if (!flags) flags = getCpFlags();
+  const isImminent = !!(flags && flags.imminent);
+
+  // If patient is imminent, replace primary card with hardcoded imminence care plan
+  if (isImminent) {
+    const isFacility = flags.setting === 'facility' || flags.setting === 'snf';
+    const immGoal = 'Patient will experience a comfortable, peaceful death as evidenced by absence of distressing symptoms and family/caregiver report of comfort and satisfaction with care throughout the final days of life.';
+    const immInterventions = [
+      'ASSESS -- Nurse will assess patient physical condition and symptom burden at each visit, including pain, dyspnea, anxiety, restlessness, secretions, and changes in level of consciousness.',
+      'ASSESS -- Nurse will evaluate family/caregiver coping, emotional adjustment, and readiness at each visit.',
+      'EDUCATE -- Nurse will educate family/caregiver on recognition and management of end-of-life symptoms including pain, dyspnea, anxiety, and restlessness, and when to contact the hospice team.',
+      'EDUCATE -- Nurse will educate family/caregiver regarding the dying process, expected physical changes, and procedures that occur at the time of death.',
+      'PERFORM -- Nurse will implement comfort-focused interventions to manage pain and distressing symptoms, and communicate medication effectiveness and needs to the physician for timely adjustment.',
+      'PERFORM -- Nurse will monitor symptom control at each visit and adjust comfort measures as needed to maintain a peaceful, comfortable environment.',
+    ].concat(isFacility ? ['PERFORM -- Nurse will coordinate with facility staff to ensure routine comfort assessments are completed and communicated to the hospice team for appropriate palliative intervention.'] : []);
+
+    const immResult = {
+      goal: immGoal,
+      interventions: immInterventions,
+      physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.',
+      _requiredGroups: [
+        {
+          label: 'Bereavement Assessment',
+          badge: 'REQUIRED — ALL ADMISSIONS',
+          items: [
+            { prefix: 'ASSESS',  text: 'Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.' },
+            { prefix: 'PERFORM', text: 'Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.' },
+            { prefix: 'PERFORM', text: 'Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.' },
+            { prefix: 'EDUCATE', text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
+          ]
+        }
+      ]
+    };
+
+    // Render primary card with imminence care plan
+    cards.forEach(function(c) {
+      if (normDx(c.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(c.diagnosis).includes(normDx(primaryDx)))) {
+        c.body.innerHTML = '';
+        renderAllCpCard(c.body, immResult, c.diagnosis, patientDetails);
+      } else {
+        // Non-primary cards — show imminence suppression notice
+        c.body.innerHTML = '<div style="padding:10px 14px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.83rem;color:#7a4200;line-height:1.5">'
+          + '<strong>⚠ Care plan suppressed — patient is imminent</strong><br>'
+          + 'This diagnosis has been deprioritized due to patient imminence. Review whether this care plan should be discontinued in Firenote. Focus care plan documentation on the primary diagnosis imminence care plan only.'
+          + '</div>';
+      }
+    });
+
+    // Append situational care plan cards (bereavement standalone etc. are now under primary)
+    const flagCards = container.querySelector('#tier-flag-cards') || container;
+    // Skip bereavement standalone since it is injected under primary; add other flags if applicable
+    // Render all accumulated cards to DOM
+    cards.forEach(function(c) { container.appendChild(c); });
+    return; // Skip the normal Promise.all path
+  }
 
   // Fire all AI calls in parallel
   await Promise.all(cards.map(async function(c) {
@@ -12658,7 +12759,8 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
         <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
         <button type="button" onclick="cpQuickFillSituational('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wound Care</button>
-        <button type="button" onclick="cpQuickFillSituational('discharge')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
+        <button type="button" onclick="cpQuickFillSituational('imminent')" style="padding:5px 11px;background:#fff0f0;border:2px solid #c0392b;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:700;color:#c0392b;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#ffd5d5'" onmouseout="this.style.background='#fff0f0'">💀 Patient is Imminent</button>
+        <button type="button" onclick="cpQuickFillSituational('discharge')"  style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
         <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
         <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
         <button type="button" onclick="cpQuickFillSituational('imminence')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🕊️ Imminence of Death</button>
