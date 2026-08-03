@@ -11788,21 +11788,32 @@ var LOCAL_ICD_SYNONYMS = {
 
   // ── ONCOLOGY — locked locally to prevent AI laterality/specificity errors ──
   'lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.11', label: 'Malignant neoplasm of upper lobe, right bronchus or lung' },
-    { code: 'C34.12', label: 'Malignant neoplasm of upper lobe, left bronchus or lung' },
-    { code: 'C34.31', label: 'Malignant neoplasm of lower lobe, right bronchus or lung' },
-    { code: 'C34.32', label: 'Malignant neoplasm of lower lobe, left bronchus or lung' },
-    { code: 'C34.11', label: 'Right lung, lobe not specified — use C34.11/21/31 depending on lobe' },
-    { code: 'C34.90', label: 'Unspecified part of unspecified side of lung (use only if laterality truly unknown)' },
+    { code: '__cascade__', label: 'RIGHT lung', subOptions: [
+      { code: 'C34.11', label: 'Upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'Middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'Lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'Right lung — lobe not documented (C34.91)' },
+    ]},
+    { code: '__cascade__', label: 'LEFT lung', subOptions: [
+      { code: 'C34.12', label: 'Upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'Lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'Left lung — lobe not documented (C34.92)' },
+    ]},
+    { code: 'C34.90', label: 'Laterality not documented — use only if truly not in the chart (C34.90)' },
   ]},
   'primary lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.11', label: 'Upper lobe, right lung' },
-    { code: 'C34.12', label: 'Upper lobe, left lung' },
-    { code: 'C34.31', label: 'Lower lobe, right lung' },
-    { code: 'C34.32', label: 'Lower lobe, left lung' },
-    { code: 'C34.91', label: 'Right lung, unspecified lobe' },
-    { code: 'C34.92', label: 'Left lung, unspecified lobe' },
-    { code: 'C34.90', label: 'Unspecified lung (avoid — use only if laterality truly not documented)' },
+    { code: '__cascade__', label: 'RIGHT lung', subOptions: [
+      { code: 'C34.11', label: 'Upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'Middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'Lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'Right lung — lobe not documented (C34.91)' },
+    ]},
+    { code: '__cascade__', label: 'LEFT lung', subOptions: [
+      { code: 'C34.12', label: 'Upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'Lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'Left lung — lobe not documented (C34.92)' },
+    ]},
+    { code: 'C34.90', label: 'Laterality not documented (C34.90) — avoid if possible' },
   ]},
   'metastatic lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
     { code: 'C34.91', label: 'Primary lung cancer, right lung (if lung is the PRIMARY site of malignancy)' },
@@ -11812,22 +11823,46 @@ var LOCAL_ICD_SYNONYMS = {
     { code: 'C78.02', label: 'Secondary malignant neoplasm of left lung (if cancer SPREAD TO the lung from elsewhere)' },
   ]},
   'non-small cell lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.11', label: 'NSCLC — upper lobe, right lung' },
-    { code: 'C34.12', label: 'NSCLC — upper lobe, left lung' },
-    { code: 'C34.31', label: 'NSCLC — lower lobe, right lung' },
-    { code: 'C34.32', label: 'NSCLC — lower lobe, left lung' },
-    { code: 'C34.91', label: 'NSCLC — right lung, lobe unspecified' },
-    { code: 'C34.92', label: 'NSCLC — left lung, lobe unspecified' },
+    { code: '__cascade__', label: 'RIGHT lung', subOptions: [
+      { code: 'C34.11', label: 'NSCLC — upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'NSCLC — middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'NSCLC — lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'NSCLC — right lung, lobe not documented (C34.91)' },
+    ]},
+    { code: '__cascade__', label: 'LEFT lung', subOptions: [
+      { code: 'C34.12', label: 'NSCLC — upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'NSCLC — lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'NSCLC — left lung, lobe not documented (C34.92)' },
+    ]},
+    { code: 'C34.90', label: 'NSCLC — laterality not documented (C34.90)' },
   ]},
   'nsclc': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.91', label: 'NSCLC — right lung' },
-    { code: 'C34.92', label: 'NSCLC — left lung' },
-    { code: 'C34.90', label: 'NSCLC — laterality not documented' },
+    { code: '__cascade__', label: 'RIGHT lung', subOptions: [
+      { code: 'C34.11', label: 'NSCLC — upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'NSCLC — middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'NSCLC — lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'NSCLC — right lung, lobe not documented (C34.91)' },
+    ]},
+    { code: '__cascade__', label: 'LEFT lung', subOptions: [
+      { code: 'C34.12', label: 'NSCLC — upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'NSCLC — lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'NSCLC — left lung, lobe not documented (C34.92)' },
+    ]},
+    { code: 'C34.90', label: 'NSCLC — laterality not documented (C34.90)' },
   ]},
   'small cell lung cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'C34.91', label: 'Small cell lung cancer — right lung' },
-    { code: 'C34.92', label: 'Small cell lung cancer — left lung' },
-    { code: 'C34.90', label: 'Small cell lung cancer — laterality not documented' },
+    { code: '__cascade__', label: 'RIGHT lung', subOptions: [
+      { code: 'C34.11', label: 'Small cell — upper lobe, right lung (C34.11)' },
+      { code: 'C34.21', label: 'Small cell — middle lobe, right lung (C34.21)' },
+      { code: 'C34.31', label: 'Small cell — lower lobe, right lung (C34.31)' },
+      { code: 'C34.91', label: 'Small cell — right lung, lobe not documented (C34.91)' },
+    ]},
+    { code: '__cascade__', label: 'LEFT lung', subOptions: [
+      { code: 'C34.12', label: 'Small cell — upper lobe, left lung (C34.12)' },
+      { code: 'C34.32', label: 'Small cell — lower lobe, left lung (C34.32)' },
+      { code: 'C34.92', label: 'Small cell — left lung, lobe not documented (C34.92)' },
+    ]},
+    { code: 'C34.90', label: 'Small cell — laterality not documented (C34.90)' },
   ]},
   'breast cancer': { code: null, desc: null, resolve: false, clarify: true, options: [
     { code: 'C50.911', label: 'Malignant neoplasm of unspecified site of right female breast' },
@@ -12463,14 +12498,39 @@ function renderIcdLookupResults(container) {
         + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
         + '</div>';
     } else {
-      let optHtml = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">Select the most accurate option for this patient:</div>';
-      (item.options || []).forEach(function(opt, oi) {
-        optHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
-          + '<input type="radio" name="icd-opt-' + idx + '" value="' + escapeHtml(opt.code) + '" data-label="' + escapeHtml(opt.label) + '" data-idx="' + idx + '" onchange="resolveIcdOption(' + idx + ', this.value, this.dataset.label)">'
-          + '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(opt.code) + '</span>'
-          + '<span>' + escapeHtml(opt.label) + '</span>'
-          + '</label>';
-      });
+      // Render options - supports cascade (two-level) via __cascade__ sentinel
+      function renderIcdOptions(options, promptText, namePrefix) {
+        var html = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">' + (promptText || 'Select the most accurate option for this patient:') + '</div>';
+        (options || []).forEach(function(opt) {
+          if (opt.code === '__cascade__') {
+            // Cascade parent - clicking expands sub-options inline
+            var cascadeId = 'cascade-' + idx + '-' + Math.random().toString(36).slice(2,6);
+            html += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+              + '<input type="radio" name="' + namePrefix + '" value="__cascade__" data-label="' + escapeHtml(opt.label) + '" data-cascade-id="' + cascadeId + '" onchange="icdExpandCascade(this,' + idx + ',&quot;' + cascadeId + '&quot;)">'
+              + '<span style="font-weight:600;color:var(--navy)">' + escapeHtml(opt.label) + '</span>'
+              + '<span style="font-size:.75rem;color:var(--text-lt)">▶ select lobe</span>'
+              + '</label>'
+              + '<div id="' + cascadeId + '" style="display:none;margin-left:28px;padding:6px 10px;background:var(--row-alt);border-radius:5px;margin-bottom:4px">';
+            (opt.subOptions || []).forEach(function(sub) {
+              html += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:3px;cursor:pointer;font-size:.84rem">'
+                + '<input type="radio" name="' + namePrefix + '-sub-' + cascadeId + '" value="' + escapeHtml(sub.code) + '" data-label="' + escapeHtml(sub.label) + '" data-idx="' + idx + '" onchange="resolveIcdOption(' + idx + ', this.value, this.dataset.label)">'
+                + '<span style="font-family:monospace;font-size:.76rem;background:#fff;border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(sub.code) + '</span>'
+                + '<span>' + escapeHtml(sub.label) + '</span>'
+                + '</label>';
+            });
+            html += '</div>';
+          } else {
+            html += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
+              + '<input type="radio" name="' + namePrefix + '" value="' + escapeHtml(opt.code) + '" data-label="' + escapeHtml(opt.label) + '" data-idx="' + idx + '" onchange="resolveIcdOption(' + idx + ', this.value, this.dataset.label)">'
+              + '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(opt.code) + '</span>'
+              + '<span>' + escapeHtml(opt.label) + '</span>'
+              + '</label>';
+          }
+        });
+        return html;
+      }
+
+      let optHtml = renderIcdOptions(item.options, null, 'icd-opt-' + idx);
 
       // "Other" option — manual entry
       optHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;cursor:pointer;font-size:.85rem">'
@@ -12509,6 +12569,17 @@ function renderIcdLookupResults(container) {
   });
 
   updateIcdSendButton(container);
+}
+
+function icdExpandCascade(radio, idx, cascadeId) {
+  // Hide all cascade sub-panels for this idx, then show the selected one
+  // cascadeId may come in as HTML-entity-encoded via onchange attribute
+  var id = radio.dataset.cascadeId || cascadeId;
+  document.querySelectorAll('[id^="cascade-' + idx + '-"]').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  var panel = document.getElementById(id);
+  if (panel) panel.style.display = 'block';
 }
 
 function resolveIcdOption(idx, code, label) {
