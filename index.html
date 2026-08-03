@@ -9441,6 +9441,10 @@ async function runTierChecker() {
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--navy);font-size:.88rem;font-style:italic">Applying the three-tier framework to each diagnosis...</div>';
 
+  const imminenceNote = isImminent
+    ? 'IMPORTANT -- IMMINENCE MODE: This patient is believed to be within 48-72 hours of death. Apply these rules when tiering: (1) Only the primary diagnosis should be Tier 1. All other diagnoses should be Tier 2 or Tier 3. (2) Add to the reasoning for each non-primary item: deprioritized due to patient imminence. (3) Diagnoses that are clinically irrelevant during active dying (hypertension, hyperlipidemia, stable chronic conditions, etc.) should be Tier 3 with reasoning: Not clinically relevant during active dying process - recommend discontinuing this care plan.'
+    : '';
+
   const prompt = `You are a hospice clinical documentation expert helping a nurse decide which diagnoses on a patient's active problem list need a fully built care plan (goal + interventions), versus which can be addressed under another problem, versus which are diagnosis-list-only.
 
 Use this exact three-tier framework:
