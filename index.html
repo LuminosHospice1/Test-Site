@@ -9991,14 +9991,56 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
           window._fcFamily = tierFcFamily;
           renderFCodeBuilder(fcBuilderRow, tierEtiology || { family: tierFcFamily }, null, m.suggestion, function(fcCode, fcDesc) {
             if (fcCode) {
+              const fcDiagnosisText = fcCode + ' ' + fcDesc;
+              // Add to tier input (kept in sync for manual re-runs / audit trail)
+              const ti = document.getElementById('tier-input');
+              if (ti) { ti.value = (ti.value.trim() ? ti.value.trim() + '\n' : '') + fcDiagnosisText; }
+
+              // Find the etiology's item on the current tier list, so the F-code is filed as a
+              // Tier 2 manifestation under it — no AI re-run needed, this is deterministic.
+              const etiologyLineText = tierLines.split('\n').map(function(l) { return l.trim(); }).find(function(l) {
+                return detectDementiaEtiology(l);
+              });
+              const etiologyItem = (tierCurrentData && tierCurrentData.items) ? tierCurrentData.items.find(function(it) {
+                return etiologyLineText && it.diagnosis && it.diagnosis.trim().toLowerCase() === etiologyLineText.trim().toLowerCase();
+              }) : null;
+              const alreadyPresent = (tierCurrentData && tierCurrentData.items) ? tierCurrentData.items.some(function(it) {
+                return it.diagnosis && it.diagnosis.trim().toLowerCase() === fcDiagnosisText.trim().toLowerCase();
+              }) : true;
+
+              if (tierCurrentData && tierCurrentData.items && !alreadyPresent) {
+                const newFcItem = {
+                  diagnosis: fcDiagnosisText,
+                  tier: 2,
+                  reasoning: 'Required ICD-10 manifestation companion for dementia etiology',
+                  parentProblem: etiologyItem ? etiologyItem.diagnosis : (etiologyLineText || null),
+                  parentRationale: 'F-code companion required whenever the etiology is coded',
+                  parentWhat: 'Sequence directly after the etiology code — no separate standalone care plan needed',
+                  associatedSymptom: true,
+                  confidence: 'high',
+                  hospiceRelatedness: 'related',
+                  relatednessReason: 'Manifestation of the primary dementia etiology',
+                  relatednessLean: null
+                };
+                tierCurrentData.items.push(newFcItem);
+                tierLockedItems.set(fcDiagnosisText.toLowerCase().trim(), newFcItem);
+
+                // Remove this requirement from the missing/required list so it doesn't render twice
+                if (tierCurrentData.missing) {
+                  tierCurrentData.missing = tierCurrentData.missing.filter(function(mm) { return mm !== m; });
+                }
+
+                // Re-render so the new Tier 2 item appears immediately
+                const resultsElNow = document.getElementById('tier-results');
+                if (resultsElNow) { renderTierResults(resultsElNow, tierCurrentData, primaryDx, false, '', flags); }
+                return;
+              }
+
               fcBuilderRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0">'
                 + '<span style="font-family:monospace;font-size:.82rem;background:#c0392b;color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span>'
                 + '<span style="color:#c0392b;font-weight:600">' + escapeHtml(fcDesc) + '</span>'
-                + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Built — add this to the problem list in Firenote after the etiology code</span>'
+                + '<span style="font-size:.7rem;color:var(--green);font-weight:600">✓ Built — added to Tier 2 below</span>'
                 + '</div>';
-              // Add to tier input
-              const ti = document.getElementById('tier-input');
-              if (ti) { ti.value = (ti.value.trim() ? ti.value.trim() + '\n' : '') + fcCode + ' ' + fcDesc; }
             } else {
               fcBuilderRow.innerHTML = '<div style="font-size:.8rem;color:var(--text-mid);font-style:italic;padding:4px 0">F-code skipped.</div>';
             }
