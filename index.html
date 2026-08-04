@@ -12770,8 +12770,24 @@ function renderIcdLookupResults(container) {
       // the nurse isn't picking ONE correct code for one condition, they're deciding WHICH of
       // several genuinely separate conditions to keep, then splitting the line into that many
       // separate diagnosis lines. Radio buttons (pick exactly one) would be wrong here.
+      //
+      // Detection uses two signals, since the AI doesn't always reliably apply the exact
+      // "should be its own line" phrasing even when it did correctly identify several distinct
+      // conditions — it sometimes just returns a flat list of candidate codes instead:
+      //   1. Every option label explicitly says "should be its own line" (the AI cooperated), OR
+      //   2. The options span 3+ different ICD-10 code families (first segment before the dot) —
+      //      e.g. I50.x (heart failure) + R06.x (dyspnea) + R60.x (edema) + E44.x (malnutrition).
+      //      A genuine single-condition clarification (laterality, severity, primary-vs-secondary)
+      //      almost never spans more than 2 families. Restricted to AI-sourced results only, so
+      //      trusted local synonym-table cascades (curated by us, not free-text AI output) are
+      //      never second-guessed by this heuristic.
+      var optionFamilies = {};
+      (item.options || []).forEach(function(o) { optionFamilies[(o.code || '').split('.')[0].toUpperCase()] = true; });
       var isMultiDxSplit = Array.isArray(item.options) && item.options.length > 1
-        && item.options.every(function(o) { return /should be its own line/i.test(o.label || ''); });
+        && (
+          item.options.every(function(o) { return /should be its own line/i.test(o.label || ''); })
+          || (item.source === 'api' && Object.keys(optionFamilies).length >= 3)
+        );
 
       if (isMultiDxSplit) {
         var splitOptsHtml = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px;font-style:italic">This line appears to describe more than one distinct condition. Uncheck any that shouldn\'t be split out, then split the rest into separate diagnosis lines:</div>'
