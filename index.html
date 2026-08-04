@@ -3979,6 +3979,7 @@ Chronic pain"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="checker-btn" id="tier-parse-btn" onclick="runTierChecker()">🗂️ Suggest Tiers</button>
         <button class="ai-clear-btn" onclick="clearTierChecker()" style="padding:10px 18px">✕ Clear</button>
+        <button class="ai-clear-btn" onclick="clearTierCheckerAndReturnToIcdLookup()" style="padding:10px 18px">↩ Clear &amp; Return to ICD-10 Code Lookup</button>
       </div>
       <div id="tier-results" style="display:none;margin-top:20px"></div>
     </div>
@@ -8004,6 +8005,21 @@ function getCpFlags() {
   };
 }
 
+// Setting-aware wording for the required "responsible party for medication administration"
+// intervention. Used everywhere this required intervention is generated — standalone Care
+// Plan Builder, and both the imminent and non-imminent Build All Tier 1 paths — so Patient
+// Setting (Home / Facility-ALF / SNF-LTC) actually changes the wording everywhere it appears,
+// not just in the one place it happened to be wired up.
+function getMedAdminResponsibilityText(setting) {
+  if (setting === 'facility') {
+    return 'Nurse has instructed facility staff to administer medications based on the hospice plan of care. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.';
+  }
+  if (setting === 'snf') {
+    return 'Nurse has confirmed that facility staff will be responsible for administering all medications per the hospice plan of care. Medication education assessed and provided including purpose, dosing, administration, and potential side effects. (Note: Facility Delineation Form required on file.)';
+  }
+  return 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.';
+}
+
 function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
   const lines = [];
 
@@ -8266,7 +8282,7 @@ async function runCarePlanBuilder() {
   const bereavementBlockCp = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission -- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
 
   const requiredPrimaryBlock = isPrimaryDxPlan
-    ? '\n3. REQUIRED ADDITIONAL INTERVENTIONS -- This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:\n   PERFORM -- Nurse has identified and documented that [Name/Relationship -- e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
+    ? '\n3. REQUIRED ADDITIONAL INTERVENTIONS -- This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:\n   PERFORM -- ' + getMedAdminResponsibilityText(flags.setting) + '\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
       + fullCodeBlock
       + bereavementBlockCp
     : '';
@@ -9411,6 +9427,15 @@ function cpQuickFillDirect(problem, primary, details) {
   }, 150);
 }
 
+// Same as cpQuickFillDirect, but also immediately generates the care plan — used by
+// "Generate Care Plan" buttons on situational suggestion cards (e.g. K59.03 opioid-induced
+// constipation) so a nurse gets a built plan in one click instead of having to add the
+// diagnosis back to the problem list and re-run the whole tiering flow.
+function cpQuickFillAndGenerate(problem, primary, details) {
+  cpQuickFillDirect(problem, primary, details);
+  runCarePlanBuilder();
+}
+
 async function runTierChecker() {
   const primaryDx = cleanDiagnosisLine(document.getElementById('tier-primary').value.trim());
   const flags = getCpFlags();
@@ -10008,8 +10033,6 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
                 return it.diagnosis && it.diagnosis.trim().toLowerCase() === fcDiagnosisText.trim().toLowerCase();
               }) : true;
 
-              console.log('[F-code auto-add]', { fcDiagnosisText: fcDiagnosisText, hasTierCurrentData: !!tierCurrentData, itemCount: tierCurrentData && tierCurrentData.items ? tierCurrentData.items.length : null, etiologyLineText: etiologyLineText, etiologyItemFound: !!etiologyItem, alreadyPresent: alreadyPresent });
-
               if (tierCurrentData && tierCurrentData.items && !alreadyPresent) {
                 const newFcItem = {
                   diagnosis: fcDiagnosisText,
@@ -10032,16 +10055,12 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
                   tierCurrentData.missing = tierCurrentData.missing.filter(function(mm) { return mm !== m; });
                 }
 
-                console.log('[F-code auto-add] pushed new Tier 2 item, re-rendering', newFcItem);
-
                 // Re-render so the new Tier 2 item appears immediately
                 const resultsElNow = document.getElementById('tier-results');
                 if (resultsElNow) { renderTierResults(resultsElNow, tierCurrentData, primaryDx, false, '', flags); }
-                else { console.warn('[F-code auto-add] #tier-results element not found — could not re-render'); }
+                else { console.warn('[F-code] #tier-results element not found — could not re-render after adding companion code'); }
                 return;
               }
-
-              console.warn('[F-code auto-add] SKIPPED adding to Tier 2 — tierCurrentData missing or item already present', { hasTierCurrentData: !!tierCurrentData, alreadyPresent: alreadyPresent });
 
               fcBuilderRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0">'
                 + '<span style="font-family:monospace;font-size:.82rem;background:#c0392b;color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span>'
@@ -10938,7 +10957,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
           label: 'Medication Administration & Education',
           badge: 'REQUIRED — ALL ADMISSIONS',
           items: [
-            { prefix: 'PERFORM', text: 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.' },
+            { prefix: 'PERFORM', text: getMedAdminResponsibilityText(flags.setting) },
             { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
           ]
         },
@@ -10996,7 +11015,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
     const bereavementBlock = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission --- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
 
     const requiredPrimaryInterventions = isPrimary
-      ? '\n\nThis is the PRIMARY hospice diagnosis -- also include these required interventions in addition to the clinically-relevant ones:\n   PERFORM -- Nurse has identified and documented that [Name/Relationship -- e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
+      ? '\n\nThis is the PRIMARY hospice diagnosis -- also include these required interventions in addition to the clinically-relevant ones:\n   PERFORM -- ' + getMedAdminResponsibilityText(flags.setting) + '\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
         + fullCodeBlockAll
         + bereavementBlock
       : '';
@@ -11072,7 +11091,7 @@ Respond ONLY with valid JSON, no markdown, no extra text:
         label: 'Medication Administration & Education',
         badge: 'REQUIRED — ALL ADMISSIONS',
         items: [
-          { prefix: 'PERFORM', text: 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.' },
+          { prefix: 'PERFORM', text: getMedAdminResponsibilityText(flags.setting) },
           { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
         ]
       });
@@ -11290,9 +11309,19 @@ function buildSituationalCards(flags, primaryDx, data) {
 
   // ── Opioids → K59.03 flag ────────────────────────────────────────
   if (flags.opioids) {
-    cards.push(makeCard('💊 Opioid-Induced Constipation', 'Consider Adding K59.03', amber, [
+    var oicCard = makeCard('💊 Opioid-Induced Constipation', 'Consider Adding K59.03', amber, [
       { type: 'flag', label: 'Consider adding K59.03 (Constipation due to opioids) as a separate active problem', text: 'Patient is on scheduled opioids. K59.03 is more specific than K59.00 and reflects the opioid-related etiology. Add a bowel management goal and interventions under this code.' }
-    ]));
+    ]);
+    var oicBtn = document.createElement('button');
+    oicBtn.textContent = '📋 Generate Care Plan for K59.03';
+    oicBtn.style.cssText = 'padding:7px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:2px';
+    oicBtn.addEventListener('click', function() {
+      var details = document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '';
+      cpQuickFillAndGenerate('K59.03 Constipation due to opioids', primaryDx, details);
+    });
+    var oicBody = oicCard.querySelector('.sit-card-body');
+    if (oicBody) { oicBody.appendChild(oicBtn); }
+    cards.push(oicCard);
   }
 
   // ── Anticoagulants ───────────────────────────────────────────────
@@ -11718,6 +11747,14 @@ function clearTierChecker() {
   tierLockedItems = new Map();
   tierCurrentData = null;
   tierQueuedAdditions = new Map();
+}
+
+function clearTierCheckerAndReturnToIcdLookup() {
+  clearTierChecker();
+  clearIcdLookup();
+  var icdTabBtn = document.querySelector('.checker-tab[onclick*="icd-lookup"]');
+  if (icdTabBtn) { switchCheckerTab('icd-lookup', icdTabBtn); }
+  window.scrollTo(0, 0);
 }
 
 // ── ICD-10 CODE LOOKUP ──────────────────────────────────────────────
@@ -12412,12 +12449,18 @@ function localIcdLookup(diagnosis, hasCancerContext) {
   if (LOCAL_ICD_SYNONYMS[orig]) return LOCAL_ICD_SYNONYMS[orig];
   if (LOCAL_ICD_SYNONYMS[norm]) return LOCAL_ICD_SYNONYMS[norm];
 
-  // 2. Partial synonym match (input contains a known key phrase)
-  var synKeys = Object.keys(LOCAL_ICD_SYNONYMS);
-  for (var i = 0; i < synKeys.length; i++) {
-    var key = synKeys[i];
-    if (key.length > 6 && (orig.indexOf(key) !== -1 || norm.indexOf(key) !== -1)) {
-      return LOCAL_ICD_SYNONYMS[key];
+  // 2. Partial synonym match (input contains a known key phrase). Guarded to short lines only —
+  // a real diagnosis line is a handful of words. If the line is long (a run-on sentence describing
+  // several conditions at once, e.g. pasted paragraph text), a keyword appearing anywhere inside it
+  // must not silently hijack the whole line and discard everything else that was documented.
+  var origWordCount = orig.split(/\s+/).filter(Boolean).length;
+  if (origWordCount <= 8) {
+    var synKeys = Object.keys(LOCAL_ICD_SYNONYMS);
+    for (var i = 0; i < synKeys.length; i++) {
+      var key = synKeys[i];
+      if (key.length > 6 && (orig.indexOf(key) !== -1 || norm.indexOf(key) !== -1)) {
+        return LOCAL_ICD_SYNONYMS[key];
+      }
     }
   }
 
@@ -12434,11 +12477,10 @@ function localIcdLookup(diagnosis, hasCancerContext) {
     var s = 0;
     if (norm === ename) s = 100;
     // Substring match only counts at high confidence when the query itself carries
-    // enough specificity (2+ meaningful words). A single short word (e.g. "pain",
-    // "weakness") being contained inside a longer, more specific reference-row name
-    // (e.g. "Neoplasm-related pain") is not a reliable match and used to cause
-    // silent false-positive resolutions — route those to the API/clarification instead.
-    else if (qwords.length >= 2 && (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1)) s = 85;
+    // enough specificity (2+ meaningful words) but ISN'T a long run-on line — a short
+    // reference-row name (e.g. "Malnutrition") appearing anywhere inside a long paragraph
+    // that also documents other unrelated conditions must not hijack the whole line.
+    else if (qwords.length >= 2 && qwords.length <= 8 && (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1)) s = 85;
     else if (qwords.length >= 2) {
       var overlap = qwords.filter(function(w) { return ewords.indexOf(w) !== -1; }).length;
       if (overlap >= 2 && overlap / Math.max(qwords.length, 1) >= 0.75) s = 72;
@@ -12492,7 +12534,7 @@ async function runIcdLookup() {
   if (needsApi.length > 0) {
     btn.textContent = '⏳ Coding ' + needsApi.length + ' remaining via AI...';
     const needsApiLines = needsApi;
-    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain (\"chronic pain\", \"persistent pain\", \"generalized pain\") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. \"cancer pain\", \"tumor pain\", \"neoplasm related pain\"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain (\"chronic pain\", \"persistent pain\", \"generalized pain\") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. \"cancer pain\", \"tumor pain\", \"neoplasm related pain\"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
     let parsed = null; let errMsg = '';
     try {
       const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: apiPrompt, max_tokens: 4000 }) });
@@ -12559,6 +12601,14 @@ async function runIcdLookup() {
         if (api.options.length === 0) api.options = null;
       }
       api.needsClarification = api.needsClarification === true && Array.isArray(api.options) && api.options.length > 0;
+      // Guard against a contradictory/invalid AI response: it claims resolved
+      // (needsClarification:false) but didn't actually return a code. Don't trust a
+      // "resolution" with nothing in it — this is exactly how a nonsense/too-short input
+      // (e.g. a stray single character) could silently slip through with an empty code
+      // and an enabled Send button. Route it to manual entry instead.
+      if (!api.needsClarification && !api.code) {
+        return { diagnosis: line, code: null, description: null, needsClarification: true, options: [{ code: '__manual__', label: 'Enter code manually using the ICD-10 Reference' }], source: 'none' };
+      }
       return api;
     }
     // No match from local or API — show as clarification needed with manual entry prompt
@@ -12590,6 +12640,18 @@ function renderIcdLookupResults(container) {
     const row = document.createElement('div');
     row.style.cssText = 'padding:11px 14px;border-bottom:1px solid var(--border);font-size:.87rem';
     row.id = 'icd-row-' + idx;
+
+    // A genuine diagnosis line is a handful of words. An unusually long line is a strong
+    // signal a paragraph got pasted in describing several conditions at once — flag it so
+    // the nurse can split it into separate lines rather than trusting whatever single code
+    // happened to get matched (or missed) out of the whole sentence.
+    var lineWordCount = (item.diagnosis || '').trim().split(/\s+/).filter(Boolean).length;
+    if (lineWordCount > 12) {
+      const lengthWarn = document.createElement('div');
+      lengthWarn.style.cssText = 'padding:7px 10px;background:#fff3b0;border:1px solid #ffe082;border-radius:5px;font-size:.76rem;color:#7a4200;margin-bottom:8px;line-height:1.5';
+      lengthWarn.innerHTML = '<strong>⚠ This line is unusually long (' + lineWordCount + ' words)</strong> — it may describe more than one diagnosis. Consider splitting it into separate lines, one diagnosis per line, for accurate coding and tiering.';
+      row.appendChild(lengthWarn);
+    }
 
     // Items with no local or API match — show manually with Other entry panel open
     if (item.source === 'none') {
@@ -13011,9 +13073,69 @@ function reopenIcdOption(idx) {
   updateIcdSendButton(container);
 }
 
+// Groups icdLookupResults indices that share the same resolved ICD-10 code (e.g. "End-stage
+// congestive heart failure" and "CHF end stage" both resolving to I50.22). Only considers
+// items that are fully resolved (not still needing clarification) and have a real code.
+// Returns an array of groups; each group is an array of indices with length > 1.
+function findIcdDuplicateGroups() {
+  var byCode = {};
+  icdLookupResults.forEach(function(r, i) {
+    if (r.needsClarification || !r.code) return;
+    var key = r.code.trim().toUpperCase();
+    if (!byCode[key]) byCode[key] = [];
+    byCode[key].push(i);
+  });
+  var groups = [];
+  Object.keys(byCode).forEach(function(key) {
+    if (byCode[key].length > 1) groups.push(byCode[key]);
+  });
+  return groups;
+}
+
+function removeIcdDuplicateGroup(keepIdx, indicesToRemove) {
+  // Remove the later duplicate(s), keeping the first occurrence. Sort descending so
+  // splicing doesn't shift the indices of items still to be removed.
+  var toRemove = indicesToRemove.slice().sort(function(a, b) { return b - a; });
+  toRemove.forEach(function(i) { icdLookupResults.splice(i, 1); });
+  if (icdPrimaryIdx >= 0) {
+    // Re-map the primary marker if it pointed at a removed or shifted item
+    var removedCount = toRemove.filter(function(i) { return i < icdPrimaryIdx; }).length;
+    if (toRemove.indexOf(icdPrimaryIdx) !== -1) { icdPrimaryIdx = -1; }
+    else { icdPrimaryIdx -= removedCount; }
+  }
+  var container = document.getElementById('icd-lookup-results');
+  renderIcdLookupResults(container);
+}
+
 function updateIcdSendButton(container) {
   let sendBtn = document.getElementById('icd-send-tier-btn');
   const allResolved = icdLookupResults.every(function(r) { return !r.needsClarification; });
+
+  // ── Duplicate-code warning ──────────────────────────────────────
+  var dupWarning = document.getElementById('icd-dup-warning');
+  var dupGroups = findIcdDuplicateGroups();
+  if (dupGroups.length > 0) {
+    if (!dupWarning) {
+      dupWarning = document.createElement('div');
+      dupWarning.id = 'icd-dup-warning';
+      dupWarning.style.cssText = 'padding:10px 14px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.83rem;color:#7a4200;margin-top:8px;line-height:1.55';
+      container.appendChild(dupWarning);
+    }
+    var dupHtml = '<strong>⚠ Same code resolved for more than one line — likely duplicate diagnoses.</strong><br>'
+      + 'Review before sending to Tiering, or these will appear as separate problems.';
+    dupGroups.forEach(function(group) {
+      var code = icdLookupResults[group[0]].code;
+      var names = group.map(function(i) { return escapeHtml(icdLookupResults[i].diagnosis); }).join(' &nbsp;/&nbsp; ');
+      dupHtml += '<div style="margin-top:8px;padding:7px 10px;background:#fff;border:1px solid #ffe082;border-radius:5px">'
+        + '<span style="font-family:monospace;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-size:.78rem">' + escapeHtml(code) + '</span> '
+        + names
+        + '<button onclick="removeIcdDuplicateGroup(' + group[0] + ', [' + group.slice(1).join(',') + '])" style="margin-left:10px;padding:3px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.74rem;font-weight:600;cursor:pointer">Keep only "' + escapeHtml(icdLookupResults[group[0]].diagnosis.slice(0, 28)) + (icdLookupResults[group[0]].diagnosis.length > 28 ? '…' : '') + '"</button>'
+        + '</div>';
+    });
+    dupWarning.innerHTML = dupHtml;
+  } else if (dupWarning) {
+    dupWarning.remove();
+  }
 
   if (!sendBtn) {
     sendBtn = document.createElement('button');
