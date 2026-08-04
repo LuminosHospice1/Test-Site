@@ -8557,7 +8557,6 @@ function cpQuickFillSituational(key) {
     gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
     imminence: { problem: 'Imminence of death — comfort, dignity, and family support in final hours/days', type: 'psychosocial', goals: 'grief', hint: 'Add when patient shows signs of active dying. Focus on comfort, dignity, and family preparation.' },
     facility: { problem: 'Facility collaboration and coordination of care', type: 'coordination', goals: 'facility', hint: 'For patients residing in a SNF, LTC, or ALF. Ensure Facility Delineation Form is on file for SNF/LTC.' },
-    druginteraction: { problem: 'Z91.89 Drug-to-drug interaction monitoring and safety', type: 'safety', goals: 'safety_general', hint: 'Required when any drug-to-drug interaction is identified. Use the Drug Interaction Parser to generate the full Z91.89 care plan with specific interaction details.' },
   };
 
   var p = presets[key];
@@ -12449,16 +12448,29 @@ function localIcdLookup(diagnosis, hasCancerContext) {
   if (LOCAL_ICD_SYNONYMS[orig]) return LOCAL_ICD_SYNONYMS[orig];
   if (LOCAL_ICD_SYNONYMS[norm]) return LOCAL_ICD_SYNONYMS[norm];
 
-  // 2. Partial synonym match (input contains a known key phrase). Guarded to short lines only —
-  // a real diagnosis line is a handful of words. If the line is long (a run-on sentence describing
-  // several conditions at once, e.g. pasted paragraph text), a keyword appearing anywhere inside it
-  // must not silently hijack the whole line and discard everything else that was documented.
+  // Detects whether a line likely bundles more than one distinct condition: after removing
+  // the one keyword that matched, is there still substantial other content left, joined by a
+  // conjunction word? Word count alone isn't reliable — "CHF with edema and dyspnea plus
+  // malnutrition" is only 7 words but clearly names 4 separate conditions. A matched keyword
+  // is only trusted to represent the WHOLE line, not just a fragment of a longer sentence.
+  function lineLikelyHasMultipleConcepts(fullLineNorm, matchedKeyNorm) {
+    var remainder = fullLineNorm.split(matchedKeyNorm).join(' ');
+    var remainderWords = remainder.split(/\s+/).filter(function(w) { return w.length > 2; });
+    var hasConjunction = /\b(and|with|plus|also|as well as|in addition to)\b/i.test(remainder);
+    return hasConjunction && remainderWords.length >= 2;
+  }
+
+  // 2. Partial synonym match (input contains a known key phrase). Guarded so a keyword
+  // appearing anywhere inside a longer sentence (pasted paragraph, or a short run-on line
+  // joining several conditions with "with"/"and"/"plus") can't silently hijack the whole
+  // line and discard everything else that was documented.
   var origWordCount = orig.split(/\s+/).filter(Boolean).length;
   if (origWordCount <= 8) {
     var synKeys = Object.keys(LOCAL_ICD_SYNONYMS);
     for (var i = 0; i < synKeys.length; i++) {
       var key = synKeys[i];
       if (key.length > 6 && (orig.indexOf(key) !== -1 || norm.indexOf(key) !== -1)) {
+        if (lineLikelyHasMultipleConcepts(norm, key)) { continue; }
         return LOCAL_ICD_SYNONYMS[key];
       }
     }
@@ -12477,10 +12489,10 @@ function localIcdLookup(diagnosis, hasCancerContext) {
     var s = 0;
     if (norm === ename) s = 100;
     // Substring match only counts at high confidence when the query itself carries
-    // enough specificity (2+ meaningful words) but ISN'T a long run-on line — a short
-    // reference-row name (e.g. "Malnutrition") appearing anywhere inside a long paragraph
-    // that also documents other unrelated conditions must not hijack the whole line.
-    else if (qwords.length >= 2 && qwords.length <= 8 && (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1)) s = 85;
+    // enough specificity (2+ meaningful words) but ISN'T bundling other conditions —
+    // a short reference-row name (e.g. "Malnutrition") appearing anywhere inside a
+    // sentence that also documents other unrelated conditions must not hijack the whole line.
+    else if (qwords.length >= 2 && qwords.length <= 8 && (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1) && !lineLikelyHasMultipleConcepts(norm, ename)) s = 85;
     else if (qwords.length >= 2) {
       var overlap = qwords.filter(function(w) { return ewords.indexOf(w) !== -1; }).length;
       if (overlap >= 2 && overlap / Math.max(qwords.length, 1) >= 0.75) s = 72;
@@ -12753,6 +12765,41 @@ function renderIcdLookupResults(container) {
         + '<div class="icd-primary-btn-wrap" style="flex-shrink:0">' + icdPrimaryBtnHtml(idx) + '</div>'
         + '</div>';
     } else {
+      // A run-on line that got flagged as describing multiple distinct diagnoses (see the
+      // MULTI-DIAGNOSIS LINE prompt rule) needs a different UI than normal clarification:
+      // the nurse isn't picking ONE correct code for one condition, they're deciding WHICH of
+      // several genuinely separate conditions to keep, then splitting the line into that many
+      // separate diagnosis lines. Radio buttons (pick exactly one) would be wrong here.
+      var isMultiDxSplit = Array.isArray(item.options) && item.options.length > 1
+        && item.options.every(function(o) { return /should be its own line/i.test(o.label || ''); });
+
+      if (isMultiDxSplit) {
+        var splitOptsHtml = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px;font-style:italic">This line appears to describe more than one distinct condition. Uncheck any that shouldn\'t be split out, then split the rest into separate diagnosis lines:</div>'
+          + '<div id="icd-split-options-' + idx + '">';
+        item.options.forEach(function(opt, oi) {
+          var cleanLabel = (opt.label || '').replace(/\s*[—-]\s*should be its own line\s*$/i, '').trim();
+          splitOptsHtml += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:5px;cursor:pointer;font-size:.85rem">'
+            + '<input type="checkbox" checked data-code="' + escapeHtml(opt.code) + '" data-label="' + escapeHtml(cleanLabel) + '" id="icd-split-cb-' + idx + '-' + oi + '">'
+            + '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px">' + escapeHtml(opt.code) + '</span>'
+            + '<span>' + escapeHtml(cleanLabel) + '</span>'
+            + '</label>';
+        });
+        splitOptsHtml += '</div>'
+          + '<button onclick="splitIcdMultiDiagnosis(' + idx + ')" style="margin-top:6px;padding:7px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">✂ Split Into Separate Lines</button>'
+          + '</div>';
+
+        row.innerHTML = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between">'
+          + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">'
+          + '<span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700;flex-shrink:0">⚠ Multiple diagnoses in one line</span>'
+          + '<span style="color:var(--navy);font-weight:600">' + escapeHtml(item.diagnosis) + '</span>'
+          + '</div>'
+          + '<div style="flex-shrink:0"><button onclick="removeIcdLookupItem(' + idx + ')" title="Remove this line" style="font-size:.75rem;color:#c0392b;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:600">🗑 Remove</button></div>'
+          + '</div>' + splitOptsHtml;
+
+        listWrap.appendChild(row);
+        return;
+      }
+
       // Render options - supports cascade (two-level) via __cascade__ sentinel
       function renderIcdOptions(options, promptText, namePrefix) {
         var html = '<div style="margin-top:8px"><div style="font-size:.8rem;color:var(--text-mid);margin-bottom:5px;font-style:italic">' + (promptText || 'Select the most accurate option for this patient:') + '</div>';
@@ -13107,6 +13154,33 @@ function removeIcdDuplicateGroup(keepIdx, indicesToRemove) {
   renderIcdLookupResults(container);
 }
 
+// Replaces one combined run-on line (flagged by the MULTI-DIAGNOSIS LINE rule) with a
+// separate resolved item for each condition the nurse left checked. Each split-out line
+// is treated as a normal AI-resolved result (not needing further clarification) — the
+// nurse can still use the usual "Other — enter code manually" flow later if a specific
+// code needs refining, but the split itself just needs to happen without forcing a
+// single-choice radio pick.
+function splitIcdMultiDiagnosis(idx) {
+  var optsWrap = document.getElementById('icd-split-options-' + idx);
+  if (!optsWrap) return;
+  var checked = Array.prototype.slice.call(optsWrap.querySelectorAll('input[type="checkbox"]:checked'));
+  if (checked.length === 0) { alert('Select at least one diagnosis to keep before splitting.'); return; }
+
+  var newItems = checked.map(function(cb) {
+    return { diagnosis: cb.dataset.label, code: cb.dataset.code, description: null, needsClarification: false, options: null, source: 'api' };
+  });
+
+  icdLookupResults.splice(idx, 1, ...newItems);
+
+  if (icdPrimaryIdx >= 0) {
+    if (icdPrimaryIdx === idx) { icdPrimaryIdx = -1; }
+    else if (icdPrimaryIdx > idx) { icdPrimaryIdx += (newItems.length - 1); }
+  }
+
+  var container = document.getElementById('icd-lookup-results');
+  renderIcdLookupResults(container);
+}
+
 function updateIcdSendButton(container) {
   let sendBtn = document.getElementById('icd-send-tier-btn');
   const allResolved = icdLookupResults.every(function(r) { return !r.needsClarification; });
@@ -13189,11 +13263,28 @@ function sendIcdToTierChecker() {
 }
 
 function icdPrimaryBtnHtml(idx) {
+  var removeBtn = '<button onclick="removeIcdLookupItem(' + idx + ')" title="Remove this line" style="font-size:.75rem;color:#c0392b;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:6px">🗑 Remove</button>';
   if (icdPrimaryIdx === idx) {
     return '<span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 8px;border-radius:10px;font-weight:700">⭐ PRIMARY</span>'
-      + '<button onclick="markIcdPrimary(-1)" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✕ Unmark</button>';
+      + '<button onclick="markIcdPrimary(-1)" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✕ Unmark</button>'
+      + removeBtn;
   }
-  return '<button onclick="markIcdPrimary(' + idx + ')" style="font-size:.75rem;color:var(--navy);background:var(--row-alt);border:1px solid var(--border);border-radius:5px;padding:2px 9px;cursor:pointer;font-family:inherit;font-weight:600">☆ Mark as Primary</button>';
+  return '<button onclick="markIcdPrimary(' + idx + ')" style="font-size:.75rem;color:var(--navy);background:var(--row-alt);border:1px solid var(--border);border-radius:5px;padding:2px 9px;cursor:pointer;font-family:inherit;font-weight:600">☆ Mark as Primary</button>'
+    + removeBtn;
+}
+
+// Removes a single ICD Lookup line entirely — e.g. a stray/erroneous line like "x" that
+// doesn't need a code at all, rather than forcing the nurse to either resolve it or
+// leave it blocking the Send button.
+function removeIcdLookupItem(idx) {
+  var item = icdLookupResults[idx];
+  var label = item ? item.diagnosis : 'this line';
+  if (!confirm('Remove "' + label + '" from the list?')) return;
+  icdLookupResults.splice(idx, 1);
+  if (icdPrimaryIdx === idx) { icdPrimaryIdx = -1; }
+  else if (icdPrimaryIdx > idx) { icdPrimaryIdx -= 1; }
+  var container = document.getElementById('icd-lookup-results');
+  renderIcdLookupResults(container);
 }
 
 function markIcdPrimary(idx) {
@@ -13341,7 +13432,6 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
         <button type="button" onclick="cpQuickFillSituational('imminence')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🕊️ Imminence of Death</button>
         <button type="button" onclick="cpQuickFillSituational('facility')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏢 Facility Collaboration</button>
-        <button type="button" onclick="cpQuickFillSituational('druginteraction')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💊 Drug Interaction (Z91.89)</button>
       </div>
       <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Pre-fills the problem type, problem text, and goals direction — add your primary diagnosis and patient details then generate</div>
     </div>
