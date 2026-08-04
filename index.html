@@ -11849,12 +11849,10 @@ var LOCAL_ICD_SYNONYMS = {
       { code: 'C78.00', label: 'Secondary malignant neoplasm of unspecified lung (C78.00)' },
     ]},
   ]},
-  // ── PAIN CODES — locked locally to prevent AI over-coding chronic pain as neoplasm-related without confirmed relatedness ──
-  'chronic pain': { code: null, desc: null, resolve: false, clarify: true, options: [
-    { code: 'G89.29', label: 'Other chronic pain — use unless pain is specifically documented as related to the malignancy (G89.29)' },
-    { code: 'G89.3', label: 'Neoplasm related pain — use ONLY if pain is documented as related to the malignancy (G89.3)' },
-    { code: 'G89.4', label: 'Chronic pain syndrome (G89.4)' },
-  ]},
+  // ── PAIN CODES — locked locally to prevent AI/fuzzy-match over-coding as neoplasm-related without confirmed relatedness.
+  // NOTE: bare "pain", "chronic pain", "persistent pain", "generalized pain", "ongoing pain", "unspecified pain" are handled
+  // dynamically in localIcdLookup() (context-aware — G89.3 is only offered as an option when a cancer diagnosis is present
+  // elsewhere in the same submitted list). Only unambiguous explicit terms are locked here.
   'chronic pain syndrome': { code: 'G89.4', desc: 'Chronic pain syndrome', resolve: true },
   'other chronic pain': { code: 'G89.29', desc: 'Other chronic pain', resolve: true },
   'cancer pain': { code: 'G89.3', desc: 'Neoplasm related pain (Neoplasm related pain (acute)(chronic))', resolve: true },
@@ -12327,9 +12325,27 @@ function fcCancel() {
 
 // ─── END F-CODE ENGINE ─────────────────────────────────────────────────────
 
-function localIcdLookup(diagnosis) {
+function localIcdLookup(diagnosis, hasCancerContext) {
   var norm = normalizeForLookup(diagnosis);
   var orig = diagnosis.toLowerCase().trim();
+
+  // 0. PAIN — context-aware. Resolved here, before the synonym table and fuzzy
+  // database match, so bare "pain" can never fuzzy-match into "Neoplasm-related
+  // pain" (G89.3) in the ICD-10 Reference database just because "pain" is a
+  // substring of that row's name. G89.3 is only offered as an option when a
+  // cancer diagnosis is present elsewhere in the same submitted list.
+  var painTerms = ['pain', 'chronic pain', 'persistent pain', 'generalized pain', 'ongoing pain', 'unspecified pain'];
+  if (painTerms.indexOf(orig) !== -1 || painTerms.indexOf(norm) !== -1) {
+    var painOptions = [
+      { code: 'G89.29', label: 'Other chronic pain (G89.29)' },
+      { code: 'G89.1', label: 'Acute pain, not elsewhere classified (G89.1)' },
+      { code: 'G89.4', label: 'Chronic pain syndrome (G89.4)' },
+    ];
+    if (hasCancerContext) {
+      painOptions.push({ code: 'G89.3', label: 'Neoplasm related pain — use ONLY if pain is documented as related to the malignancy (G89.3)' });
+    }
+    return { code: null, desc: null, resolve: false, clarify: true, options: painOptions };
+  }
 
   // 1. Check synonym table first (exact match on original or normalized)
   if (LOCAL_ICD_SYNONYMS[orig]) return LOCAL_ICD_SYNONYMS[orig];
@@ -12356,7 +12372,12 @@ function localIcdLookup(diagnosis) {
 
     var s = 0;
     if (norm === ename) s = 100;
-    else if (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1) s = 85;
+    // Substring match only counts at high confidence when the query itself carries
+    // enough specificity (2+ meaningful words). A single short word (e.g. "pain",
+    // "weakness") being contained inside a longer, more specific reference-row name
+    // (e.g. "Neoplasm-related pain") is not a reliable match and used to cause
+    // silent false-positive resolutions — route those to the API/clarification instead.
+    else if (qwords.length >= 2 && (norm.indexOf(ename) !== -1 || ename.indexOf(norm) !== -1)) s = 85;
     else if (qwords.length >= 2) {
       var overlap = qwords.filter(function(w) { return ewords.indexOf(w) !== -1; }).length;
       if (overlap >= 2 && overlap / Math.max(qwords.length, 1) >= 0.75) s = 72;
@@ -12392,9 +12413,12 @@ async function runIcdLookup() {
   // ── Step 1: Run local lookup on all diagnoses ──────────────────
   var localResults = {};
   var needsApi = [];
+  var hasCancerContext = lines.some(function(l) {
+    return /\bC[0-9][0-9]\b|\bmalignant\b|\bmalignancy\b|\bcancer\b|\bneoplasm\b|\bcarcinoma\b|\blymphoma\b|\bleukemia\b|\bmyeloma\b/i.test(l);
+  });
 
   lines.forEach(function(line) {
-    var local = localIcdLookup(line);
+    var local = localIcdLookup(line, hasCancerContext);
     if (local) {
       localResults[line] = local;
     } else {
