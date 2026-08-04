@@ -10899,7 +10899,12 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   });
 
   // Get flags before Promise.all so they're available inside the async callbacks
-  if (!flags) flags = getCpFlags();
+  // Always read live checkbox state at the moment Build All is clicked. The `flags` parameter
+  // passed in reflects whatever was checked back when the Tier Checker was originally run — if the
+  // nurse toggles Imminent, Full Code, or any situational flag afterward (which is the natural
+  // workflow: run tier check, review, THEN set situational flags before building care plans),
+  // that stale snapshot silently overrode the current checkbox state. Re-read every time instead.
+  flags = getCpFlags();
   const isImminent = !!(flags && flags.imminent);
 
   // If patient is imminent, replace primary card with hardcoded imminence care plan
@@ -11091,13 +11096,13 @@ Respond ONLY with valid JSON, no markdown, no extra text:
   btn.disabled = false;
 
   // Append situational/required care plan cards
-  const sitCards = buildSituationalCards(flags, primaryDx);
+  const sitCards = buildSituationalCards(flags, primaryDx, data);
   sitCards.forEach(function(sc) { wrap.appendChild(sc); });
 
   wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function buildSituationalCards(flags, primaryDx) {
+function buildSituationalCards(flags, primaryDx, data) {
   var cards = [];
 
   function makeCard(title, tag, color, sections) {
@@ -11266,14 +11271,21 @@ function buildSituationalCards(flags, primaryDx) {
   }
 
   // ── Cancer → G89.3 Neoplasm Related Pain suggestion ─────────────
-  var isCancerPrimary = primaryDx && /\bC[0-9][0-9]\b|\bmalignant\b|\bcancer\b|\bneoplasm\b|\bcarcinoma\b|\blymphoma\b|\bleukemia\b|\bmyeloma\b/i.test(primaryDx);
-  var hasPainAlready = (data && data.items || []).some(function(it) {
-    return /G89\.3\b|neoplasm.*pain|cancer.*pain|pain.*cancer|pain.*neoplasm|tumor.*pain|pain.*tumor/i.test(it.diagnosis);
-  });
-  if (isCancerPrimary && !hasPainAlready) {
-    cards.push(makeCard('⚠ Consider Adding — G89.3 Neoplasm Related Pain', 'Cancer Diagnosis Detected', amber, [
-      { type: 'flag', label: 'G89.3 — Neoplasm related pain', text: 'A cancer diagnosis is present as the primary. If the patient has documented pain related to the malignancy, G89.3 (Neoplasm related pain) should be added as a separate active problem with its own care plan goal and interventions. This is distinct from general chronic pain (G89.29) and is highly relevant to hospice eligibility documentation.' }
-    ]));
+  // Wrapped defensively — this block reaches into the current tier data, and a prior
+  // missing-parameter bug here silently aborted the entire function, wiping out every
+  // situational card (oxygen, foley, fall risk, etc). Never let this section alone break the rest.
+  try {
+    var isCancerPrimary = primaryDx && /\bC[0-9][0-9]\b|\bmalignant\b|\bcancer\b|\bneoplasm\b|\bcarcinoma\b|\blymphoma\b|\bleukemia\b|\bmyeloma\b/i.test(primaryDx);
+    var hasPainAlready = (data && data.items || []).some(function(it) {
+      return /G89\.3\b|neoplasm.*pain|cancer.*pain|pain.*cancer|pain.*neoplasm|tumor.*pain|pain.*tumor/i.test(it.diagnosis);
+    });
+    if (isCancerPrimary && !hasPainAlready) {
+      cards.push(makeCard('⚠ Consider Adding — G89.3 Neoplasm Related Pain', 'Cancer Diagnosis Detected', amber, [
+        { type: 'flag', label: 'G89.3 — Neoplasm related pain', text: 'A cancer diagnosis is present as the primary. If the patient has documented pain related to the malignancy, G89.3 (Neoplasm related pain) should be added as a separate active problem with its own care plan goal and interventions. This is distinct from general chronic pain (G89.29) and is highly relevant to hospice eligibility documentation.' }
+      ]));
+    }
+  } catch (e) {
+    console.error('[buildSituationalCards] cancer/pain suggestion block failed, skipping it but keeping other situational cards:', e);
   }
 
   // ── Opioids → K59.03 flag ────────────────────────────────────────
