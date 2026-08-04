@@ -10008,6 +10008,8 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
                 return it.diagnosis && it.diagnosis.trim().toLowerCase() === fcDiagnosisText.trim().toLowerCase();
               }) : true;
 
+              console.log('[F-code auto-add]', { fcDiagnosisText: fcDiagnosisText, hasTierCurrentData: !!tierCurrentData, itemCount: tierCurrentData && tierCurrentData.items ? tierCurrentData.items.length : null, etiologyLineText: etiologyLineText, etiologyItemFound: !!etiologyItem, alreadyPresent: alreadyPresent });
+
               if (tierCurrentData && tierCurrentData.items && !alreadyPresent) {
                 const newFcItem = {
                   diagnosis: fcDiagnosisText,
@@ -10030,11 +10032,16 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
                   tierCurrentData.missing = tierCurrentData.missing.filter(function(mm) { return mm !== m; });
                 }
 
+                console.log('[F-code auto-add] pushed new Tier 2 item, re-rendering', newFcItem);
+
                 // Re-render so the new Tier 2 item appears immediately
                 const resultsElNow = document.getElementById('tier-results');
                 if (resultsElNow) { renderTierResults(resultsElNow, tierCurrentData, primaryDx, false, '', flags); }
+                else { console.warn('[F-code auto-add] #tier-results element not found — could not re-render'); }
                 return;
               }
+
+              console.warn('[F-code auto-add] SKIPPED adding to Tier 2 — tierCurrentData missing or item already present', { hasTierCurrentData: !!tierCurrentData, alreadyPresent: alreadyPresent });
 
               fcBuilderRow.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0">'
                 + '<span style="font-family:monospace;font-size:.82rem;background:#c0392b;color:#fff;padding:2px 9px;border-radius:4px;font-weight:700">' + escapeHtml(fcCode) + '</span>'
