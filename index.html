@@ -9435,6 +9435,73 @@ function cpQuickFillAndGenerate(problem, primary, details) {
   runCarePlanBuilder();
 }
 
+// Generates a care plan directly via AI — same prompt structure used for individual Tier 1
+// diagnoses in Build All — without navigating to the standalone Care Plan Builder. Used by
+// inline "Generate Care Plan" buttons on situational cards (wound, infection, opioid-induced
+// constipation) so the result renders right there in the card instead of switching tabs.
+async function generateInlineCarePlanResult(problemText, primaryDx, patientDetails) {
+  const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
+
+Generate a complete hospice care plan for the following:
+
+CARE PLAN PROBLEM/DIAGNOSIS: ${problemText}
+PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
+PATIENT DETAILS: ${patientDetails || 'Not provided'}
+GOALS OF CARE EMPHASIS: comfort and symptom management
+
+CRITICAL: This care plan is for the specific problem "${problemText}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problemText}" specifically. Do not write a generic care plan for the primary diagnosis.
+
+REQUIREMENTS — STRICTLY FOLLOW THESE:
+
+1. GOAL: Must be comfort-focused and specific to "${problemText}". Use this EXACT format, filling in clinical indicators relevant to "${problemText}":
+"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problemText}], and trends in caregiver feedback by the end of the current benefit period."
+
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problemText}" and follow this exact structure:
+
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${problemText}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problemText}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problemText}]
+
+   You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
+
+3. Do NOT include any curative, restorative, or rehabilitation-focused language anywhere in the output.
+
+4. PHYSICIAN/IDT COORDINATION: Include one sentence describing what to flag at IDT or discuss with the physician regarding this problem.
+
+Respond ONLY with valid JSON, no markdown, no extra text:
+{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
+
+  let result = null;
+  try {
+    const resp = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ prompt: prompt, max_tokens: 2000 })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      try { result = JSON.parse(clean); } catch (e) {}
+    }
+  } catch (e) {}
+  return result;
+}
+
+// Wires a "Generate Care Plan" click: shows a loading state in outputContainer, calls the AI,
+// then renders the result inline using the same renderer Build All Tier 1 already uses.
+async function generateAndRenderInlineCarePlan(problemText, primaryDx, patientDetails, outputContainer, triggerBtn) {
+  var origLabel = triggerBtn ? triggerBtn.textContent : null;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '⏳ Generating...'; }
+  outputContainer.style.display = 'block';
+  outputContainer.innerHTML = '<div style="color:var(--text-mid);font-size:.84rem;font-style:italic;padding:8px 0">⏳ Generating care plan...</div>';
+
+  var result = await generateInlineCarePlanResult(problemText, primaryDx, patientDetails);
+  renderAllCpCard(outputContainer, result, problemText, patientDetails);
+
+  if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = origLabel; }
+}
+
 async function runTierChecker() {
   const primaryDx = cleanDiagnosisLine(document.getElementById('tier-primary').value.trim());
   const flags = getCpFlags();
@@ -11314,12 +11381,14 @@ function buildSituationalCards(flags, primaryDx, data) {
     var oicBtn = document.createElement('button');
     oicBtn.textContent = '📋 Generate Care Plan for K59.03';
     oicBtn.style.cssText = 'padding:7px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:2px';
+    var oicOutput = document.createElement('div');
+    oicOutput.style.cssText = 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid #ffe082';
     oicBtn.addEventListener('click', function() {
       var details = document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '';
-      cpQuickFillAndGenerate('K59.03 Constipation due to opioids', primaryDx, details);
+      generateAndRenderInlineCarePlan('K59.03 Constipation due to opioids', primaryDx, details, oicOutput, oicBtn);
     });
     var oicBody = oicCard.querySelector('.sit-card-body');
-    if (oicBody) { oicBody.appendChild(oicBtn); }
+    if (oicBody) { oicBody.appendChild(oicBtn); oicBody.appendChild(oicOutput); }
     cards.push(oicCard);
   }
 
@@ -11485,13 +11554,15 @@ function buildSituationalCards(flags, primaryDx, data) {
         genBtn.type = 'button';
         genBtn.textContent = '📋 Generate Care Plan for This Wound';
         genBtn.style.cssText = 'padding:7px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer';
+        var woundOutput = document.createElement('div');
+        woundOutput.style.cssText = 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid #ffe082';
         genBtn.addEventListener('click', function() {
           var desc = descInput.value.trim();
           var code = codeInput.value.trim();
           if (!code) { alert('Enter the ICD-10 code for this wound first — use Suggest Code or Browse Reference above if you need to look it up.'); return; }
           if (!desc) { alert('Enter a description of this wound (location, type) first.'); return; }
           var details = document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '';
-          cpQuickFillAndGenerate(code + ' ' + desc, primaryDx, details);
+          generateAndRenderInlineCarePlan(code + ' ' + desc, primaryDx, details, woundOutput, genBtn);
         });
 
         var removeRowBtn = document.createElement('button');
@@ -11508,6 +11579,7 @@ function buildSituationalCards(flags, primaryDx, data) {
         row.appendChild(codeRow);
         row.appendChild(suggestionsWrap);
         row.appendChild(actionRow);
+        row.appendChild(woundOutput);
         woundEntriesWrap.appendChild(row);
       }
 
@@ -11712,13 +11784,15 @@ function buildSituationalCards(flags, primaryDx, data) {
         genBtn.type = 'button';
         genBtn.textContent = '📋 Generate Care Plan for This Infection';
         genBtn.style.cssText = 'padding:7px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer';
+        var infOutput = document.createElement('div');
+        infOutput.style.cssText = 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid #ffe082';
         genBtn.addEventListener('click', function() {
           var desc = descInput.value.trim();
           var code = codeInput.value.trim();
           if (!code) { alert('Enter the ICD-10 code for this infection first — use Suggest Code or Browse Reference above if you need to look it up.'); return; }
           if (!desc) { alert('Enter a description of this infection (site, organism if known) first.'); return; }
           var details = document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '';
-          cpQuickFillAndGenerate(code + ' ' + desc, primaryDx, details);
+          generateAndRenderInlineCarePlan(code + ' ' + desc, primaryDx, details, infOutput, genBtn);
         });
 
         var removeRowBtn = document.createElement('button');
@@ -11735,6 +11809,7 @@ function buildSituationalCards(flags, primaryDx, data) {
         row.appendChild(codeRow);
         row.appendChild(suggestionsWrap);
         row.appendChild(actionRow);
+        row.appendChild(infOutput);
         infEntriesWrap.appendChild(row);
       }
 
