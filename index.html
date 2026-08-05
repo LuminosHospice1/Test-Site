@@ -9210,63 +9210,56 @@ Respond ONLY with a JSON array — no preamble, no markdown, no explanation. For
   ];
   appendInterventionGroup(resultsEl, '3', 'Standard Interventions', step3Lines);
 
-  // ── STEP 4: Monitor For intervention(s) — combined or individual view ──
-  // All interactions grouped Major → Moderate → Minor (combined view, original behavior)
-  var monitorLines = ['Nurse will monitor patient for signs and symptoms related to the following identified drug-to-drug interactions:\n'];
-  presentLevels.forEach(function(level) {
-    const cfg = sevConfig[level];
-    const ixList = grouped[level];
-    monitorLines.push(cfg.label.toUpperCase() + ':');
-    ixList.forEach(function(ix) {
-      monitorLines.push('• ' + ix.drugs + (ix.monitoringText ? ' — ' + ix.monitoringText : ''));
-    });
-    monitorLines.push('');
-  });
-  const monitorText = monitorLines.join('\n').replace(/\n\n$/, '\n').trimEnd();
-
-  // Same content, one self-contained block per interaction (individual view) — each repeats
-  // the full lead-in sentence so it can be copied, edited, or removed independently if a
-  // medication is discontinued, without touching the others.
-  var individualMonitorBlocks = [];
+  // ── STEP 4: Monitor For intervention — one combined block, reformatted so each ──
+  // interaction repeats the full lead-in sentence for readability/editability, without
+  // being split into separate interventions (feedback from physicians: too many separate
+  // interactions/interventions listed caused confusion when this was tried previously).
+  var monitorBlockTexts = [];
   presentLevels.forEach(function(level) {
     const cfg = sevConfig[level];
     grouped[level].forEach(function(ix) {
-      individualMonitorBlocks.push({
-        label: ix.drugs,
-        text: 'Nurse will monitor patient for signs and symptoms related to the following identified drug-to-drug interaction — ' + cfg.label.toUpperCase() + ': ' + ix.drugs + (ix.monitoringText ? ' — ' + ix.monitoringText : '')
-      });
+      monitorBlockTexts.push('Nurse will monitor patient for signs and symptoms related to the following identified drug-to-drug interaction — ' + cfg.label.toUpperCase() + ': ' + ix.drugs + (ix.monitoringText ? ' — ' + ix.monitoringText : ''));
     });
   });
+  const monitorText = monitorBlockTexts.join('\n\n');
+  appendStepCard(resultsEl, '4', 'Monitor For — All Interactions (' + interactions.length + ' total)', monitorText);
 
-  appendToggleableStepCard(resultsEl, '4', 'Monitor For — All Interactions (' + interactions.length + ' total)', monitorText, individualMonitorBlocks, false, null);
-
-  // ── STEP 5: MD Notification Comment — combined or individual view ──
-  // Copyable comment to paste on the Monitor For intervention in Firenote
-  var commentLines = ['Drug/Allergy interactions reviewed with ' + physician + ' on ' + dateStr + '. ' + response];
+  // ── STEP 5: MD Notification Comment — same reformatting, one combined comment ──
+  var commentBlockTexts = [];
   presentLevels.forEach(function(level) {
     const cfg = sevConfig[level];
     grouped[level].forEach(function(ix) {
-      commentLines.push(cfg.label + ' Drug Interaction - ' + ix.drugs);
+      commentBlockTexts.push('Drug/Allergy interactions reviewed with ' + physician + ' on ' + dateStr + '. ' + response + '\n' + cfg.label + ' Drug Interaction - ' + ix.drugs);
     });
   });
-  const commentText = commentLines.join('\n');
+  const commentText = commentBlockTexts.join('\n\n');
 
-  // One self-contained comment per interaction (individual view) — matches the individual
-  // Monitor For blocks above, so each interaction can be documented and later removed on its
-  // own if that medication is discontinued.
-  var individualCommentBlocks = [];
-  presentLevels.forEach(function(level) {
-    const cfg = sevConfig[level];
-    grouped[level].forEach(function(ix) {
-      individualCommentBlocks.push({
-        label: ix.drugs,
-        text: 'Drug/Allergy interactions reviewed with ' + physician + ' on ' + dateStr + '. ' + response + '\n' + cfg.label + ' Drug Interaction - ' + ix.drugs
-      });
-    });
-  });
+  // Render Step 5 as a distinct "comment" card
+  const step5Wrap = document.createElement('div');
+  step5Wrap.style.cssText = 'background:#fff;border:2px dashed #b45309;border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
 
-  appendToggleableStepCard(resultsEl, '5', 'MD Notification Comment', commentText, individualCommentBlocks, true,
-    'On the Monitor For intervention: click <strong>Performed</strong>, then click the <strong>comment bubble</strong> next to Performed and paste this text.');
+  const step5Hdr = document.createElement('div');
+  step5Hdr.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 14px;background:#fef3c7;border-bottom:1px dashed #b45309';
+
+  const step5Left = document.createElement('div');
+  step5Left.innerHTML = '<div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em">Step 5 — MD Notification Comment</div>'
+    + '<div style="font-size:.75rem;color:#7a4200;margin-top:3px">On the Monitor For intervention: click <strong>Performed</strong>, then click the <strong>comment bubble</strong> next to Performed and paste this text.</div>';
+
+  const step5Btn = document.createElement('button');
+  step5Btn.style.cssText = 'padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;flex-shrink:0';
+  step5Btn.textContent = '📋 Copy';
+  step5Btn.addEventListener('click', (function(t) { return function() { copyText2(t, step5Btn); }; })(commentText));
+
+  step5Hdr.appendChild(step5Left);
+  step5Hdr.appendChild(step5Btn);
+
+  const step5Body = document.createElement('div');
+  step5Body.style.cssText = 'padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap';
+  step5Body.textContent = commentText;
+
+  step5Wrap.appendChild(step5Hdr);
+  step5Wrap.appendChild(step5Body);
+  resultsEl.appendChild(step5Wrap);
 
   // ── Info box ──────────────────────────────────────────────────
   const infoBox = document.createElement('div');
@@ -9275,107 +9268,11 @@ Respond ONLY with a JSON array — no preamble, no markdown, no explanation. For
     + interactions.length + ' interaction' + (interactions.length !== 1 ? 's' : '') + ' identified across '
     + presentLevels.length + ' level' + (presentLevels.length !== 1 ? 's' : '') + ' ('
     + presentLevels.map(function(l) { return sevConfig[l].label; }).join(', ')
-    + '). Keep the Monitor For intervention active unless the medication causing the interaction is discontinued and the alert clears from Firenote. Use "Split Into Separate Interventions" on Steps 4 and 5 if you prefer to document and later edit/remove each interaction on its own rather than as one combined block.';
+    + '). Keep the Monitor For intervention active unless the medication causing the interaction is discontinued and the alert clears from Firenote.';
   resultsEl.appendChild(infoBox);
 
   resultsEl.style.display = 'block';
   resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-// Renders a step card that can toggle between one combined block of text and a list of
-// separate, individually-copyable blocks (one per drug interaction). Used for Steps 4 and 5
-// of the Drug Interaction Parser so nurses can choose whichever fits their Firenote workflow —
-// combined keeps the physician-facing order/comment count lower; individual makes each
-// interaction independently editable/removable if a medication is later discontinued.
-function appendToggleableStepCard(container, num, labelCombined, combinedText, individualBlocks, dashedBorder, helperNote) {
-  var wrap = document.createElement('div');
-  wrap.style.cssText = dashedBorder
-    ? 'background:#fff;border:2px dashed #b45309;border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)'
-    : 'background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
-
-  var hdr = document.createElement('div');
-  hdr.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 14px;background:' + (dashedBorder ? '#fef3c7' : 'var(--row-alt)') + ';border-bottom:' + (dashedBorder ? '1px dashed #b45309' : '1px solid var(--border)');
-
-  var left = document.createElement('div');
-  left.innerHTML = '<div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em">Step ' + num + ' — ' + labelCombined + '</div>'
-    + (helperNote ? '<div style="font-size:.75rem;color:#7a4200;margin-top:3px">' + helperNote + '</div>' : '');
-
-  var btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end';
-
-  var toggleBtn = document.createElement('button');
-  toggleBtn.style.cssText = 'padding:5px 10px;background:#fff;color:var(--navy);border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap';
-
-  var copyAllBtn = document.createElement('button');
-  copyAllBtn.style.cssText = 'padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap';
-  copyAllBtn.textContent = '📋 Copy';
-
-  btnRow.appendChild(toggleBtn);
-  btnRow.appendChild(copyAllBtn);
-  hdr.appendChild(left);
-  hdr.appendChild(btnRow);
-
-  var body = document.createElement('div');
-  body.style.cssText = 'padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.7';
-
-  var mode = 'combined';
-
-  function renderCombined() {
-    body.innerHTML = '';
-    body.style.cssText = 'padding:12px 14px;font-size:.88rem;color:var(--text);line-height:1.7;white-space:pre-wrap';
-    body.textContent = combinedText;
-    copyAllBtn.style.display = 'inline-block';
-    copyAllBtn.textContent = '📋 Copy';
-    copyAllBtn.onclick = function() { copyText2(combinedText, copyAllBtn); };
-  }
-
-  function renderIndividual() {
-    body.innerHTML = '';
-    body.style.whiteSpace = 'normal';
-    body.style.background = 'var(--bg, #f4f6fa)';
-    body.style.padding = '12px';
-    body.style.display = 'flex';
-    body.style.flexDirection = 'column';
-    body.style.gap = '10px';
-    copyAllBtn.style.display = 'none';
-    individualBlocks.forEach(function(blk, i) {
-      var card = document.createElement('div');
-      card.style.cssText = 'background:#fff;border:1px solid var(--border);border-radius:7px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)';
-
-      var cardHdr = document.createElement('div');
-      cardHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)';
-      var cardHdrLabel = document.createElement('span');
-      cardHdrLabel.style.cssText = 'font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
-      cardHdrLabel.textContent = 'Interaction ' + (i + 1) + ' of ' + individualBlocks.length + (blk.label ? ' — ' + blk.label : '');
-      var cbtn = document.createElement('button');
-      cbtn.style.cssText = 'flex-shrink:0;padding:4px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer';
-      cbtn.textContent = '📋 Copy';
-      cbtn.addEventListener('click', (function(t, b) { return function() { copyText2(t, b); }; })(blk.text, cbtn));
-      cardHdr.appendChild(cardHdrLabel);
-      cardHdr.appendChild(cbtn);
-
-      var cardBody = document.createElement('div');
-      cardBody.style.cssText = 'padding:11px 13px;font-size:.87rem;line-height:1.6;white-space:pre-wrap;color:var(--text)';
-      cardBody.textContent = blk.text;
-
-      card.appendChild(cardHdr);
-      card.appendChild(cardBody);
-      body.appendChild(card);
-    });
-  }
-
-  toggleBtn.textContent = '✂ Split Into Separate Interventions (' + individualBlocks.length + ')';
-  toggleBtn.addEventListener('click', function() {
-    mode = mode === 'combined' ? 'individual' : 'combined';
-    toggleBtn.textContent = mode === 'combined' ? '✂ Split Into Separate Interventions (' + individualBlocks.length + ')' : '↩ Combine Back Into One';
-    if (mode === 'combined') { renderCombined(); } else { renderIndividual(); }
-  });
-
-  renderCombined();
-
-  wrap.appendChild(hdr);
-  wrap.appendChild(body);
-  container.appendChild(wrap);
 }
 
 function appendStepCard(container, num, label, text) {
