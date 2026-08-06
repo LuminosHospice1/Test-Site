@@ -13268,18 +13268,24 @@ function renderIcdLookupResults(container) {
       // "should be its own line" phrasing even when it did correctly identify several distinct
       // conditions — it sometimes just returns a flat list of candidate codes instead:
       //   1. Every option label explicitly says "should be its own line" (the AI cooperated), OR
-      //   2. The options span 3+ different ICD-10 code families (first segment before the dot) —
-      //      e.g. I50.x (heart failure) + R06.x (dyspnea) + R60.x (edema) + E44.x (malnutrition).
-      //      A genuine single-condition clarification (laterality, severity, primary-vs-secondary)
-      //      almost never spans more than 2 families. Restricted to AI-sourced results only, so
-      //      trusted local synonym-table cascades (curated by us, not free-text AI output) are
-      //      never second-guessed by this heuristic.
+      //   2. The options span 3+ different ICD-10 code families AND the original line itself
+      //      shows signs of naming multiple conditions (multiple words joined by a conjunction).
+      //      Code-family diversity ALONE is not reliable — a single ambiguous term like
+      //      "dementia" legitimately has many mutually-exclusive candidate etiologies (Alzheimer's
+      //      G30, Parkinson's G20, vascular I67.3, etc.) that the nurse must pick ONE of, not a
+      //      set of co-occurring conditions to split apart. The original line has to actually
+      //      look like a run-on sentence (not a single ambiguous word) before code-family
+      //      diversity is trusted as a multi-diagnosis signal. Restricted to AI-sourced results
+      //      only, so trusted local synonym-table cascades are never second-guessed either way.
       var optionFamilies = {};
       (item.options || []).forEach(function(o) { optionFamilies[(o.code || '').split('.')[0].toUpperCase()] = true; });
+      var origLineWords = (item.diagnosis || '').trim().split(/\s+/).filter(Boolean);
+      var origLineHasConjunction = /\b(and|with|plus|also|as well as|in addition to)\b/i.test(item.diagnosis || '');
+      var origLineLooksLikeMultiConcept = origLineWords.length >= 3 && origLineHasConjunction;
       var isMultiDxSplit = Array.isArray(item.options) && item.options.length > 1
         && (
           item.options.every(function(o) { return /should be its own line/i.test(o.label || ''); })
-          || (item.source === 'api' && Object.keys(optionFamilies).length >= 3)
+          || (item.source === 'api' && Object.keys(optionFamilies).length >= 3 && origLineLooksLikeMultiConcept)
         );
 
       if (isMultiDxSplit) {
