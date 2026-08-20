@@ -7893,50 +7893,50 @@ function renderCarePlan(text) {
       } else if (/^---\s+.+\s+---$/.test(lt)) {
         var divLabel = lt.replace(/^-+\s+/, '').replace(/\s+-+$/, '');
         return '<div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px;padding:6px 10px;background:#eef2fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0">' + escHtml(divLabel) + '</div>';
-      } else if (/^GOAL FOCUS:/i.test(lt)) {
-        var focusTxt = lt.replace(/^GOAL FOCUS:\s*/i, '');
+      } else if (/^\*{0,2}GOAL FOCUS:\*{0,2}/i.test(lt)) {
+        var focusTxt = lt.replace(/^\*{0,2}GOAL FOCUS:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Focus</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(focusTxt) + '</span>'
           + makeCpBtn(focusTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
-      } else if (/^GOAL MEASUREMENT:/i.test(lt)) {
-        var measTxt = lt.replace(/^GOAL MEASUREMENT:\s*/i, '');
+      } else if (/^\*{0,2}GOAL MEASUREMENT:\*{0,2}/i.test(lt)) {
+        var measTxt = lt.replace(/^\*{0,2}GOAL MEASUREMENT:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Measurement</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(measTxt) + '</span>'
           + makeCpBtn(measTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
-      } else if (/^GOAL DURATION:/i.test(lt)) {
-        var durTxt = lt.replace(/^GOAL DURATION:\s*/i, '');
+      } else if (/^\*{0,2}GOAL DURATION:\*{0,2}/i.test(lt)) {
+        var durTxt = lt.replace(/^\*{0,2}GOAL DURATION:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Duration</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(durTxt) + '</span>'
           + '<span style="font-size:.7rem;color:var(--text-lt);flex-shrink:0;padding-top:2px;font-style:italic">click button</span>'
           + '</div>';
-      } else if (/^SECONDARY GOAL FOCUS:/i.test(lt)) {
-        var secFocusTxt = lt.replace(/^SECONDARY GOAL FOCUS:\s*/i, '');
+      } else if (/^\*{0,2}SECONDARY GOAL FOCUS:\*{0,2}/i.test(lt)) {
+        var secFocusTxt = lt.replace(/^\*{0,2}SECONDARY GOAL FOCUS:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Focus</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secFocusTxt) + '</span>'
           + makeCpBtn(secFocusTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
-      } else if (/^SECONDARY GOAL MEASUREMENT:/i.test(lt)) {
-        var secMeasTxt = lt.replace(/^SECONDARY GOAL MEASUREMENT:\s*/i, '');
+      } else if (/^\*{0,2}SECONDARY GOAL MEASUREMENT:\*{0,2}/i.test(lt)) {
+        var secMeasTxt = lt.replace(/^\*{0,2}SECONDARY GOAL MEASUREMENT:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Measure</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secMeasTxt) + '</span>'
           + makeCpBtn(secMeasTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
           + '</div>';
-      } else if (/^SECONDARY GOAL DURATION:/i.test(lt)) {
-        var secDurTxt = lt.replace(/^SECONDARY GOAL DURATION:\s*/i, '');
+      } else if (/^\*{0,2}SECONDARY GOAL DURATION:\*{0,2}/i.test(lt)) {
+        var secDurTxt = lt.replace(/^\*{0,2}SECONDARY GOAL DURATION:\*{0,2}\s*/i, '');
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Duration</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secDurTxt) + '</span>'
           + '<span style="font-size:.7rem;color:var(--text-lt);flex-shrink:0;padding-top:2px;font-style:italic">click button</span>'
           + '</div>';
-      } else if (/^SECONDARY GOAL:/i.test(lt)) {
-        var goalTxt = lt.replace(/^SECONDARY GOAL:\s*/i, '');
+      } else if (/^\*{0,2}SECONDARY GOAL:\*{0,2}/i.test(lt)) {
+        var goalTxt = lt.replace(/^\*{0,2}SECONDARY GOAL:\*{0,2}\s*/i, '');
         return '<div style="background:var(--amber-bg,#fff8ee);border:1px solid var(--gold,#c9972c);border-radius:6px;padding:8px 12px;margin:6px 0"><div style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.88rem;color:var(--text)">' + escHtml(goalTxt) + '</div></div>';
       } else if (/^INTERVENTION\s+\d+[:\.]/.test(lt)) {
         return ''; // Strip numbered intervention group headers
