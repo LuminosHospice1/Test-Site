@@ -7912,7 +7912,7 @@ function renderCarePlan(text) {
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Duration</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(durTxt) + '</span>'
-          + makeCpBtn(durTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '<span style="font-size:.7rem;color:var(--text-lt);flex-shrink:0;padding-top:2px;font-style:italic">click button</span>'
           + '</div>';
       } else if (/^SECONDARY GOAL FOCUS:/i.test(lt)) {
         var secFocusTxt = lt.replace(/^SECONDARY GOAL FOCUS:\s*/i, '');
@@ -7933,7 +7933,7 @@ function renderCarePlan(text) {
         return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
           + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Duration</span>'
           + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secDurTxt) + '</span>'
-          + makeCpBtn(secDurTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '<span style="font-size:.7rem;color:var(--text-lt);flex-shrink:0;padding-top:2px;font-style:italic">click button</span>'
           + '</div>';
       } else if (/^SECONDARY GOAL:/i.test(lt)) {
         var goalTxt = lt.replace(/^SECONDARY GOAL:\s*/i, '');
@@ -11949,7 +11949,7 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   const goalSec = document.createElement('div');
   goalSec.style.cssText = 'margin-bottom:12px;display:flex;flex-direction:column;gap:8px';
 
-  function buildGoalFieldRow(labelText, valueText) {
+  function buildGoalFieldRow(labelText, valueText, skipCopy) {
     const fieldWrap = document.createElement('div');
     const fieldLabel = document.createElement('div');
     fieldLabel.style.cssText = 'font-size:.7rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px';
@@ -11959,12 +11959,20 @@ function renderAllCpCard(body, result, dx, patientDetails) {
     const fieldText = document.createElement('span');
     fieldText.style.cssText = 'flex:1;font-size:.87rem;line-height:1.5';
     fieldText.textContent = valueText;
-    const fieldCopy = document.createElement('button');
-    fieldCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
-    fieldCopy.textContent = '📋';
-    fieldCopy.addEventListener('click', function() { copyAllCpText(fieldCopy, valueText); });
     fieldRow.appendChild(fieldText);
-    fieldRow.appendChild(fieldCopy);
+    if (skipCopy) {
+      // Duration is a button click in Firenote's Goal Builder, not a text field to paste into.
+      const fieldHint = document.createElement('span');
+      fieldHint.style.cssText = 'flex-shrink:0;font-size:.72rem;color:var(--text-lt);font-style:italic;padding-top:2px;white-space:nowrap';
+      fieldHint.textContent = 'click button';
+      fieldRow.appendChild(fieldHint);
+    } else {
+      const fieldCopy = document.createElement('button');
+      fieldCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+      fieldCopy.textContent = '📋';
+      fieldCopy.addEventListener('click', function() { copyAllCpText(fieldCopy, valueText); });
+      fieldRow.appendChild(fieldCopy);
+    }
     fieldWrap.appendChild(fieldLabel);
     fieldWrap.appendChild(fieldRow);
     return fieldWrap;
@@ -11982,7 +11990,8 @@ function renderAllCpCard(body, result, dx, patientDetails) {
 
   goalSec.appendChild(buildGoalFieldRow('Focus', result.goalFocus));
   goalSec.appendChild(buildGoalFieldRow('Measurement', result.goalMeasurement || ''));
-  goalSec.appendChild(buildGoalFieldRow('Duration', result.goalDuration || 'end of the current benefit period'));
+  // Duration is a button click in Firenote, not a text field — reference only, no copy button.
+  goalSec.appendChild(buildGoalFieldRow('Duration', result.goalDuration || 'end of the current benefit period', true));
 
   body.appendChild(goalSec);
 
