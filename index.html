@@ -9676,6 +9676,41 @@ function mountWoundInfectionBuilder(kind, container, getPrimaryDx, getDetails) {
       var parsed = JSON.parse(clean);
       var opts = Array.isArray(parsed.options) ? parsed.options.filter(function(o) { return o && o.code; }) : [];
 
+      // Deterministic correction, not just prompt instruction: the AI sometimes returns the
+      // right code family but the wrong encounter letter (e.g. still "A" when the nurse picked
+      // Subsequent). Since the target letter is fully determined by the dropdown selection, fix
+      // it here rather than trusting the model to apply it consistently every time. Only touches
+      // codes that already end in a letter (A/D/S) — chronic ulcer codes end in a digit and are
+      // correctly left untouched.
+      if (isWound && encounterVal && encounterVal !== 'na') {
+        var encounterLetterMap = { initial: 'A', subsequent: 'D', sequela: 'S' };
+        var encounterPhraseMap = { initial: 'initial encounter', subsequent: 'subsequent encounter', sequela: 'sequela' };
+        var targetLetter = encounterLetterMap[encounterVal];
+        var targetPhrase = encounterPhraseMap[encounterVal];
+        if (targetLetter) {
+          opts.forEach(function(opt) {
+            if (!opt.code) return;
+            var lastChar = opt.code.slice(-1).toUpperCase();
+            if (lastChar === 'A' || lastChar === 'D' || lastChar === 'S') {
+              opt.code = opt.code.slice(0, -1) + targetLetter;
+              if (opt.label) {
+                opt.label = opt.label.replace(/\b(initial encounter|subsequent encounter|sequela)\b/i, targetPhrase);
+              }
+            }
+          });
+          // Correcting the letter can make two originally-distinct AI candidates collapse into
+          // the same code (e.g. both "initial" and "subsequent" variants of the same injury) —
+          // dedupe so the nurse doesn't see the identical code listed twice.
+          var seenCodes = {};
+          opts = opts.filter(function(opt) {
+            var key = (opt.code || '').toUpperCase();
+            if (seenCodes[key]) return false;
+            seenCodes[key] = true;
+            return true;
+          });
+        }
+      }
+
       suggestionsWrap.style.display = 'block';
       if (opts.length === 0) {
         suggestionsWrap.innerHTML = '<div style="font-size:.8rem;color:var(--text-lt);font-style:italic;padding:4px 0">No confident suggestions — use the ICD-10 Reference instead.</div>';
