@@ -8569,6 +8569,14 @@ function clearCarePlan() {
   if (caregiverField) caregiverField.style.display = 'none';
   const sitHint = document.getElementById('cp-situational-hint');
   if (sitHint) sitHint.style.display = 'none';
+  // Close and reset the Wounds/Infections builders so stale entries don't linger after a clear
+  ['wound', 'infection'].forEach(function(kind) {
+    var sectionEl = document.getElementById('cp-' + kind + '-section');
+    var mountEl = document.getElementById('cp-' + kind + '-mount');
+    if (sectionEl) sectionEl.style.display = 'none';
+    if (mountEl) mountEl.innerHTML = '';
+    if (typeof _cpWoundInfectionMounted !== 'undefined') _cpWoundInfectionMounted[kind] = false;
+  });
 }
 
 const CP_PRESETS = {
@@ -8620,7 +8628,7 @@ function cpQuickFillSituational(key) {
     foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
     skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
-    wound: { problem: 'Wound care — assessment, treatment, and healing support', type: 'clinical', goals: 'comfort', hint: 'Add as a separate problem per wound. Ensure wound care order and supplies are entered. QAPI event required if wound present on admission.' },
+    // 'wound' preset removed — the Wounds button now opens the interactive multi-entry builder instead.
     discharge: { problem: 'Z71.89 – Encounter for other specified counseling (Discharge Planning / Live Discharge)', type: 'coordination', goals: 'transition', hint: 'Use when patient is anticipated to discharge from hospice services, or when a patient no longer qualifies (NLQ/voluntary withdrawal). Generates instantly using approved QA language.', hardcoded: true },
     respite: { problem: 'Respite admission — caregiver relief and patient safety during temporary placement', type: 'coordination', goals: 'respite', hint: 'Use when patient is being admitted for a short-term respite level of care.' },
     gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
@@ -9559,6 +9567,287 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
 // Wires a "Generate Care Plan" click: shows a loading state in outputContainer, calls the AI,
 // then renders the result inline using the same renderer Build All Tier 1 already uses.
+// Shared, parameterized wound/infection entry builder — mounts a full interactive builder
+// (multiple entries, AI-assisted code suggestion, live duplicate-code detection, inline
+// Generate Care Plan per entry) into any container. Used by the standalone Care Plan
+// Builder's Wounds & Infections section. Kept separate from the Tiering tool's own
+// buildSituationalCards implementation so neither can regress the other.
+// Shows/hides the Wounds or Infections section in the standalone Care Plan Builder, mounting
+// the interactive builder the first time it's opened (not rebuilt on every toggle, so entries
+// already in progress aren't lost by accidentally closing and reopening).
+var _cpWoundInfectionMounted = { wound: false, infection: false };
+function toggleWoundInfectionSection(kind) {
+  var sectionEl = document.getElementById('cp-' + kind + '-section');
+  var mountEl = document.getElementById('cp-' + kind + '-mount');
+  if (!sectionEl || !mountEl) return;
+
+  var isOpen = sectionEl.style.display !== 'none';
+  if (isOpen) {
+    sectionEl.style.display = 'none';
+    return;
+  }
+
+  sectionEl.style.display = 'block';
+  if (!_cpWoundInfectionMounted[kind]) {
+    mountWoundInfectionBuilder(kind, mountEl,
+      function() { return document.getElementById('cp-primary-dx') ? document.getElementById('cp-primary-dx').value.trim() : ''; },
+      function() { return document.getElementById('cp-details') ? document.getElementById('cp-details').value.trim() : ''; }
+    );
+    _cpWoundInfectionMounted[kind] = true;
+  }
+  sectionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function mountWoundInfectionBuilder(kind, container, getPrimaryDx, getDetails) {
+  var isWound = kind === 'wound';
+  var cfg = isWound ? {
+    icon: '🩹', label: 'wound', labelCap: 'Wound', plural: 'wounds',
+    descPlaceholder: 'e.g. Right lower leg, wound #1 — venous stasis ulcer',
+    codePlaceholder: 'e.g. L97.219',
+    dupNote: '<strong>⚠ Each wound needs its own distinct ICD-10 code.</strong> Firenote will not allow the same code to be active twice at the same time — if two wounds share the same type and location (e.g. two ulcers on the same lower leg), they must be differentiated by stage, laterality, or sub-site so each gets a unique code.',
+  } : {
+    icon: '🦠', label: 'infection', labelCap: 'Infection', plural: 'infections',
+    descPlaceholder: 'e.g. UTI with E. coli — or — Cellulitis, right lower leg',
+    codePlaceholder: 'e.g. N39.0',
+    dupNote: '<strong>⚠ Each infection needs its own distinct ICD-10 code.</strong> If the patient has more than one infection present (e.g. a UTI and cellulitis), each must be coded and care-planned separately — Firenote will not allow the same code to be active twice at the same time.',
+  };
+
+  container.innerHTML = '';
+
+  var dupNoteEl = document.createElement('div');
+  dupNoteEl.style.cssText = 'font-size:.78rem;color:#7a2020;background:#fdf2f1;border:1px solid #e8b4b0;padding:8px 11px;border-radius:5px;margin-bottom:10px;line-height:1.5';
+  dupNoteEl.innerHTML = cfg.dupNote;
+  container.appendChild(dupNoteEl);
+
+  var liveDupWarning = document.createElement('div');
+  liveDupWarning.style.cssText = 'display:none;font-size:.8rem;color:#fff;background:#c0392b;padding:8px 11px;border-radius:5px;margin-bottom:10px;line-height:1.5;font-weight:600';
+  container.appendChild(liveDupWarning);
+
+  var entriesWrap = document.createElement('div');
+  container.appendChild(entriesWrap);
+
+  function checkDuplicateCodes() {
+    var codeInputs = Array.prototype.slice.call(entriesWrap.querySelectorAll('.wi-code-input'));
+    var seen = {};
+    var dupes = [];
+    codeInputs.forEach(function(inp) {
+      var v = inp.value.trim().toUpperCase();
+      inp.style.borderColor = 'var(--border)';
+      if (!v) return;
+      if (seen[v]) { if (dupes.indexOf(v) === -1) dupes.push(v); }
+      seen[v] = seen[v] || [];
+      seen[v].push(inp);
+    });
+    if (dupes.length > 0) {
+      dupes.forEach(function(code) { (seen[code] || []).forEach(function(inp) { inp.style.borderColor = '#c0392b'; }); });
+      liveDupWarning.style.display = 'block';
+      liveDupWarning.innerHTML = '⚠ Duplicate code entered: ' + dupes.map(function(c) { return escapeHtml(c); }).join(', ') + ' — two ' + cfg.plural + ' below share this code. Firenote will reject this; give one a more specific code.';
+    } else {
+      liveDupWarning.style.display = 'none';
+    }
+  }
+
+  async function suggestCode(descInput, codeInput, suggestBtn, suggestionsWrap) {
+    var desc = descInput.value.trim();
+    if (!desc) { alert('Enter a ' + cfg.label + ' description first, then request a code suggestion.'); return; }
+    var origLabel = suggestBtn.textContent;
+    suggestBtn.disabled = true;
+    suggestBtn.textContent = '⏳ Looking up...';
+    suggestionsWrap.innerHTML = '';
+    suggestionsWrap.style.display = 'none';
+
+    var prompt = isWound
+      ? 'You are a hospice and wound care ICD-10-CM coding expert. Given the wound description below, return the 2-4 MOST LIKELY specific ICD-10-CM codes.\n\nCRITICAL — verified site-to-code-family mappings. Do NOT deviate from these; matching a plausible-looking code to the wrong site is a serious error:\n\nPRESSURE ULCER (L89) by site: elbow=L89.0xx, back(non-sacral)=L89.1xx, sacrum specifically=L89.15x, hip=L89.2xx, buttock=L89.3xx, contiguous back/buttock/hip=L89.4xx, ankle=L89.5xx, heel=L89.6xx, other site=L89.8xx, unspecified site=L89.9xx. Stage/severity is the next digit (1=stage 1, 2=stage 2, 3=stage 3, 4=stage 4, 6=unstageable, 0=deep tissue damage).\n\nNON-PRESSURE CHRONIC ULCER, non-lower-limb (L98.4) by site: buttock=L98.41x, back=L98.42x, abdomen=L98.43x, chest=L98.44x, neck=L98.45x, face=L98.46x, groin=L98.47x, other sites=L98.49x. Severity is the next digit (1=limited to skin breakdown, 2=fat layer exposed, 3=muscle necrosis, 4=bone necrosis, 9=unspecified severity).\n\nNON-PRESSURE CHRONIC ULCER, lower limb (L97) by site: thigh=L97.1xx, calf=L97.2xx, ankle=L97.3xx, heel and midfoot=L97.4xx, other part of foot=L97.5xx, other part of lower leg=L97.8xx, unspecified part of lower leg=L97.9xx.\n\nOther ulcer types: venous stasis ulcer of leg uses L97.xxx (site-specific per above) — venous etiology is documented via an additional code (I83.xxx) when known, not a different primary code family. Arterial/ischemic ulcer = I70.xxx or I96. Diabetic foot ulcer = E11.62x (diabetes with skin complication) sequenced with the L97.xxx site code.\n\nDouble-check that the digit(s) after the decimal point in your suggested code actually correspond to the site named in the description above before responding — a wrong site digit produces a code for a completely different body part. Correct laterality (right/left) and anatomical sub-site when documented. Never fabricate a code. If the description is ambiguous, still give your best 2-4 ranked candidates from most to least likely — do not refuse.\n\nWound description: "' + desc + '"\n\nRespond ONLY with valid JSON, no markdown, no extra text:\n{"options":[{"code":"L89.153","label":"Pressure ulcer of sacral region, stage 3"},{"code":"L89.154","label":"Pressure ulcer of sacral region, stage 4"}]}'
+      : 'You are a hospice clinical coding expert specializing in infectious disease ICD-10-CM. Given the infection description below, return the 2-4 MOST LIKELY specific ICD-10-CM codes. Favor precise, site-specific codes (e.g. N39.0 for UTI, L03.xxx for cellulitis by site, J18.9 for pneumonia unspecified organism, J15.x when organism is documented) over vague unspecified codes when the description supports it. Never fabricate a code. If ambiguous, still give your best 2-4 ranked candidates from most to least likely — do not refuse.\n\nInfection description: "' + desc + '"\n\nRespond ONLY with valid JSON, no markdown, no extra text:\n{"options":[{"code":"N39.0","label":"Urinary tract infection, site not specified"},{"code":"N30.00","label":"Acute cystitis without hematuria"}]}';
+
+    try {
+      var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 800 }) });
+      var data = await resp.json();
+      var rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+      var clean = rawText.replace(/```json|```/g, '').trim();
+      var parsed = JSON.parse(clean);
+      var opts = Array.isArray(parsed.options) ? parsed.options.filter(function(o) { return o && o.code; }) : [];
+
+      suggestionsWrap.style.display = 'block';
+      if (opts.length === 0) {
+        suggestionsWrap.innerHTML = '<div style="font-size:.8rem;color:var(--text-lt);font-style:italic;padding:4px 0">No confident suggestions — use the ICD-10 Reference instead.</div>';
+      } else {
+        var pickLabel = document.createElement('div');
+        pickLabel.style.cssText = 'font-size:.76rem;color:var(--text-mid);font-style:italic;margin-bottom:4px';
+        pickLabel.textContent = 'Select the most accurate option for this ' + cfg.label + ':';
+        suggestionsWrap.appendChild(pickLabel);
+        opts.forEach(function(opt) {
+          var optRow = document.createElement('label');
+          optRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:3px;cursor:pointer;font-size:.84rem;padding:5px 8px;border-radius:4px';
+          optRow.addEventListener('mouseover', function() { optRow.style.background = 'var(--row-alt)'; });
+          optRow.addEventListener('mouseout', function() { optRow.style.background = ''; });
+          optRow.innerHTML = '<span style="font-family:monospace;font-size:.78rem;background:var(--row-alt);border:1px solid var(--border);padding:1px 6px;border-radius:3px;flex-shrink:0">' + escapeHtml(opt.code) + '</span><span>' + escapeHtml(opt.label || '') + '</span>';
+          optRow.addEventListener('click', function() {
+            codeInput.value = (opt.code || '').toUpperCase();
+            checkDuplicateCodes();
+          });
+          suggestionsWrap.appendChild(optRow);
+        });
+      }
+    } catch (e) {
+      suggestionsWrap.style.display = 'block';
+      suggestionsWrap.innerHTML = '<div style="font-size:.8rem;color:var(--red)">Could not get suggestions — use the ICD-10 Reference instead.</div>';
+    }
+    suggestBtn.disabled = false;
+    suggestBtn.textContent = origLabel;
+  }
+
+  function buildEntryRow() {
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:10px 11px;background:#fff;border:1px solid #ffe082;border-radius:6px;margin-bottom:8px';
+
+    var descLabel = document.createElement('div');
+    descLabel.style.cssText = 'font-size:.74rem;color:var(--text-mid);margin-bottom:3px';
+    descLabel.textContent = cfg.labelCap + ' description' + (isWound ? ' / location' : ' / site');
+    var descInput = document.createElement('input');
+    descInput.type = 'text';
+    descInput.placeholder = cfg.descPlaceholder;
+    descInput.style.cssText = 'width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.85rem;margin-bottom:8px;box-sizing:border-box';
+
+    var codeRow = document.createElement('div');
+    codeRow.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px';
+    var codeWrap = document.createElement('div');
+    var codeLabel = document.createElement('div');
+    codeLabel.style.cssText = 'font-size:.74rem;color:var(--text-mid);margin-bottom:3px';
+    codeLabel.textContent = 'ICD-10 code for this ' + cfg.label;
+    var codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'wi-code-input';
+    codeInput.placeholder = cfg.codePlaceholder;
+    codeInput.style.cssText = 'width:130px;padding:6px 9px;border:1px solid var(--border);border-radius:4px;font-family:monospace;font-size:.85rem;text-transform:uppercase';
+    codeInput.addEventListener('input', function() { codeInput.value = codeInput.value.toUpperCase(); checkDuplicateCodes(); });
+    codeWrap.appendChild(codeLabel);
+    codeWrap.appendChild(codeInput);
+
+    var suggestionsWrap = document.createElement('div');
+    suggestionsWrap.style.cssText = 'display:none;margin-top:6px;padding:8px 10px;background:var(--row-alt);border-radius:5px';
+
+    var suggestBtn = document.createElement('button');
+    suggestBtn.type = 'button';
+    suggestBtn.textContent = '🔍 Suggest Code';
+    suggestBtn.style.cssText = 'padding:6px 11px;background:#1a6a9a;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap';
+    suggestBtn.addEventListener('click', function() { suggestCode(descInput, codeInput, suggestBtn, suggestionsWrap); });
+
+    var refBtn = document.createElement('button');
+    refBtn.type = 'button';
+    refBtn.textContent = '📖 Browse Reference';
+    refBtn.style.cssText = 'padding:6px 11px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap';
+    refBtn.addEventListener('click', function() { switchToIcdRefFromCheckers(document.getElementById('checker-tab-icdref')); });
+
+    codeRow.appendChild(codeWrap);
+    codeRow.appendChild(suggestBtn);
+    codeRow.appendChild(refBtn);
+
+    var actionRow = document.createElement('div');
+    actionRow.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px';
+
+    var genBtn = document.createElement('button');
+    genBtn.type = 'button';
+    genBtn.textContent = '📋 Generate Care Plan for This ' + cfg.labelCap;
+    genBtn.style.cssText = 'padding:7px 13px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer';
+    var entryOutput = document.createElement('div');
+    entryOutput.style.cssText = 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid #ffe082';
+    genBtn.addEventListener('click', function() {
+      var desc = descInput.value.trim();
+      var code = codeInput.value.trim();
+      if (!code) { alert('Enter the ICD-10 code for this ' + cfg.label + ' first — use Suggest Code or Browse Reference above if you need to look it up.'); return; }
+      if (!desc) { alert('Enter a description of this ' + cfg.label + ' first.'); return; }
+      generateAndRenderInlineCarePlan(code + ' ' + desc, getPrimaryDx(), getDetails(), entryOutput, genBtn);
+    });
+
+    var removeRowBtn = document.createElement('button');
+    removeRowBtn.type = 'button';
+    removeRowBtn.textContent = '🗑 Remove';
+    removeRowBtn.style.cssText = 'padding:6px 11px;background:none;color:#c0392b;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer';
+    removeRowBtn.addEventListener('click', function() { row.remove(); checkDuplicateCodes(); });
+
+    actionRow.appendChild(genBtn);
+    actionRow.appendChild(removeRowBtn);
+
+    row.appendChild(descLabel);
+    row.appendChild(descInput);
+    row.appendChild(codeRow);
+    row.appendChild(suggestionsWrap);
+    row.appendChild(actionRow);
+    row.appendChild(entryOutput);
+    entriesWrap.appendChild(row);
+  }
+
+  buildEntryRow(); // start with one entry
+
+  var addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = '+ Add Another ' + cfg.labelCap;
+  addBtn.style.cssText = 'padding:6px 13px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-bottom:12px';
+  addBtn.addEventListener('click', buildEntryRow);
+  container.appendChild(addBtn);
+
+  if (isWound) {
+    // Wound care order format reference — this is the ORDER entered in Firenote, separate
+    // from the care plan interventions generated above.
+    var orderFormatWrap = document.createElement('div');
+    orderFormatWrap.style.cssText = 'padding:10px 12px;background:#f5f7fc;border:1px solid var(--border);border-radius:6px';
+    var orderFormatTitle = document.createElement('div');
+    orderFormatTitle.style.cssText = 'font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:6px';
+    orderFormatTitle.textContent = '📝 Wound Care Order Format — enter this structure in the Firenote wound care order';
+    orderFormatWrap.appendChild(orderFormatTitle);
+
+    var woundOrderTemplates = [
+      { label: 'Daily + PRN', text: 'Remove old dressing, cleanse with [cleanser], pat dry, apply [product] to wound bed, cover with [dressing type], secure with [securement]. To be changed daily and PRN. Hospice to do on visit days, facility staff to do on non-visit days and PRN for soiled/dislodged dressing.' },
+      { label: 'Twice Weekly', text: 'Remove old dressing, cleanse with [cleanser], pat dry, apply [product] to wound bed, cover with [dressing type], secure with [securement]. To be changed twice weekly by hospice nurse and PRN by family.' }
+    ];
+    woundOrderTemplates.forEach(function(tpl) {
+      var tRow = document.createElement('div');
+      tRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:#fff;border:1px solid var(--border);padding:8px 10px;border-radius:5px;margin-bottom:6px';
+      var tLabel = document.createElement('div');
+      tLabel.style.cssText = 'font-size:.7rem;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.03em;flex-shrink:0;padding-top:2px;min-width:82px';
+      tLabel.textContent = tpl.label;
+      var tText = document.createElement('span');
+      tText.style.cssText = 'flex:1;font-size:.83rem;line-height:1.5';
+      tText.textContent = tpl.text;
+      var tCopyBtn = document.createElement('button');
+      tCopyBtn.type = 'button';
+      tCopyBtn.textContent = '📋';
+      tCopyBtn.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+      tCopyBtn.addEventListener('click', function() { copyAllCpText(tCopyBtn, tpl.text); });
+      tRow.appendChild(tLabel);
+      tRow.appendChild(tText);
+      tRow.appendChild(tCopyBtn);
+      orderFormatWrap.appendChild(tRow);
+    });
+
+    var fillNote = document.createElement('div');
+    fillNote.style.cssText = 'font-size:.75rem;color:var(--text-lt);font-style:italic;margin-top:2px';
+    fillNote.textContent = 'Replace the bracketed placeholders with the actual cleanser, wound bed product, dressing type, and securement used for this wound.';
+    orderFormatWrap.appendChild(fillNote);
+
+    container.appendChild(orderFormatWrap);
+  } else {
+    // Treatment order documentation checklist — infections vary far more widely than wound
+    // dressing changes, so this is a completeness checklist rather than one fixed sentence.
+    var treatOrderWrap = document.createElement('div');
+    treatOrderWrap.style.cssText = 'padding:10px 12px;background:#f5f7fc;border:1px solid var(--border);border-radius:6px';
+    var treatOrderTitle = document.createElement('div');
+    treatOrderTitle.style.cssText = 'font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:6px';
+    treatOrderTitle.textContent = '📝 Treatment Order — confirm this is entered in Firenote for each infection';
+    treatOrderWrap.appendChild(treatOrderTitle);
+    var treatOrderList = document.createElement('ul');
+    treatOrderList.style.cssText = 'margin:0 0 4px 18px;padding:0;font-size:.83rem;line-height:1.7;color:var(--text)';
+    ['Medication name and route (oral / topical / IV / IM)', 'Dose and frequency', 'Duration of treatment (or "until reassessed")', 'Who administers on visit vs. non-visit days (hospice / facility / family), if applicable', 'Whether this is treatment of an active infection vs. prophylaxis'].forEach(function(item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      treatOrderList.appendChild(li);
+    });
+    treatOrderWrap.appendChild(treatOrderList);
+    container.appendChild(treatOrderWrap);
+  }
+}
+
 async function generateAndRenderInlineCarePlan(problemText, primaryDx, patientDetails, outputContainer, triggerBtn) {
   var origLabel = triggerBtn ? triggerBtn.textContent : null;
   if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = '⏳ Generating...'; }
@@ -14088,7 +14377,8 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('foley')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">💧 Foley Catheter (Y84.6)</button>
         <button type="button" onclick="cpQuickFillSituational('fallrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">⚠️ Fall Risk</button>
         <button type="button" onclick="cpQuickFillSituational('skinrisk')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Skin Breakdown Risk</button>
-        <button type="button" onclick="cpQuickFillSituational('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wound Care</button>
+        <button type="button" onclick="toggleWoundInfectionSection('wound')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🩹 Wounds</button>
+        <button type="button" onclick="toggleWoundInfectionSection('infection')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🦠 Infections</button>
         <button type="button" onclick="cpQuickFillSituational('imminent')" style="padding:5px 11px;background:#fff0f0;border:2px solid #c0392b;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:700;color:#c0392b;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#ffd5d5'" onmouseout="this.style.background='#fff0f0'">🕊️ Patient is Imminent</button>
         <button type="button" onclick="cpQuickFillSituational('discharge')"  style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
         <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
@@ -14097,6 +14387,22 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('facility')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏢 Facility Collaboration</button>
       </div>
       <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Pre-fills the problem type, problem text, and goals direction — add your primary diagnosis and patient details then generate</div>
+    </div>
+
+    <!-- Wounds & Infections — interactive multi-entry builder, same functionality as the Care Plan Tiering tool's situational cards -->
+    <div id="cp-wound-section" style="display:none;margin-bottom:16px;padding:12px 14px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+        <div style="font-size:.8rem;font-weight:700;color:#7a4200">🩹 Wounds</div>
+        <button type="button" onclick="toggleWoundInfectionSection('wound')" style="padding:3px 10px;background:none;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.74rem;color:var(--text-mid);cursor:pointer">✕ Close</button>
+      </div>
+      <div id="cp-wound-mount"></div>
+    </div>
+    <div id="cp-infection-section" style="display:none;margin-bottom:16px;padding:12px 14px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+        <div style="font-size:.8rem;font-weight:700;color:#7a4200">🦠 Infections</div>
+        <button type="button" onclick="toggleWoundInfectionSection('infection')" style="padding:3px 10px;background:none;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.74rem;color:var(--text-mid);cursor:pointer">✕ Close</button>
+      </div>
+      <div id="cp-infection-mount"></div>
     </div>
 
     <div class="ai-field">
