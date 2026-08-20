@@ -7852,12 +7852,6 @@ function renderCarePlan(text) {
   const out = [];
 
   sections.forEach(function(sec) {
-    // Build plain-text version of section content for copying
-    const plainLines = sec.lines.map(l => {
-      return l.replace(/\*\*([^*]+?)\*\*/g, '$1').trim();
-    }).filter(l => l.length > 0 && !/^-{3,}$/.test(l) && !/^\*{3,}$/.test(l));
-    const plainText = sec.title + '\n' + plainLines.join('\n');
-
     // Render section content HTML
     const contentHtml = sec.lines.map(function(l) {
       const lt = l.trim();
@@ -7899,6 +7893,48 @@ function renderCarePlan(text) {
       } else if (/^---\s+.+\s+---$/.test(lt)) {
         var divLabel = lt.replace(/^-+\s+/, '').replace(/\s+-+$/, '');
         return '<div style="font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px;padding:6px 10px;background:#eef2fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0">' + escHtml(divLabel) + '</div>';
+      } else if (/^GOAL FOCUS:/i.test(lt)) {
+        var focusTxt = lt.replace(/^GOAL FOCUS:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Focus</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(focusTxt) + '</span>'
+          + makeCpBtn(focusTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^GOAL MEASUREMENT:/i.test(lt)) {
+        var measTxt = lt.replace(/^GOAL MEASUREMENT:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Measurement</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(measTxt) + '</span>'
+          + makeCpBtn(measTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^GOAL DURATION:/i.test(lt)) {
+        var durTxt = lt.replace(/^GOAL DURATION:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--row-alt);border-radius:6px;border-left:3px solid var(--navy)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Duration</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(durTxt) + '</span>'
+          + makeCpBtn(durTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^SECONDARY GOAL FOCUS:/i.test(lt)) {
+        var secFocusTxt = lt.replace(/^SECONDARY GOAL FOCUS:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Focus</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secFocusTxt) + '</span>'
+          + makeCpBtn(secFocusTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^SECONDARY GOAL MEASUREMENT:/i.test(lt)) {
+        var secMeasTxt = lt.replace(/^SECONDARY GOAL MEASUREMENT:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Measure</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secMeasTxt) + '</span>'
+          + makeCpBtn(secMeasTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
+      } else if (/^SECONDARY GOAL DURATION:/i.test(lt)) {
+        var secDurTxt = lt.replace(/^SECONDARY GOAL DURATION:\s*/i, '');
+        return '<div style="display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:var(--amber-bg,#fff8ee);border-radius:6px;border-left:3px solid var(--gold,#c9972c)">'
+          + '<span style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:90px">Sec. Duration</span>'
+          + '<span style="font-size:.88rem;color:var(--text);flex:1">' + escHtml(secDurTxt) + '</span>'
+          + makeCpBtn(secDurTxt, '📋', 'margin-left:6px;padding:4px 10px;flex-shrink:0;')
+          + '</div>';
       } else if (/^SECONDARY GOAL:/i.test(lt)) {
         var goalTxt = lt.replace(/^SECONDARY GOAL:\s*/i, '');
         return '<div style="background:var(--amber-bg,#fff8ee);border:1px solid var(--gold,#c9972c);border-radius:6px;padding:8px 12px;margin:6px 0"><div style="font-size:.72rem;font-weight:700;color:var(--gold-dark,#7a4200);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Secondary Goal</div><div style="font-size:.88rem;color:var(--text)">' + escHtml(goalTxt) + '</div></div>';
@@ -7919,15 +7955,19 @@ function renderCarePlan(text) {
       }
     }).join('');
 
-    // Section block — Goal section gets a copy button in the header; others just show the title
-    const isGoal = sec.title.toUpperCase() === 'GOAL';
+    // Section block — each GOAL FOCUS/MEASUREMENT/DURATION line has its own copy button
+    // (added above); no header-level copy here since a combined dump would mix the three
+    // labeled values together, which doesn't match pasting into three separate Firenote fields.
+    const isGoalSection = sec.title.toUpperCase() === 'GOAL';
+    const goalCategoryReminder = isGoalSection
+      ? '<div style="font-size:.76rem;color:#7a4200;background:#fff8ee;border:1px solid #ffe082;border-radius:5px;padding:5px 9px;margin-bottom:8px">📌 In Firenote\'s Goal Builder, select Category: Custom to unlock the Focus/Measurement/Duration fields below.</div>'
+      : '';
     out.push(
       '<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
       + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.08em">' + escHtml(sec.title) + '</span>'
-      + (isGoal ? makeCpBtn(plainLines.join(' '), '📋 Copy', 'padding:4px 12px;') : '')
       + '</div>'
-      + '<div style="padding:10px 12px">' + contentHtml + '</div>'
+      + '<div style="padding:10px 12px">' + goalCategoryReminder + contentHtml + '</div>'
       + '</div>'
     );
   });
@@ -8039,8 +8079,10 @@ function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
   if (flags.oxygen) {
     lines.push(`
 FLAG — CONTINUOUS OXYGEN (generate a SEPARATE care plan for Z99.81 Dependence on supplemental oxygen):
-This patient requires continuous oxygen. Z99.81 must be added as a related problem with its own care plan:
-Goal: Patient will experience improved respiratory comfort as evidenced by patient/caregiver report and reduced signs of respiratory distress.
+This patient requires continuous oxygen. Z99.81 must be added as a related problem with its own care plan. Its goal must ALSO use the three-field format — output it prefixed exactly as shown:
+SECONDARY GOAL FOCUS: improved respiratory comfort
+SECONDARY GOAL MEASUREMENT: patient/caregiver report and reduced signs of respiratory distress
+SECONDARY GOAL DURATION: end of the current benefit period
 Interventions:
 • ASSESS: Nurse will assess respiratory status each visit including rate, depth, work of breathing, lung sounds, level of dyspnea, and use of accessory muscles.
 • ASSESS: Nurse will assess oxygen flow rate, verify it matches orders, and assess oxygen equipment for proper setup and functioning.
@@ -8074,7 +8116,10 @@ Interventions:
   if (flags.foley) {
     lines.push(`
 FLAG — FOLEY CATHETER (generate a SEPARATE care plan for Y84.6 Urinary Catheterization):
-Goal: Patient will remain comfortable with minimum catheter-related complications and maintain adequate urine flow.
+Its goal must ALSO use the three-field format — output it prefixed exactly as shown:
+SECONDARY GOAL FOCUS: comfort with minimal catheter-related complications
+SECONDARY GOAL MEASUREMENT: maintained adequate urine flow and absence of catheter complications
+SECONDARY GOAL DURATION: end of the current benefit period
 Interventions:
 • ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental changes.
 • EDUCATE: Nurse will educate patient/caregiver on proper foley bag positioning (below bladder level, never on the floor), emptying technique for drainage bag, importance of keeping tubing straight/untangled, and proper routine perineal care.
@@ -8087,7 +8132,10 @@ Interventions:
   if (flags.fallRisk) {
     lines.push(`
 SITUATIONAL — FALL RISK (add fall risk interventions under an appropriate existing diagnosis, or add R26.89 Abnormality of gait and mobility as a new problem if no applicable diagnosis exists):
-Goal: Patient will realize decreased fall risk with implementation of fall prevention measures as illustrated by reduction in fall events by the end of the current benefit period.
+If added as a new problem, its goal must ALSO use the three-field format — output it prefixed exactly as shown:
+SECONDARY GOAL FOCUS: decreased fall risk with implementation of fall prevention measures
+SECONDARY GOAL MEASUREMENT: reduction in fall events
+SECONDARY GOAL DURATION: end of the current benefit period
 Interventions:
 • ASSESS: Nurse will assess patient's risk for falls at each visit and implement appropriate safety measures.
 • EDUCATE: Nurse will educate patient and family/caregiver on the importance of using assistive devices and following safety precautions to prevent falls.
@@ -8099,7 +8147,10 @@ Interventions:
   if (flags.skinRisk) {
     lines.push(`
 SITUATIONAL — SKIN BREAKDOWN RISK (add under an appropriate existing diagnosis such as malnutrition or immobility, or add Z91.89 Other specified personal risk factors if no applicable diagnosis exists):
-Goal: Patient will remain free from skin breakdown/pressure injury as evidenced by intact skin or wound healing progress throughout the benefit period.
+If added as a new problem, its goal must ALSO use the three-field format — output it prefixed exactly as shown:
+SECONDARY GOAL FOCUS: freedom from skin breakdown/pressure injury
+SECONDARY GOAL MEASUREMENT: intact skin or wound healing progress
+SECONDARY GOAL DURATION: end of the current benefit period
 Interventions:
 • ASSESS: Nurse will assess skin integrity at each visit, including bony prominences, areas of moisture exposure, and existing wounds or areas of breakdown.
 • EDUCATE: Nurse will educate caregiver on proper turning and repositioning schedule, skin care techniques, and use of protective barriers/moisture barriers.
@@ -8304,8 +8355,10 @@ CRITICAL: This care plan addresses "${problem}" as a safety or crisis concern. T
 
 REQUIREMENTS:
 
-1. GOAL: Must be measurable and safety-focused. Format:
-"Patient/caregiver will [demonstrate/verbalize/maintain] [specific safety behavior or risk reduction outcome] as evidenced by [measurable indicator] throughout the benefit period."
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence, all safety-focused:
+   GOAL FOCUS: short phrase (no trailing period) naming WHAT safety behavior or risk-reduction outcome is being targeted, e.g. "demonstrated fall prevention safety practices"
+   GOAL MEASUREMENT: short phrase (no trailing period) naming the measurable indicator, e.g. "verbalized understanding of safety measures and absence of fall events"
+   GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more appropriate.
 
 2. INTERVENTIONS: Generate a minimum of one ASSESS, one INTERVENE, and one DOCUMENT intervention. You may add additional individual interventions (up to 6 total lines) if clinically appropriate. Every intervention must be a single standalone line — do NOT group them into numbered sections or categories. Do NOT use Perform or Educate labels. Use only ASSESS, INTERVENE, DOCUMENT.
    ASSESS — Nurse will assess [specific safety risk or indicator] at each visit
@@ -8317,7 +8370,9 @@ REQUIREMENTS:
 [problem statement]
 
 ## GOAL
-[safety goal]
+GOAL FOCUS: [short phrase]
+GOAL MEASUREMENT: [short phrase]
+GOAL DURATION: [exact duration value]
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess [...]
@@ -8343,8 +8398,10 @@ CRITICAL: "${problem}" is a care coordination or planning problem — NOT a clin
 
 REQUIREMENTS:
 
-1. GOAL: Must be coordination-focused and measurable. Format:
-"Patient/family/caregiver will [achieve specific coordination outcome — e.g. verbalize understanding of, complete, successfully transition to] [specific goal] as evidenced by [measurable indicator] by [timeframe or throughout the benefit period]."
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence, all coordination-focused:
+   GOAL FOCUS: short phrase (no trailing period) naming WHAT coordination outcome is being targeted — e.g. verbalized understanding of, completion of, or successful transition to a specific plan, e.g. "successful transition to facility-based care"
+   GOAL MEASUREMENT: short phrase (no trailing period) naming the measurable indicator, e.g. "documented care plan agreement between hospice and facility staff"
+   GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more appropriate.
 
 2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}" coordination needs:
    ASSESS — Nurse will assess [specific coordination need, readiness, or barrier]
@@ -8358,7 +8415,9 @@ REQUIREMENTS:
 [problem statement]
 
 ## GOAL
-[coordination goal]
+GOAL FOCUS: [short phrase]
+GOAL MEASUREMENT: [short phrase]
+GOAL DURATION: [exact duration value]
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess [...]
@@ -8384,8 +8443,10 @@ CRITICAL: "${problem}" is a psychosocial or emotional care problem. The goal mus
 
 REQUIREMENTS:
 
-1. GOAL: Must be psychosocial and measurable. Format:
-"Patient/family/caregiver will [verbalize/demonstrate/utilize] [specific coping strategy, emotional outcome, or support utilization] as evidenced by [observable indicator] throughout the benefit period."
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence, all psychosocial:
+   GOAL FOCUS: short phrase (no trailing period) naming WHAT coping strategy, emotional outcome, or support utilization is being targeted, e.g. "verbalized coping strategies for anticipatory grief"
+   GOAL MEASUREMENT: short phrase (no trailing period) naming the observable indicator, e.g. "patient/family report of improved emotional adjustment and engagement with support services"
+   GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more appropriate.
 
 2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}":
    ASSESS — Nurse will assess [specific psychosocial or emotional indicator]
@@ -8399,7 +8460,9 @@ REQUIREMENTS:
 [problem statement]
 
 ## GOAL
-[psychosocial goal]
+GOAL FOCUS: [short phrase]
+GOAL MEASUREMENT: [short phrase]
+GOAL DURATION: [exact duration value]
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess [...]
@@ -8425,11 +8488,15 @@ CRITICAL: This care plan is for the specific problem "${problem}" — NOT for th
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: ${isPrimaryDxPlan
-  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom. Use this EXACT format:
-"Patient will experience optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible, as evidenced by patient/caregiver report of comfort and absence of unnecessary suffering throughout the benefit period."`
-  : `Must be comfort-focused and specific to "${problem}". Use this EXACT format:
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problem}], and trends in caregiver feedback by the end of the current benefit period."`}
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence, not a full sentence for each: ${isPrimaryDxPlan
+  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom.
+   GOAL FOCUS: short phrase (no trailing period), e.g. "optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible"
+   GOAL MEASUREMENT: short phrase (no trailing period), e.g. "patient/caregiver report of comfort and absence of unnecessary suffering"
+   GOAL DURATION: "end of the current benefit period" unless a shorter window is clearly more appropriate.`
+  : `Must be comfort-focused and specific to "${problem}".
+   GOAL FOCUS: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${problem}-related distress" — adapt to the specific problem.
+   GOAL MEASUREMENT: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${problem}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+   GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.`}
 
 2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}":
    ASSESS — Nurse will assess [specific symptom or indicator related to ${problem}] at each visit
@@ -8446,7 +8513,9 @@ ${requiredPrimaryBlock}
 [problem statement]
 
 ## GOAL
-[goal statement]
+GOAL FOCUS: [short phrase]
+GOAL MEASUREMENT: [short phrase]
+GOAL DURATION: [exact duration value]
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess [...]
@@ -9451,8 +9520,10 @@ CRITICAL: This care plan is for the specific problem "${problemText}" — NOT fo
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: Must be comfort-focused and specific to "${problemText}". Use this EXACT format, filling in clinical indicators relevant to "${problemText}":
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${problemText}], and trends in caregiver feedback by the end of the current benefit period."
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence. Generate each specific to "${problemText}":
+   - goalFocus: A short phrase (not a full sentence, no trailing period) naming WHAT the goal is about. Format example: "comfort and freedom from ${problemText}-related distress" — adapt the wording to the specific problem.
+   - goalMeasurement: A short phrase (not a full sentence, no trailing period) naming HOW progress will be measured — the observable/reportable indicators. Format example: "patient report (if able), observed [clinical indicators specific to ${problemText}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+   - goalDuration: Must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.
 
 2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problemText}" and follow this exact structure:
 
@@ -9467,7 +9538,7 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
 4. PHYSICIAN/IDT COORDINATION: Include one sentence describing what to flag at IDT or discuss with the physician regarding this problem.
 
 Respond ONLY with valid JSON, no markdown, no extra text:
-{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
+{"goalFocus":"...","goalMeasurement":"...","goalDuration":"end of the current benefit period","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
 
   let result = null;
   try {
@@ -10993,7 +11064,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   // If patient is imminent, replace primary card with hardcoded imminence care plan
   if (isImminent) {
     const isFacility = flags.setting === 'facility' || flags.setting === 'snf';
-    const immGoal = 'Patient will experience a comfortable, peaceful death as evidenced by absence of distressing symptoms and family/caregiver report of comfort and satisfaction with care throughout the final days of life.';
+    const immGoalFocus = 'comfortable, peaceful death';
+    const immGoalMeasurement = 'absence of distressing symptoms and family/caregiver report of comfort and satisfaction with care';
+    const immGoalDuration = '3 days';
     const immInterventions = [
       'ASSESS -- Nurse will assess patient physical condition and symptom burden at each visit, including pain, dyspnea, anxiety, restlessness, secretions, and changes in level of consciousness.',
       'ASSESS -- Nurse will evaluate family/caregiver coping, emotional adjustment, and readiness at each visit.',
@@ -11004,7 +11077,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
     ].concat(isFacility ? ['PERFORM -- Nurse will coordinate with facility staff to ensure routine comfort assessments are completed and communicated to the hospice team for appropriate palliative intervention.'] : []);
 
     const immResult = {
-      goal: immGoal,
+      goalFocus: immGoalFocus,
+      goalMeasurement: immGoalMeasurement,
+      goalDuration: immGoalDuration,
       interventions: immInterventions,
       physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.',
       _requiredGroups: [
@@ -11097,11 +11172,15 @@ CRITICAL: This care plan is for the specific problem "${it.diagnosis}" — NOT f
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL: ${isPrimary
-  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom. Use this EXACT format:
-"Patient will experience optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible, as evidenced by patient/caregiver report of comfort and absence of unnecessary suffering throughout the benefit period."`
-  : `Must be comfort-focused and specific to "${it.diagnosis}". Use this EXACT format, filling in clinical indicators relevant to "${it.diagnosis}":
-"Patient will remain comfortable and free from [problem]-related distress, as measured by patient report (if able), observed [relevant clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback by the end of the current benefit period."`}
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence: goalFocus, goalMeasurement, and goalDuration. ${isPrimary
+  ? `This is the PRIMARY hospice diagnosis — the goal must be BROAD and hospice-focused, not specific to a single symptom.
+   - goalFocus: short phrase (no trailing period), e.g. "optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible"
+   - goalMeasurement: short phrase (no trailing period), e.g. "patient/caregiver report of comfort and absence of unnecessary suffering"
+   - goalDuration: "end of the current benefit period" unless a shorter window is clearly more appropriate.`
+  : `Specific to "${it.diagnosis}".
+   - goalFocus: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${it.diagnosis}-related distress" — adapt to the specific problem.
+   - goalMeasurement: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+   - goalDuration: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.`}
 
 2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${it.diagnosis}" and follow this exact structure:
 
@@ -11117,7 +11196,7 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
 4. PHYSICIAN/IDT COORDINATION: Include one sentence describing what to flag at IDT or discuss with the physician regarding this problem.
 
 Respond ONLY with valid JSON, no markdown, no extra text:
-{"goal":"...","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
+{"goalFocus":"...","goalMeasurement":"...","goalDuration":"end of the current benefit period","interventions":["ASSESS: Nurse will...","EDUCATE: Nurse will...","PERFORM: Nurse will..."],"physicianCoordination":"..."}`;
 
         let result = null;
     try {
@@ -11460,7 +11539,7 @@ function buildSituationalCards(flags, primaryDx, data) {
         suggestionsWrap.innerHTML = '';
         suggestionsWrap.style.display = 'none';
 
-        var prompt = 'You are a hospice and wound care ICD-10-CM coding expert. Given the wound description below, return the 2-4 MOST LIKELY specific ICD-10-CM codes. Favor precise codes: pressure injury staging (L89.xxx), ulcer type (venous L97.xxx, arterial I70.xxx/I96, diabetic E11.62x + L97.xxx, other L98.4xx), correct laterality and anatomical sub-site when documented. Never fabricate a code. If the description is ambiguous, still give your best 2-4 ranked candidates from most to least likely — do not refuse.\n\nWound description: "' + desc + '"\n\nRespond ONLY with valid JSON, no markdown, no extra text:\n{"options":[{"code":"L89.153","label":"Pressure ulcer of sacral region, stage 3"},{"code":"L89.154","label":"Pressure ulcer of sacral region, stage 4"}]}';
+        var prompt = 'You are a hospice and wound care ICD-10-CM coding expert. Given the wound description below, return the 2-4 MOST LIKELY specific ICD-10-CM codes.\n\nCRITICAL — verified site-to-code-family mappings. Do NOT deviate from these; matching a plausible-looking code to the wrong site is a serious error:\n\nPRESSURE ULCER (L89) by site: elbow=L89.0xx, back(non-sacral)=L89.1xx, sacrum specifically=L89.15x, hip=L89.2xx, buttock=L89.3xx, contiguous back/buttock/hip=L89.4xx, ankle=L89.5xx, heel=L89.6xx, other site=L89.8xx, unspecified site=L89.9xx. Stage/severity is the next digit (1=stage 1, 2=stage 2, 3=stage 3, 4=stage 4, 6=unstageable, 0=deep tissue damage).\n\nNON-PRESSURE CHRONIC ULCER, non-lower-limb (L98.4) by site: buttock=L98.41x, back=L98.42x, abdomen=L98.43x, chest=L98.44x, neck=L98.45x, face=L98.46x, groin=L98.47x, other sites=L98.49x. Severity is the next digit (1=limited to skin breakdown, 2=fat layer exposed, 3=muscle necrosis, 4=bone necrosis, 9=unspecified severity).\n\nNON-PRESSURE CHRONIC ULCER, lower limb (L97) by site: thigh=L97.1xx, calf=L97.2xx, ankle=L97.3xx, heel and midfoot=L97.4xx, other part of foot=L97.5xx, other part of lower leg=L97.8xx, unspecified part of lower leg=L97.9xx.\n\nOther ulcer types: venous stasis ulcer of leg uses L97.xxx (site-specific per above) — venous etiology is documented via an additional code (I83.xxx) when known, not a different primary code family. Arterial/ischemic ulcer = I70.xxx or I96. Diabetic foot ulcer = E11.62x (diabetes with skin complication) sequenced with the L97.xxx site code.\n\nDouble-check that the digit(s) after the decimal point in your suggested code actually correspond to the site named in the description above before responding — a wrong site digit produces a code for a completely different body part. Correct laterality (right/left) and anatomical sub-site when documented. Never fabricate a code. If the description is ambiguous, still give your best 2-4 ranked candidates from most to least likely — do not refuse.\n\nWound description: "' + desc + '"\n\nRespond ONLY with valid JSON, no markdown, no extra text:\n{"options":[{"code":"L89.153","label":"Pressure ulcer of sacral region, stage 3"},{"code":"L89.154","label":"Pressure ulcer of sacral region, stage 4"}]}';
 
         try {
           var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 800 }) });
@@ -11858,32 +11937,53 @@ function buildSituationalCards(flags, primaryDx, data) {
 }
 
 function renderAllCpCard(body, result, dx, patientDetails) {
-  if (!result || !result.goal) {
+  if (!result || !result.goalFocus) {
     body.innerHTML = '<div style="color:var(--red);font-size:.84rem;padding:8px 0">⚠ Could not generate care plan. Please use the Care Plan Builder tab to generate individually.</div>';
     return;
   }
 
   body.innerHTML = '';
 
-  // Goal section
+  // Goal section — three separate fields matching Firenote's Custom Goal Builder
+  // (Focus / Measurement / Duration), each independently copyable into its own field.
   const goalSec = document.createElement('div');
-  goalSec.style.cssText = 'margin-bottom:12px';
-  const goalLabel = document.createElement('div');
-  goalLabel.style.cssText = 'font-size:.74rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px';
-  goalLabel.textContent = 'Goal';
-  const goalRow = document.createElement('div');
-  goalRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--row-alt);padding:9px 11px;border-radius:5px';
-  const goalText = document.createElement('span');
-  goalText.style.cssText = 'flex:1;font-size:.87rem;line-height:1.55';
-  goalText.textContent = result.goal;
-  const goalCopy = document.createElement('button');
-  goalCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
-  goalCopy.textContent = '📋';
-  goalCopy.addEventListener('click', function() { copyAllCpText(goalCopy, result.goal); });
-  goalRow.appendChild(goalText);
-  goalRow.appendChild(goalCopy);
-  goalSec.appendChild(goalLabel);
-  goalSec.appendChild(goalRow);
+  goalSec.style.cssText = 'margin-bottom:12px;display:flex;flex-direction:column;gap:8px';
+
+  function buildGoalFieldRow(labelText, valueText) {
+    const fieldWrap = document.createElement('div');
+    const fieldLabel = document.createElement('div');
+    fieldLabel.style.cssText = 'font-size:.7rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px';
+    fieldLabel.textContent = labelText;
+    const fieldRow = document.createElement('div');
+    fieldRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--row-alt);padding:8px 11px;border-radius:5px';
+    const fieldText = document.createElement('span');
+    fieldText.style.cssText = 'flex:1;font-size:.87rem;line-height:1.5';
+    fieldText.textContent = valueText;
+    const fieldCopy = document.createElement('button');
+    fieldCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+    fieldCopy.textContent = '📋';
+    fieldCopy.addEventListener('click', function() { copyAllCpText(fieldCopy, valueText); });
+    fieldRow.appendChild(fieldText);
+    fieldRow.appendChild(fieldCopy);
+    fieldWrap.appendChild(fieldLabel);
+    fieldWrap.appendChild(fieldRow);
+    return fieldWrap;
+  }
+
+  const goalHeader = document.createElement('div');
+  goalHeader.style.cssText = 'font-size:.74rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em';
+  goalHeader.textContent = 'Goal';
+  goalSec.appendChild(goalHeader);
+
+  const goalCategoryNote = document.createElement('div');
+  goalCategoryNote.style.cssText = 'font-size:.76rem;color:#7a4200;background:#fff8ee;border:1px solid #ffe082;border-radius:5px;padding:5px 9px;margin:2px 0 2px';
+  goalCategoryNote.textContent = '📌 In Firenote\'s Goal Builder, select Category: Custom to unlock the Focus/Measurement/Duration fields below.';
+  goalSec.appendChild(goalCategoryNote);
+
+  goalSec.appendChild(buildGoalFieldRow('Focus', result.goalFocus));
+  goalSec.appendChild(buildGoalFieldRow('Measurement', result.goalMeasurement || ''));
+  goalSec.appendChild(buildGoalFieldRow('Duration', result.goalDuration || 'end of the current benefit period'));
+
   body.appendChild(goalSec);
 
   // Interventions section
@@ -13035,47 +13135,84 @@ async function runIcdLookup() {
   });
 
   // ── Step 2: Call API only for unmatched diagnoses ──────────────
+  // Batched rather than one giant call: a single request covering every unmatched line could
+  // silently run out of its token budget on longer lists (especially when several lines need
+  // verbose needsClarification option arrays), truncating the JSON and dropping whichever
+  // diagnoses hadn't been generated yet -- with nothing visibly wrong, they'd just fall through
+  // to "enter code manually" as if they were never found. Batches of 8 keep each call's output
+  // comfortably within budget regardless of overall list length.
   var apiResults = {};
+  var apiBatchErrors = [];
   if (needsApi.length > 0) {
-    btn.textContent = '⏳ Coding ' + needsApi.length + ' remaining via AI...';
-    const needsApiLines = needsApi;
-    const apiPrompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES: Heel=L89.6xx. Sacrum=L89.15x. L89.2xx is ankle not heel.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain (\"chronic pain\", \"persistent pain\", \"generalized pain\") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. \"cancer pain\", \"tumor pain\", \"neoplasm related pain\"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\nDiagnoses:\n' + needsApiLines.map(function(l,i){return (i+1)+'. '+l;}).join('\n') + '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: \"code\" and \"label\" (NOT \"description\", NOT \"name\"). Example: [{\"code\":\"I50.22\",\"label\":\"Chronic systolic CHF, unspecified\"},{\"code\":\"I50.32\",\"label\":\"Chronic diastolic CHF, unspecified\"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
-    let parsed = null; let errMsg = '';
-    try {
-      const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: apiPrompt, max_tokens: 4000 }) });
-      if (!resp.ok) { errMsg = 'HTTP ' + resp.status; } else {
-        const data = await resp.json();
-        if (data.error) { errMsg = String(data.error).slice(0,200); } else {
-          const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
-          try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim()); } catch(e) { errMsg = 'Parse error: ' + e.message; }
+    btn.textContent = '\u23f3 Coding ' + needsApi.length + ' remaining via AI...';
+    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
+    const ICD_API_JSON_SPEC = '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: "code" and "label" (NOT "description", NOT "name"). Example: [{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+
+    const ICD_API_BATCH_SIZE = 8;
+    const batches = [];
+    for (let bi = 0; bi < needsApi.length; bi += ICD_API_BATCH_SIZE) {
+      batches.push(needsApi.slice(bi, bi + ICD_API_BATCH_SIZE));
+    }
+
+    async function runIcdApiBatch(batchLines) {
+      const prompt = 'You are a hospice clinical coding expert. Return the most specific ICD-10-CM code for each diagnosis below.' + ICD_API_KEY_RULES
+        + 'Diagnoses:\n' + batchLines.map(function(l, i) { return (i + 1) + '. ' + l; }).join('\n')
+        + ICD_API_JSON_SPEC;
+      let parsed = null; let errMsg = '';
+      try {
+        const resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 4000 }) });
+        if (!resp.ok) { errMsg = 'HTTP ' + resp.status; } else {
+          const data = await resp.json();
+          if (data.error) { errMsg = String(data.error).slice(0, 200); } else {
+            const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+            try { parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim()); } catch (e) { errMsg = 'Parse error: ' + e.message; }
+          }
         }
-      }
-    } catch(e) { errMsg = 'Network error: ' + e.message; }
-    if (parsed && parsed.results) {
-      parsed.results.forEach(function(r) {
-        var stripped = (r.diagnosis || '').replace(/^\d+\.\s*/, '').trim();
-        apiResults[stripped] = r;
-        apiResults[stripped.toLowerCase()] = r;
-        if (r.diagnosis !== stripped) {
-          apiResults[r.diagnosis] = r;
-          apiResults[(r.diagnosis || '').toLowerCase()] = r;
+      } catch (e) { errMsg = 'Network error: ' + e.message; }
+      return { batchLines: batchLines, parsed: parsed, errMsg: errMsg };
+    }
+
+    const batchOutcomes = await Promise.all(batches.map(runIcdApiBatch));
+
+    batchOutcomes.forEach(function(outcome) {
+      if (outcome.parsed && outcome.parsed.results) {
+        outcome.parsed.results.forEach(function(r) {
+          var stripped = (r.diagnosis || '').replace(/^\d+\.\s*/, '').trim();
+          apiResults[stripped] = r;
+          apiResults[stripped.toLowerCase()] = r;
+          if (r.diagnosis !== stripped) {
+            apiResults[r.diagnosis] = r;
+            apiResults[(r.diagnosis || '').toLowerCase()] = r;
+          }
+        });
+        var coveredCount = outcome.batchLines.filter(function(l) {
+          return apiResults[l] || apiResults[l.toLowerCase()];
+        }).length;
+        if (coveredCount < outcome.batchLines.length) {
+          apiBatchErrors.push({ lines: outcome.batchLines, errMsg: 'AI response did not include all requested diagnoses (possible truncation)' });
         }
-      });
-    } else {
-      if (Object.keys(localResults).length === 0) {
-        btn.textContent = origText; btn.disabled = false;
-        resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>⚠ Unable to look up codes.</strong> ' + (errMsg || 'Unexpected error.') + '</div>';
-        return;
+      } else {
+        apiBatchErrors.push({ lines: outcome.batchLines, errMsg: outcome.errMsg || 'Unknown error' });
       }
-      // API failed but we have some local results — add a visible warning and continue
+    });
+
+    if (Object.keys(apiResults).length === 0 && Object.keys(localResults).length === 0) {
+      btn.textContent = origText; btn.disabled = false;
+      resultsEl.innerHTML = '<div style="padding:16px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:.88rem"><strong>\u26a0 Unable to look up codes.</strong> ' + (apiBatchErrors[0] ? apiBatchErrors[0].errMsg : 'Unexpected error.') + '</div>';
+      return;
+    }
+
+    if (apiBatchErrors.length > 0) {
+      var failedLineCount = apiBatchErrors.reduce(function(sum, e) { return sum + e.lines.filter(function(l) { return !apiResults[l] && !apiResults[l.toLowerCase()]; }).length; }, 0);
       const apiWarn = document.createElement('div');
-      apiWarn.style.cssText = 'padding:8px 14px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:8px';
-      apiWarn.innerHTML = '<strong>⚠ AI lookup unavailable</strong> — ' + needsApiLines.length + ' diagnoses could not be auto-coded. Use "Other — enter code manually" for those. Error: ' + (errMsg || 'Unknown');
+      apiWarn.style.cssText = 'padding:10px 14px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:8px;line-height:1.55';
+      apiWarn.innerHTML = '<strong>\u26a0 AI lookup incomplete</strong> \u2014 ' + failedLineCount + ' of ' + needsApi.length + ' diagnoses could not be auto-coded and will need "Other \u2014 enter code manually" below. This can happen on longer lists. Try running "Look Up Codes" again, or resolve those specific lines manually.';
       resultsEl.appendChild(apiWarn);
     }
   }
   btn.textContent = origText;
   btn.disabled = false;
+
   // ── Step 3: Merge local + API results in original order ─────────
   const finalResults = lines.map(function(line) {
     var local = localResults[line];
@@ -13838,6 +13975,8 @@ function clearIcdLookup() {
   if (res) { res.innerHTML = ''; res.style.display = 'none'; }
   icdLookupResults = [];
   icdPrimaryIdx = -1;
+  const lookupBtn = document.getElementById('icd-lookup-btn');
+  if (lookupBtn) { lookupBtn.textContent = '🔎 Look Up Codes'; lookupBtn.disabled = false; }
 }
 
 </script>
