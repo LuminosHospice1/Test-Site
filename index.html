@@ -8764,6 +8764,8 @@ A hospice admission nurse needs help strengthening a clinical nursing narrative.
    - Goals of care and patient/family understanding of hospice philosophy
 3. Return a checklist showing each element as PRESENT, PARTIAL, or MISSING with a brief note
 
+CRITICAL — DO NOT WRITE ABOUT GAPS INSIDE THE NARRATIVE ITSELF: The STRENGTHENED NARRATIVE section must describe ONLY what actually happened during the visit and what was actually assessed or documented in the draft notes below. NEVER write sentences in the narrative stating that something "was not included," "was not documented," "should be completed," "is missing from the notes," or similar — that kind of statement must NEVER appear inside the narrative text, because this narrative may be copied directly into the permanent clinical record, and a sentence documenting that documentation is missing becomes a compliance liability once it's in the chart. If an element is missing or incomplete, simply omit any mention of it from the narrative and instead flag it ONLY in the ELEMENT CHECKLIST section below, marked MISSING or PARTIAL. The narrative and the checklist serve different purposes: the narrative describes the visit as documented; the checklist tells the nurse what still needs follow-up before this narrative can be considered complete.
+
 PRIMARY HOSPICE DIAGNOSIS: ${dx || 'Not specified — infer from narrative'}
 
 DRAFT NARRATIVE / NOTES:
@@ -8772,7 +8774,7 @@ ${draft}
 FORMAT YOUR RESPONSE EXACTLY AS:
 
 STRENGTHENED NARRATIVE:
-[Full rewritten narrative — paragraphs only, no headers, no bullets, first-person past tense]
+[Full rewritten narrative — paragraphs only, no headers, no bullets, first-person past tense. Describes ONLY what was actually documented/assessed. Contains NO commentary about missing, absent, or incomplete documentation — that belongs exclusively in the checklist below.]
 
 ---
 
@@ -8807,6 +8809,37 @@ function clearNarrative() {
   if (chkDisplay) chkDisplay.classList.remove('show');
 }
 
+// Scans narrative text for sentences that describe documentation gaps rather than describing
+// the visit itself — e.g. "Documentation regarding X was not included in the available notes."
+// This kind of sentence should NEVER end up in the permanent clinical record (it documents that
+// documentation is missing, which is a compliance liability, not a clinical fact about the
+// patient). The prompt instructs the AI not to write these, but that instruction isn't always
+// followed reliably, so this is a safety net that catches it even when proofreading misses it.
+function scanNarrativeForMetaCommentary(text) {
+  if (!text) return [];
+  var metaPatterns = [
+    /\b(was|were|is|are)\s+not\s+(included|documented|addressed|found|available|noted|completed|performed|assessed|obtained)\b/i,
+    /\bshould be (completed|documented|added|obtained)\b/i,
+    /\bnot (included|documented|addressed|found|available|noted)\s+in\s+the\b/i,
+    /\b(documentation|review)\s+(regarding|for|of)\b[^.]{0,100}\b(was not|is not|were not|are not)\b/i,
+    /\bnot (addressed|documented)\s+in\s+(the\s+)?(available\s+|current\s+)?(admission\s+)?notes\b/i,
+    /\bmissing\s+from\s+(the\s+)?(available\s+|current\s+)?(admission\s+)?notes\b/i,
+    /\bcould not be (confirmed|verified|found)\b/i,
+    /\b(needs?|need)\s+to\s+be\s+(completed|documented|added|obtained)\b/i,
+  ];
+  // Split into rough sentences (period + space/end, keeps things simple rather than perfect)
+  var sentences = text.split(/(?<=[.!?])\s+/);
+  var flagged = [];
+  sentences.forEach(function(s) {
+    var trimmed = s.trim();
+    if (!trimmed) return;
+    for (var i = 0; i < metaPatterns.length; i++) {
+      if (metaPatterns[i].test(trimmed)) { flagged.push(trimmed); break; }
+    }
+  });
+  return flagged;
+}
+
 function handleNarrativePasteBack() {
   const ta = document.getElementById('narr-paste-back');
   if (!ta) return;
@@ -8830,6 +8863,24 @@ function parseNarrativeChecklist(rawText) {
       narrativePart = rawText.substring(0, match).trimEnd();
       checklistPart = rawText.substring(match);
       break;
+    }
+  }
+
+  // Safety-net check: flag any sentence in the narrative itself that describes documentation
+  // gaps rather than the visit — this must never be copied into the permanent clinical record.
+  var metaWarningEl = document.getElementById('narr-meta-warning');
+  if (metaWarningEl) {
+    var flaggedSentences = scanNarrativeForMetaCommentary(narrativePart);
+    if (flaggedSentences.length > 0) {
+      metaWarningEl.style.display = 'block';
+      metaWarningEl.innerHTML = '<strong>⚠ Review before copying — possible documentation-gap commentary found inside the narrative itself:</strong>'
+        + '<ul style="margin:6px 0 4px 20px;padding:0">'
+        + flaggedSentences.map(function(s) { return '<li style="margin-bottom:4px">"' + escapeHtml(s) + '"</li>'; }).join('')
+        + '</ul>'
+        + '<div>This kind of sentence documents that documentation is missing — it should never go into Firenote. Delete it from the narrative above; any missing items are already tracked separately in the checklist below.</div>';
+    } else {
+      metaWarningEl.style.display = 'none';
+      metaWarningEl.innerHTML = '';
     }
   }
 
@@ -9006,6 +9057,12 @@ function copyFinalNarrative(btn) {
   const ta = document.getElementById('narr-paste-back');
   if (!ta || !ta.value.trim()) {
     alert('Please paste Copilot\'s narrative output in Step 2 before copying.');
+    return;
+  }
+  var flagged = scanNarrativeForMetaCommentary(ta.value);
+  if (flagged.length > 0) {
+    alert('This narrative still contains a sentence describing missing or incomplete documentation:\n\n"' + flagged[0] + '"\n\nThis kind of sentence must never be entered into the clinical record. Please remove it from the narrative above before copying — any missing items are already tracked separately in the checklist below.');
+    ta.focus();
     return;
   }
   document.getElementById('narr-attest-modal').classList.add('show');
@@ -14228,6 +14285,8 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
         <div style="font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:6px">📋 Step 2 — Paste Copilot's Output Here</div>
         <div class="alert info" style="margin-bottom:10px;font-size:.82rem"><span>✂️</span><div>Paste <strong>only the narrative</strong> from Copilot — stop before the <code style="background:#e8edf8;padding:1px 5px;border-radius:3px">--- ELEMENT CHECKLIST ---</code> separator line. The checklist will appear automatically below. Do not paste the checklist section into Firenote.</div></div>
         <textarea id="narr-paste-back" style="width:100%;min-height:200px;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.87rem;resize:vertical;outline:none;line-height:1.6" placeholder="Paste Copilot's narrative output here. Edit it to reflect your clinical language and judgment before copying into Firenote..." oninput="handleNarrativePasteBack()" onpaste="setTimeout(handleNarrativePasteBack, 50)"></textarea>
+
+        <div id="narr-meta-warning" style="display:none;margin-top:10px;padding:10px 14px;background:#fdf2f1;border:2px solid #c0392b;border-radius:7px;font-size:.83rem;color:#7a2020;line-height:1.55"></div>
 
         <div class="narr-chk-display" id="narr-chk-display">
           <div class="narr-chk-title">📋 Compliance Checklist</div>
