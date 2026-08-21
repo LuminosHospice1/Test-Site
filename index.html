@@ -1908,7 +1908,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:.85rem;color:var(--text)"><strong style="color:var(--green)">✅ No interactions identified?</strong> If the Firenote medication tab shows a <strong>green box</strong> (no interactions identified), <strong>no Z91.89 care plan problem is needed</strong> at this time. If a medication is added later that changes the box to red, add the Z91.89 problem at that point using the Drug Interaction Parser in the Clinical Tools tab.</div>
 <strong style="color:var(--navy)">If the Firenote medication tab shows a red box (drug-to-drug interactions identified), use the Drug Interaction Parser in the Clinical Tools tab:</strong><br><br>
 <span style="color:var(--purple);font-weight:700">Problem:</span> Z91.89 — Other Personal Risk Factors, Not Elsewhere Classified<br>
-<span style="color:var(--purple);font-weight:700">Goal:</span> Patient will remain free from adverse medication effects as measured by absence of observed signs/symptoms of medication-related complications, safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks by end of the current benefit period.<br><br>
+<span style="color:var(--purple);font-weight:700">Goal (Focus / Measurement / Duration):</span> Focus — freedom from adverse effects related to identified drug-to-drug interactions. Measurement — absence of observed signs/symptoms of medication-related complications, a safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks. Duration — end of the current benefit period. In Firenote's Goal Builder, select Category: Custom to enter these as three separate fields.<br><br>
 <span style="color:var(--purple);font-weight:700">Standard Interventions (always added — 3 total):</span><br>
 • Nurse will review medication profile at each visit for drug-to-drug interactions, duplicate therapies, and allergy risks.<br>
 • Nurse will reconcile medications at each visit and with any medication change.<br>
@@ -8807,6 +8807,9 @@ function clearNarrative() {
   if (pasteBack) pasteBack.value = '';
   const chkDisplay = document.getElementById('narr-chk-display');
   if (chkDisplay) chkDisplay.classList.remove('show');
+  const metaWarning = document.getElementById('narr-meta-warning');
+  if (metaWarning) { metaWarning.style.display = 'none'; metaWarning.innerHTML = ''; }
+  _narrChecklistState = null;
 }
 
 // Scans narrative text for sentences that describe documentation gaps rather than describing
@@ -8846,6 +8849,11 @@ function handleNarrativePasteBack() {
   const cleaned = parseNarrativeChecklist(ta.value);
   if (cleaned !== ta.value) ta.value = cleaned;
 }
+
+// Tracks the most recently parsed checklist state (missing/partial counts) so
+// copyFinalNarrative() can warn before copying an incomplete narrative, without
+// needing to re-scrape the DOM or re-run the AI response parser itself.
+var _narrChecklistState = null;
 
 function parseNarrativeChecklist(rawText) {
   const sepPatterns = [
@@ -8888,7 +8896,7 @@ function parseNarrativeChecklist(rawText) {
   const itemsEl = document.getElementById('narr-chk-items');
   const summaryEl = document.getElementById('narr-chk-summary');
 
-  if (!checklistPart || !display || !itemsEl || !summaryEl) return narrativePart;
+  if (!checklistPart || !display || !itemsEl || !summaryEl) { _narrChecklistState = null; return narrativePart; }
 
   const lines = checklistPart.split('\n');
   const items = [];
@@ -8910,7 +8918,7 @@ function parseNarrativeChecklist(rawText) {
     else if (xMatch) items.push({type:'missing', icon:'❌', text: xMatch[1].trim()});
   }
 
-  if (items.length === 0 && !summary) return narrativePart;
+  if (items.length === 0 && !summary) { _narrChecklistState = null; return narrativePart; }
 
   var html = '';
   for (var k = 0; k < items.length; k++) {
@@ -8935,6 +8943,13 @@ function parseNarrativeChecklist(rawText) {
       : 'Some elements may need strengthening — review items marked ⚠️ before copying into Firenote.');
   summaryEl.className = 'narr-chk-summary ' + (allOk ? 'all-ok' : 'needs-work');
   display.classList.add('show');
+
+  _narrChecklistState = {
+    missingCount: items.filter(function(i) { return i.type === 'missing'; }).length,
+    partialCount: items.filter(function(i) { return i.type === 'partial'; }).length,
+    totalCount: items.length,
+    missingLabels: items.filter(function(i) { return i.type === 'missing'; }).map(function(i) { return i.text.split(/\s+—\s+/)[0]; }),
+  };
 
   return narrativePart;
 }
@@ -9064,6 +9079,14 @@ function copyFinalNarrative(btn) {
     alert('This narrative still contains a sentence describing missing or incomplete documentation:\n\n"' + flagged[0] + '"\n\nThis kind of sentence must never be entered into the clinical record. Please remove it from the narrative above before copying — any missing items are already tracked separately in the checklist below.');
     ta.focus();
     return;
+  }
+  if (_narrChecklistState && (_narrChecklistState.missingCount > 0 || _narrChecklistState.partialCount > 0)) {
+    var msgParts = [];
+    if (_narrChecklistState.missingCount > 0) msgParts.push(_narrChecklistState.missingCount + ' element' + (_narrChecklistState.missingCount > 1 ? 's' : '') + ' marked MISSING');
+    if (_narrChecklistState.partialCount > 0) msgParts.push(_narrChecklistState.partialCount + ' marked PARTIAL');
+    var missingListText = _narrChecklistState.missingLabels.length ? ('\n\n' + _narrChecklistState.missingLabels.map(function(l) { return '• ' + l; }).join('\n')) : '';
+    var proceed = confirm('The compliance checklist shows ' + msgParts.join(' and ') + ' out of ' + _narrChecklistState.totalCount + ' required elements:' + missingListText + '\n\nThis narrative may not be ready for Firenote entry. Click OK to continue anyway, or Cancel to go back and address these first.');
+    if (!proceed) { return; }
   }
   document.getElementById('narr-attest-modal').classList.add('show');
 }
@@ -9332,9 +9355,11 @@ Respond ONLY with a JSON array — no preamble, no markdown, no explanation. For
   appendStepCard(resultsEl, '1', 'Care Plan Problem',
     'Z91.89 — Other Personal Risk Factors, Not Elsewhere Classified');
 
-  // ── STEP 2: Goal ──────────────────────────────────────────────
-  appendStepCard(resultsEl, '2', 'Goal',
-    'Patient will remain free from adverse medication effects as measured by absence of observed signs/symptoms of medication-related complications, safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks by end of the current benefit period.');
+  // ── STEP 2: Goal — Focus/Measurement/Duration to match Firenote's Custom Goal Builder ──
+  appendGoalStepCard(resultsEl, '2', 'Goal',
+    'freedom from adverse effects related to identified drug-to-drug interactions',
+    'absence of observed signs/symptoms of medication-related complications, a safe and appropriate medication regimen, and ongoing monitoring and timely intervention for identified risks',
+    'end of the current benefit period');
 
   // ── STEP 3: Standard Interventions ───────────────────────────
   const step3Lines = [
@@ -9407,6 +9432,63 @@ Respond ONLY with a JSON array — no preamble, no markdown, no explanation. For
 
   resultsEl.style.display = 'block';
   resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function appendGoalStepCard(container, num, label, focusText, measurementText, durationText) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:10px 14px;background:var(--row-alt);border-bottom:1px solid var(--border)';
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.06em';
+  title.textContent = 'Step ' + num + ' — ' + label;
+  hdr.appendChild(title);
+
+  const body = document.createElement('div');
+  body.style.cssText = 'padding:12px 14px';
+
+  const categoryNote = document.createElement('div');
+  categoryNote.style.cssText = 'font-size:.76rem;color:#7a4200;background:#fff8ee;border:1px solid #ffe082;border-radius:5px;padding:5px 9px;margin-bottom:10px';
+  categoryNote.textContent = '📌 In Firenote\'s Goal Builder, select Category: Custom to unlock the Focus/Measurement/Duration fields below.';
+  body.appendChild(categoryNote);
+
+  function fieldRow(fieldLabel, valueText, skipCopy) {
+    const fieldWrap = document.createElement('div');
+    fieldWrap.style.cssText = 'margin-bottom:8px';
+    const fLabel = document.createElement('div');
+    fLabel.style.cssText = 'font-size:.7rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px';
+    fLabel.textContent = fieldLabel;
+    const fRow = document.createElement('div');
+    fRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--row-alt);padding:8px 11px;border-radius:5px';
+    const fText = document.createElement('span');
+    fText.style.cssText = 'flex:1;font-size:.87rem;line-height:1.5';
+    fText.textContent = valueText;
+    fRow.appendChild(fText);
+    if (skipCopy) {
+      const fHint = document.createElement('span');
+      fHint.style.cssText = 'flex-shrink:0;font-size:.72rem;color:var(--text-lt);font-style:italic;padding-top:2px;white-space:nowrap';
+      fHint.textContent = 'click button';
+      fRow.appendChild(fHint);
+    } else {
+      const fCopy = document.createElement('button');
+      fCopy.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+      fCopy.textContent = '📋';
+      fCopy.addEventListener('click', function() { copyText2(valueText, fCopy); });
+      fRow.appendChild(fCopy);
+    }
+    fieldWrap.appendChild(fLabel);
+    fieldWrap.appendChild(fRow);
+    return fieldWrap;
+  }
+
+  body.appendChild(fieldRow('Focus', focusText));
+  body.appendChild(fieldRow('Measurement', measurementText));
+  body.appendChild(fieldRow('Duration', durationText, true));
+
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  container.appendChild(wrap);
 }
 
 function appendStepCard(container, num, label, text) {
