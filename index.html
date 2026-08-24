@@ -11813,6 +11813,52 @@ function buildSituationalCards(flags, primaryDx, data) {
         row.appendChild(txt); row.appendChild(copyBtn);
         goalSec.appendChild(lbl); goalSec.appendChild(row);
         body.appendChild(goalSec);
+      } else if (sec.type === 'goal3') {
+        // Goal split into Focus/Measurement/Duration to match Firenote's Custom Goal Builder
+        var goal3Sec = document.createElement('div');
+        goal3Sec.style.cssText = 'margin-bottom:10px';
+        var goal3Lbl = document.createElement('div');
+        goal3Lbl.style.cssText = 'font-size:.74rem;font-weight:700;color:#1a2744;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px';
+        goal3Lbl.textContent = sec.isSecondary ? 'Secondary Goal' : 'Goal';
+        goal3Sec.appendChild(goal3Lbl);
+
+        var goal3Note = document.createElement('div');
+        goal3Note.style.cssText = 'font-size:.75rem;color:#7a4200;background:#fff8ee;border:1px solid #ffe082;border-radius:5px;padding:5px 9px;margin-bottom:8px';
+        goal3Note.textContent = '📌 In Firenote\'s Goal Builder, select Category: Custom to unlock the Focus/Measurement/Duration fields below.';
+        goal3Sec.appendChild(goal3Note);
+
+        function goal3FieldRow(fLabel, fText, skipCopy) {
+          var fWrap = document.createElement('div');
+          fWrap.style.cssText = 'margin-bottom:8px';
+          var fLbl = document.createElement('div');
+          fLbl.style.cssText = 'font-size:.7rem;font-weight:700;color:#1a2744;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px';
+          fLbl.textContent = fLabel;
+          var fRow = document.createElement('div');
+          fRow.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:#f5f7fc;padding:8px 11px;border-radius:5px';
+          var fSpan = document.createElement('span');
+          fSpan.style.cssText = 'flex:1;font-size:.87rem;line-height:1.5';
+          fSpan.textContent = fText;
+          fRow.appendChild(fSpan);
+          if (skipCopy) {
+            var fHint = document.createElement('span');
+            fHint.style.cssText = 'flex-shrink:0;font-size:.72rem;color:#888;font-style:italic;padding-top:2px;white-space:nowrap';
+            fHint.textContent = 'click button';
+            fRow.appendChild(fHint);
+          } else {
+            var fBtn = document.createElement('button');
+            fBtn.style.cssText = 'flex-shrink:0;padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+            fBtn.textContent = '📋';
+            fBtn.addEventListener('click', function() { copyAllCpText(fBtn, fText); });
+            fRow.appendChild(fBtn);
+          }
+          fWrap.appendChild(fLbl); fWrap.appendChild(fRow);
+          return fWrap;
+        }
+
+        goal3Sec.appendChild(goal3FieldRow('Focus', sec.focus));
+        goal3Sec.appendChild(goal3FieldRow('Measurement', sec.measurement));
+        goal3Sec.appendChild(goal3FieldRow('Duration', sec.duration || 'end of the current benefit period', true));
+        body.appendChild(goal3Sec);
       } else if (sec.type === 'interventions') {
         var ivSec = document.createElement('div');
         var ivLbl = document.createElement('div');
@@ -11860,7 +11906,7 @@ function buildSituationalCards(flags, primaryDx, data) {
   if (flags.oxygen) {
     cards.push(makeCard('💨 Z99.81 — Oxygen Dependence Care Plan', 'Separate Problem Required', teal, [
       { type: 'flag', label: 'Add Z99.81 as a separate active problem in Firenote', text: 'Continuous oxygen dependence requires its own care plan with a goal and interventions.' },
-      { type: 'goal', text: "Patient will experience improved respiratory comfort as evidenced by patient/caregiver report and reduced signs of respiratory distress throughout the benefit period." },
+      { type: 'goal3', focus: "improved respiratory comfort", measurement: "patient/caregiver report and reduced signs of respiratory distress", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess respiratory status each visit including rate, depth, work of breathing, lung sounds, level of dyspnea, and use of accessory muscles.',
         'ASSESS: Nurse will assess oxygen flow rate, verify it matches orders, and assess oxygen equipment for proper setup and functioning.',
@@ -11897,7 +11943,7 @@ function buildSituationalCards(flags, primaryDx, data) {
   if (flags.foley) {
     cards.push(makeCard('💧 Y84.6 — Foley Catheter Care Plan', 'Separate Problem Required', teal, [
       { type: 'flag', label: 'Add Y84.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan. Ensure catheter order and supplies are entered.' },
-      { type: 'goal', text: "Patient will remain comfortable with minimum catheter-related complications and maintain adequate urine flow throughout the benefit period." },
+      { type: 'goal3', focus: "comfort with minimal catheter-related complications", measurement: "maintained adequate urine flow and absence of catheter complications", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental status changes.',
         'EDUCATE: Nurse will educate patient/caregiver on proper foley bag positioning (below bladder level, never on the floor), emptying technique, importance of keeping tubing straight/untangled, and routine perineal care.',
@@ -11911,7 +11957,7 @@ function buildSituationalCards(flags, primaryDx, data) {
   if (flags.fallRisk) {
     cards.push(makeCard('⚠️ Fall Risk Interventions', 'Add under applicable diagnosis or R26.89', amber, [
       { type: 'flag', label: 'If no applicable diagnosis exists, add R26.89 (Abnormality of gait and mobility) as a separate problem', text: 'Add these interventions under whichever diagnosis is most related to the fall risk (e.g. dementia, neuropathy, weakness). Also add Z91.81 (History of falling) to the problem list as applicable.' },
-      { type: 'goal', text: "Patient will realize decreased fall risk with implementation of fall prevention measures as illustrated by reduction in fall events throughout the benefit period." },
+      { type: 'goal3', focus: "decreased fall risk with implementation of fall prevention measures", measurement: "reduction in fall events", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess patient\'s risk for falls at each visit and implement appropriate safety measures based on the patient\'s current functional status.',
         'EDUCATE: Nurse will educate patient and family/caregiver on the importance of using assistive devices and following safety precautions to prevent falls.',
@@ -11924,7 +11970,7 @@ function buildSituationalCards(flags, primaryDx, data) {
   if (flags.skinRisk) {
     cards.push(makeCard('🩹 Skin Breakdown Risk Interventions', 'Add under applicable diagnosis or Z91.89', amber, [
       { type: 'flag', label: 'If no applicable diagnosis exists, add Z91.89 (Other specified personal risk factors) as a separate problem', text: 'Add under whichever existing diagnosis is most related (e.g. malnutrition, immobility, incontinence). Note: Z91.89 is also used for drug interaction care plans — if both apply, combine under one Z91.89 problem.' },
-      { type: 'goal', text: "Patient will remain free from skin breakdown/pressure injury as evidenced by intact skin integrity throughout the benefit period." },
+      { type: 'goal3', focus: "freedom from skin breakdown/pressure injury", measurement: "intact skin integrity", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess skin integrity at each visit, including bony prominences, areas of moisture exposure, and existing wounds or areas of breakdown.',
         'EDUCATE: Nurse will educate caregiver on proper turning and repositioning schedule, skin care techniques, and use of protective barriers/moisture barriers.',
