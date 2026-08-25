@@ -8273,6 +8273,13 @@ function toggleCaregiverField() {
   field.style.display = isPrimary ? 'block' : 'none';
 }
 
+// Tracks whether the current Problem field content came from a "hardcoded" preset (guaranteed
+// approved QA language, no AI variability) — checked when Generate is actually clicked, not
+// applied automatically on preset selection, so this preset behaves consistently with every
+// other preset (nothing renders until the nurse clicks Generate).
+var _cpActiveHardcodedKey = null;
+var _cpActiveHardcodedProblemText = null;
+
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
   const primaryDx = document.getElementById('cp-primary-dx').value.trim();
@@ -8282,6 +8289,32 @@ async function runCarePlanBuilder() {
   const caregiver = (document.getElementById('cp-caregiver') ? document.getElementById('cp-caregiver').value.trim() : '');
   const flags = getCpFlags();
 
+  if (!problem) { alert('Please enter a care plan problem or diagnosis.'); return; }
+
+  // If the Problem field still exactly matches a hardcoded/approved-QA-language preset (and
+  // hasn't been edited since), skip the AI call entirely and render that guaranteed text —
+  // but only now, at Generate time, not automatically when the preset button was clicked.
+  if (_cpActiveHardcodedKey && problem === _cpActiveHardcodedProblemText) {
+    var hardcodedOutput = getHardcodedCarePlan(_cpActiveHardcodedKey);
+    if (hardcodedOutput) {
+      const outputWrapHc = document.getElementById('cp-output-wrap');
+      const outputElHc = document.getElementById('cp-output');
+      const errorElHc = document.getElementById('cp-error');
+      if (errorElHc) errorElHc.classList.remove('show');
+      if (outputElHc) outputElHc.innerHTML = renderCarePlan(hardcodedOutput);
+      if (outputWrapHc) {
+        outputWrapHc.classList.add('show');
+        setTimeout(function() { outputWrapHc.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+      }
+      return;
+    }
+  }
+  // Problem field no longer matches the preset that was selected — treat as a normal,
+  // AI-generated plan from here on.
+  _cpActiveHardcodedKey = null;
+  _cpActiveHardcodedProblemText = null;
+
+
   const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && (
     problem.toLowerCase().includes(primaryDx.toLowerCase()) ||
     primaryDx.toLowerCase().includes(problem.toLowerCase()) ||
@@ -8289,7 +8322,6 @@ async function runCarePlanBuilder() {
 
   const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver);
 
-  if (!problem) { alert('Please enter a care plan problem or diagnosis.'); return; }
   if (!goals) { alert('Please select a Goals of Care Direction before generating.'); document.getElementById('cp-goals').focus(); return; }
 
   const btn = document.getElementById('cp-btn');
@@ -8577,6 +8609,8 @@ function clearCarePlan() {
     if (mountEl) mountEl.innerHTML = '';
     if (typeof _cpWoundInfectionMounted !== 'undefined') _cpWoundInfectionMounted[kind] = false;
   });
+  _cpActiveHardcodedKey = null;
+  _cpActiveHardcodedProblemText = null;
 }
 
 const CP_PRESETS = {
@@ -8666,19 +8700,15 @@ function cpQuickFillSituational(key) {
   hintBanner.innerHTML = '<strong>💡 ' + p.problem.split('—')[0].trim() + ':</strong> ' + p.hint;
   hintBanner.style.display = 'flex';
 
-  // If hardcoded — render output immediately without AI call
+  // If hardcoded — track it so Generate Care Plan can use the approved QA language instead of
+  // calling the AI, but do NOT render anything until the nurse actually clicks Generate. Every
+  // other preset waits for that click; this one should behave the same way.
   if (p.hardcoded) {
-    var hardcodedOutput = getHardcodedCarePlan(key);
-    if (hardcodedOutput) {
-      var outputWrap2 = document.getElementById('cp-output-wrap');
-      var outputEl2 = document.getElementById('cp-output');
-      if (outputEl2) outputEl2.innerHTML = renderCarePlan(hardcodedOutput);
-      if (outputWrap2) {
-        outputWrap2.classList.add('show');
-        setTimeout(function() { outputWrap2.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
-      }
-      return;
-    }
+    _cpActiveHardcodedKey = key;
+    _cpActiveHardcodedProblemText = p.problem;
+  } else {
+    _cpActiveHardcodedKey = null;
+    _cpActiveHardcodedProblemText = null;
   }
 
   // Scroll to problem field for AI-generated types
@@ -8708,7 +8738,9 @@ Z71.89 – Encounter for other specified counseling (Discharge Planning / Live D
 Patient is anticipated to discharge from hospice services and requires discharge planning and counseling to promote a safe and coordinated transition of care. This includes both planned discharges and situations where the patient no longer meets hospice eligibility criteria (NLQ) or is voluntarily withdrawing from hospice services.
 
 ## GOAL
-Patient/caregiver will participate in discharge planning and verbalize understanding of the discharge plan and available resources prior to discharge.
+GOAL FOCUS: patient/caregiver participation in discharge planning
+GOAL MEASUREMENT: verbalized understanding of the discharge plan and available resources
+GOAL DURATION: Nurse to select — shorter (3–7 days) for an active/urgent live discharge, longer (14–30 days) for anticipated/planned discharge planning
 
 ## INTERVENTIONS
 **ASSESS** — Nurse will assess patient/caregiver needs related to anticipated discharge and transition of care, including clinical status, caregiver readiness, and post-discharge support requirements.
@@ -8737,6 +8769,8 @@ function cpQuickFill(key) {
   if (sel) sel.value = p.goals;
   document.getElementById('cp-output-wrap').classList.remove('show');
   document.getElementById('cp-error').classList.remove('show');
+  _cpActiveHardcodedKey = null;
+  _cpActiveHardcodedProblemText = null;
 }
 
 // ── NARRATIVE STRENGTHENER ─────────────────────────────────────────
