@@ -3772,6 +3772,7 @@ Use these results as a starting point for your MD conversation, not as a final a
     <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
     <button class="checker-tab" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
     <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
+    <button class="checker-tab" onclick="switchCheckerTab('addendum-creator', this)">📤 Addendum Creator</button>
   </div>
   <div class="checker-body">
 
@@ -3910,6 +3911,70 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
         <button class="ai-clear-btn" onclick="clearDrugParser()" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="dip-results" style="display:none;margin-top:20px"></div>
+    </div>
+
+    <div id="addendum-creator" class="checker-section">
+      <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>📤</span><div>
+        <strong>How this works:</strong> Fill in the fields below (or pull them from Problem List Tiering), then open the Addendum Creator and click Send. Data is transmitted directly between this page and the Addendum Creator tool in your browser — it never touches a URL, query string, or server, and never appears in your browser history.
+      </div></div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="checker-btn" onclick="pullAddendumFromTiering()">🗂️ Pull from Problem List Tiering</button>
+        <button class="ai-clear-btn" onclick="clearAddendumForm()" style="padding:10px 18px">✕ Clear Form</button>
+      </div>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="flex:1;min-width:180px">
+          <label style="font-size:.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Patient Name</label>
+          <input id="add-patient-name" type="text" placeholder="e.g. Jane Smith" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;outline:none;box-sizing:border-box">
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label style="font-size:.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">MRN</label>
+          <input id="add-mrn" type="text" placeholder="e.g. 100234" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;outline:none;box-sizing:border-box">
+        </div>
+        <div style="flex:1;min-width:180px">
+          <label style="font-size:.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Hospice Name</label>
+          <input id="add-hospice-name" type="text" value="Luminos Hospice" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;outline:none;box-sizing:border-box">
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Primary Diagnosis</label>
+        <input id="add-primary-dx" type="text" placeholder="e.g. Metastatic lung cancer" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;outline:none;box-sizing:border-box">
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:.78rem;font-weight:600;color:var(--navy);display:block;margin-bottom:4px">Terminal Diagnosis Categories <span style="font-weight:400;color:var(--text-lt)">(comma-separated — matched against the Addendum Creator's built-in categories; unmatched entries are safely ignored)</span></label>
+        <input id="add-dx-categories" type="text" placeholder="e.g. Cancer, Dementia, Cardiac" style="width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;outline:none;box-sizing:border-box">
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:6px">✅ Related Conditions</label>
+        <div id="add-related-list"></div>
+        <button type="button" onclick="addAddendumListRow('add-related-list', 'related')" style="padding:6px 13px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:4px">+ Add Related Condition</button>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:6px">❌ Unrelated Conditions</label>
+        <div id="add-unrelated-list"></div>
+        <button type="button" onclick="addAddendumListRow('add-unrelated-list', 'unrelated')" style="padding:6px 13px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:4px">+ Add Unrelated Condition</button>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <label style="font-size:.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:6px">🚫 Unrelated Items / Services / Drugs</label>
+        <div id="add-items-list"></div>
+        <button type="button" onclick="addAddendumItemRow()" style="padding:6px 13px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;margin-top:4px">+ Add Item</button>
+      </div>
+
+      <div style="border-top:2px solid var(--border);padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+          <div id="addendum-status" style="font-size:.85rem;font-weight:600;color:var(--text-mid)">⏳ Addendum Creator not loaded yet</div>
+          <button class="checker-btn" id="addendum-send-btn" onclick="sendToAddendumCreator()" disabled style="opacity:.5;cursor:not-allowed">📤 Send to Addendum Creator</button>
+        </div>
+        <div id="addendum-iframe-wrap" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:600px;background:#f8f9fb;display:flex;align-items:center;justify-content:center">
+          <div id="addendum-iframe-placeholder" style="color:var(--text-lt);font-size:.88rem;text-align:center;padding:40px 20px">Loading Addendum Creator…</div>
+        </div>
+      </div>
     </div>
 
     <div id="tier-check" class="checker-section">
@@ -4449,6 +4514,194 @@ function switchCheckerTab(sectionId, btn) {
   document.querySelectorAll('.checker-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(sectionId).classList.add('active');
   btn.classList.add('active');
+
+  if (sectionId === 'addendum-creator') { mountAddendumIframeOnce(); }
+}
+
+// ── ADDENDUM CREATOR INTEGRATION ─────────────────────────────────────
+// Sends patient/diagnosis data to an external Addendum Creator tool via postMessage only —
+// never via URL, query string, or any network request. The iframe and this parent page
+// exchange data entirely in-memory in the browser; nothing here touches history or logs.
+const ADDENDUM_TOOL_ORIGIN = 'https://addendumtool.netlify.app';
+var _addendumIframeMounted = false;
+var _addendumReady = false;
+var _addendumIframeEl = null;
+
+function mountAddendumIframeOnce() {
+  if (_addendumIframeMounted) return;
+  _addendumIframeMounted = true;
+
+  const wrap = document.getElementById('addendum-iframe-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'addendum-iframe';
+  iframe.src = ADDENDUM_TOOL_ORIGIN;
+  iframe.title = 'Addendum Creator';
+  iframe.style.cssText = 'width:100%;min-height:600px;border:none;display:block';
+  wrap.appendChild(iframe);
+  _addendumIframeEl = iframe;
+
+  // Origin check is mandatory — never trust a message without verifying event.origin first,
+  // since window.postMessage listeners receive messages from any page, not just this iframe.
+  window.addEventListener('message', function(event) {
+    if (event.origin !== ADDENDUM_TOOL_ORIGIN) return;
+    if (event.data && event.data.type === 'ADDENDUM_TOOL_READY_V1') {
+      _addendumReady = true;
+      const statusEl = document.getElementById('addendum-status');
+      const sendBtn = document.getElementById('addendum-send-btn');
+      if (statusEl) { statusEl.textContent = '✓ Addendum Creator ready — fill in the fields above, then click Send'; statusEl.style.color = 'var(--green, #2e7d32)'; }
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; sendBtn.style.cursor = 'pointer'; }
+    }
+  });
+
+  const statusEl = document.getElementById('addendum-status');
+  if (statusEl) { statusEl.textContent = '⏳ Waiting for Addendum Creator to load...'; statusEl.style.color = 'var(--text-mid)'; }
+}
+
+// Builds one removable row for the Related/Unrelated condition lists.
+function addAddendumListRow(containerId, kind, prefillValue) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'addendum-condition-input';
+  input.placeholder = kind === 'related' ? 'e.g. Malnutrition' : 'e.g. Hypertension';
+  input.value = prefillValue || '';
+  input.style.cssText = 'flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;outline:none';
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '🗑';
+  removeBtn.style.cssText = 'flex-shrink:0;padding:6px 10px;background:none;color:#c0392b;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;cursor:pointer';
+  removeBtn.addEventListener('click', function() { row.remove(); });
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
+// Builds one removable {item, reason} row for the Unrelated Items/Services/Drugs list.
+function addAddendumItemRow(prefillItem, prefillReason) {
+  const container = document.getElementById('add-items-list');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap';
+  const itemInput = document.createElement('input');
+  itemInput.type = 'text';
+  itemInput.className = 'addendum-item-input';
+  itemInput.placeholder = 'Item / service / drug';
+  itemInput.value = prefillItem || '';
+  itemInput.style.cssText = 'flex:1;min-width:160px;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;outline:none';
+  const reasonInput = document.createElement('input');
+  reasonInput.type = 'text';
+  reasonInput.className = 'addendum-reason-input';
+  reasonInput.placeholder = 'Reason unrelated';
+  reasonInput.value = prefillReason || '';
+  reasonInput.style.cssText = 'flex:1.5;min-width:200px;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;outline:none';
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '🗑';
+  removeBtn.style.cssText = 'flex-shrink:0;padding:6px 10px;background:none;color:#c0392b;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;cursor:pointer';
+  removeBtn.addEventListener('click', function() { row.remove(); });
+  row.appendChild(itemInput);
+  row.appendChild(reasonInput);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
+// Pulls Primary Diagnosis and Related/Unrelated condition lists from the last Problem List
+// Tiering run (tierCurrentData), if one exists — saves re-typing what's already been tiered.
+function pullAddendumFromTiering() {
+  if (!tierCurrentData || !tierCurrentData.items || tierCurrentData.items.length === 0) {
+    alert('No Problem List Tiering results found. Run "Suggest Tiers" in the Problem List Tiering tab first, then come back and pull from it.');
+    return;
+  }
+
+  const primaryDxEl = document.getElementById('tier-primary');
+  const primaryDxVal = primaryDxEl ? primaryDxEl.value.trim() : '';
+  const addPrimaryDxEl = document.getElementById('add-primary-dx');
+  if (primaryDxVal && addPrimaryDxEl) addPrimaryDxEl.value = primaryDxVal;
+
+  const relatedListEl = document.getElementById('add-related-list');
+  const unrelatedListEl = document.getElementById('add-unrelated-list');
+  if (relatedListEl) relatedListEl.innerHTML = '';
+  if (unrelatedListEl) unrelatedListEl.innerHTML = '';
+
+  var relatedCount = 0, unrelatedCount = 0;
+  tierCurrentData.items.forEach(function(it) {
+    if (!it.diagnosis) return;
+    var effectiveRelatedness = it.hospiceRelatedness;
+    if (effectiveRelatedness === 'uncertain' && it.relatednessLean) { effectiveRelatedness = it.relatednessLean; }
+    if (effectiveRelatedness === 'unrelated') {
+      addAddendumListRow('add-unrelated-list', 'unrelated', it.diagnosis);
+      unrelatedCount++;
+    } else {
+      // related, or uncertain-with-no-lean — default to related for nurse review, matching how
+      // the Tiering results themselves flag uncertain items for review rather than dropping them.
+      addAddendumListRow('add-related-list', 'related', it.diagnosis);
+      relatedCount++;
+    }
+  });
+
+  alert('Pulled ' + tierCurrentData.items.length + ' diagnoses from Problem List Tiering: ' + relatedCount + ' related, ' + unrelatedCount + ' unrelated. Review both lists before sending.');
+}
+
+function clearAddendumForm() {
+  ['add-patient-name', 'add-mrn', 'add-primary-dx', 'add-dx-categories'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const hospiceEl = document.getElementById('add-hospice-name');
+  if (hospiceEl) hospiceEl.value = 'Luminos Hospice';
+  ['add-related-list', 'add-unrelated-list', 'add-items-list'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+}
+
+function sendToAddendumCreator() {
+  if (!_addendumReady || !_addendumIframeEl) {
+    alert('The Addendum Creator hasn\'t finished loading yet. Please wait a moment and try again.');
+    return;
+  }
+
+  const getVal = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+  const relatedConditions = Array.prototype.slice.call(document.querySelectorAll('#add-related-list .addendum-condition-input'))
+    .map(function(i) { return i.value.trim(); }).filter(Boolean);
+  const unrelatedConditions = Array.prototype.slice.call(document.querySelectorAll('#add-unrelated-list .addendum-condition-input'))
+    .map(function(i) { return i.value.trim(); }).filter(Boolean);
+
+  const itemRows = document.querySelectorAll('#add-items-list > div');
+  const items = Array.prototype.slice.call(itemRows).map(function(row) {
+    const itemInput = row.querySelector('.addendum-item-input');
+    const reasonInput = row.querySelector('.addendum-reason-input');
+    return { item: itemInput ? itemInput.value.trim() : '', reason: reasonInput ? reasonInput.value.trim() : '' };
+  }).filter(function(x) { return x.item; });
+
+  const dxCategoriesRaw = getVal('add-dx-categories');
+  const terminalDxCategoryLabels = dxCategoriesRaw ? dxCategoriesRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+
+  const payload = {
+    patientName: getVal('add-patient-name'),
+    mrn: getVal('add-mrn'),
+    hospiceName: getVal('add-hospice-name'),
+    terminalDxCategoryLabels: terminalDxCategoryLabels,
+    primaryDiagnosisText: getVal('add-primary-dx'),
+    relatedConditions: relatedConditions,
+    unrelatedConditions: unrelatedConditions,
+    items: items
+  };
+
+  _addendumIframeEl.contentWindow.postMessage({
+    type: 'ADDENDUM_IMPORT_V1',
+    payload: payload
+  }, ADDENDUM_TOOL_ORIGIN);
+
+  const statusEl = document.getElementById('addendum-status');
+  if (statusEl) { statusEl.textContent = '✓ Data sent to Addendum Creator'; statusEl.style.color = 'var(--green, #2e7d32)'; }
 }
 
 function switchToIcdRefFromCheckers(btn) {
