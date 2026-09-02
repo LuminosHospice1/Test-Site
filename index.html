@@ -4572,12 +4572,31 @@ function addAddendumListRow(containerId, kind, prefillValue) {
   input.placeholder = kind === 'related' ? 'e.g. Malnutrition' : 'e.g. Hypertension';
   input.value = prefillValue || '';
   input.style.cssText = 'flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;outline:none';
+
+  // Lets the nurse reclassify a diagnosis with one click if they disagree with the system's
+  // related/unrelated call, instead of deleting the row and retyping it into the other list.
+  const moveBtn = document.createElement('button');
+  moveBtn.type = 'button';
+  const targetContainerId = kind === 'related' ? 'add-unrelated-list' : 'add-related-list';
+  const targetKind = kind === 'related' ? 'unrelated' : 'related';
+  moveBtn.textContent = kind === 'related' ? '↔ Move to Unrelated' : '↔ Move to Related';
+  moveBtn.title = 'Move to ' + (kind === 'related' ? 'Unrelated' : 'Related') + ' Conditions';
+  moveBtn.style.cssText = 'flex-shrink:0;padding:6px 10px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.74rem;font-weight:600;cursor:pointer;white-space:nowrap';
+  moveBtn.addEventListener('click', function() {
+    const currentVal = input.value.trim();
+    row.remove();
+    addAddendumListRow(targetContainerId, targetKind, currentVal);
+  });
+
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
   removeBtn.textContent = '🗑';
+  removeBtn.title = 'Remove';
   removeBtn.style.cssText = 'flex-shrink:0;padding:6px 10px;background:none;color:#c0392b;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.78rem;cursor:pointer';
   removeBtn.addEventListener('click', function() { row.remove(); });
+
   row.appendChild(input);
+  row.appendChild(moveBtn);
   row.appendChild(removeBtn);
   container.appendChild(row);
 }
@@ -4630,8 +4649,12 @@ function pullAddendumFromTiering() {
   if (unrelatedListEl) unrelatedListEl.innerHTML = '';
 
   var relatedCount = 0, unrelatedCount = 0;
+  var seenDiagnoses = {};
   tierCurrentData.items.forEach(function(it) {
     if (!it.diagnosis) return;
+    var normalizedKey = it.diagnosis.trim().toLowerCase();
+    if (seenDiagnoses[normalizedKey]) return; // skip duplicate — already added once
+    seenDiagnoses[normalizedKey] = true;
     var effectiveRelatedness = it.hospiceRelatedness;
     if (effectiveRelatedness === 'uncertain' && it.relatednessLean) { effectiveRelatedness = it.relatednessLean; }
     if (effectiveRelatedness === 'unrelated') {
@@ -4668,11 +4691,20 @@ function sendToAddendumCreator() {
   }
 
   const getVal = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const dedupeCaseInsensitive = function(arr) {
+    const seen = {};
+    return arr.filter(function(s) {
+      const key = s.toLowerCase();
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  };
 
-  const relatedConditions = Array.prototype.slice.call(document.querySelectorAll('#add-related-list .addendum-condition-input'))
-    .map(function(i) { return i.value.trim(); }).filter(Boolean);
-  const unrelatedConditions = Array.prototype.slice.call(document.querySelectorAll('#add-unrelated-list .addendum-condition-input'))
-    .map(function(i) { return i.value.trim(); }).filter(Boolean);
+  const relatedConditions = dedupeCaseInsensitive(Array.prototype.slice.call(document.querySelectorAll('#add-related-list .addendum-condition-input'))
+    .map(function(i) { return i.value.trim(); }).filter(Boolean));
+  const unrelatedConditions = dedupeCaseInsensitive(Array.prototype.slice.call(document.querySelectorAll('#add-unrelated-list .addendum-condition-input'))
+    .map(function(i) { return i.value.trim(); }).filter(Boolean));
 
   const itemRows = document.querySelectorAll('#add-items-list > div');
   const items = Array.prototype.slice.call(itemRows).map(function(row) {
