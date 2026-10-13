@@ -14831,8 +14831,7 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
 
       <div style="margin-top:18px;border-top:2px solid var(--border);padding-top:18px">
         <div style="font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:6px">📋 Step 2 — Paste Copilot's Output Here</div>
-        <div class="alert info" style="margin-bottom:10px;font-size:.82rem"><span>✂️</span><div>Paste <strong>only the narrative</strong> from Copilot — stop before the <code style="background:#e8edf8;padding:1px 5px;border-radius:3px">--- ELEMENT CHECKLIST ---</code> separator line. The checklist will appear automatically below. Do not paste the checklist section into Firenote.</div></div>
-        <textarea id="narr-paste-back" style="width:100%;min-height:200px;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.87rem;resize:vertical;outline:none;line-height:1.6" placeholder="Paste Copilot's narrative output here. Edit it to reflect your clinical language and judgment before copying into Firenote..." oninput="handleNarrativePasteBack()" onpaste="setTimeout(handleNarrativePasteBack, 50)"></textarea>
+        <textarea id="narr-paste-back" style="width:100%;min-height:200px;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.87rem;resize:vertical;outline:none;line-height:1.6" placeholder="Paste Copilot's full response here — the element checklist is pulled out automatically. Edit the narrative to reflect your clinical language and judgment before copying into Firenote..." oninput="handleNarrativePasteBack()" onpaste="setTimeout(handleNarrativePasteBack, 50)"></textarea>
 
         <div id="narr-meta-warning" style="display:none;margin-top:10px;padding:10px 14px;background:#fdf2f1;border:2px solid #c0392b;border-radius:7px;font-size:.83rem;color:#7a2020;line-height:1.55"></div>
 
