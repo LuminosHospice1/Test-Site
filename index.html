@@ -373,6 +373,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <h1>LUMINOS HOSPICE <span>ADMISSION TOOLS</span></h1>
       
     </div>
+    <button type="button" class="split-open-btn" onclick="openFirenoteSplit()" title="Open Firenote next to this tool in the same window">🔀 Side-by-side with Firenote</button>
   </div>
   <div class="tab-bar">
     <div class="tab-inner">
@@ -14641,4 +14642,43 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
   table.dtable{min-width:0;max-width:100%}
 }
 </style>
+<style id="split-view-mode">
+/* ── SIDE-BY-SIDE WITH FIRENOTE (optional) ───────────────────────────
+   Button opens split-test.html (Firenote + this tool in one window).
+   When this tool is loaded inside that page, html gets .in-split:
+   button hidden, header slimmed so more of the tool fits. */
+.split-open-btn{margin-left:auto;flex-shrink:0;min-height:40px;padding:0 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(201,151,44,.15);color:#fff;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.split-open-btn:hover{background:rgba(201,151,44,.3)}
+@media(max-width:700px){.split-open-btn{display:none}} /* too narrow for two panes */
+html.in-split .split-open-btn{display:none}
+html.in-split .hdr-top{padding:4px 12px}
+html.in-split .hdr-logo{width:26px;height:26px}
+html.in-split .hdr-text h1{font-size:.85rem}
+</style>
+<script id="split-view-mode-js">
+(function(){
+  // Are we the tool pane inside the split page? Same-origin check only —
+  // nothing from Firenote is read (the browser blocks that anyway).
+  try{
+    if (window.top !== window.self && /split-test\.html/.test(window.top.location.pathname)) {
+      document.documentElement.classList.add('in-split');
+    }
+  }catch(e){ /* framed by another site — leave normal layout */ }
+})();
+// True if the nurse has typed or checked anything that a reload would wipe.
+function toolHasEnteredData(doc){
+  doc = doc || document;
+  const fields = doc.querySelectorAll('input:not([type=search]):not([type=button]):not([type=submit]), textarea, select');
+  for (const el of fields) {
+    if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked !== el.defaultChecked) return true; }
+    else if (el.tagName === 'SELECT') { if (el.selectedIndex > 0 && !el.options[el.selectedIndex].defaultSelected) return true; }
+    else if (el.value.trim() && el.value !== el.defaultValue) return true;
+  }
+  return false;
+}
+function openFirenoteSplit(){
+  if (toolHasEnteredData() && !confirm('Switching to side-by-side view restarts the tool, so anything you have entered or checked here will be cleared.\n\nTip: choose your view at the start of the admission.\n\nSwitch now?')) return;
+  window.location.href = 'split-test.html';
+}
+</script>
 </body>

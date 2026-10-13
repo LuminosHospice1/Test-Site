@@ -37,7 +37,7 @@ iframe{border:0;display:block}
     <button onclick="nudge(1)" title="Larger text">A+</button>
   </span>
   <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap</button>
-  <a href="https://luminos.firenote.io/" target="_blank" rel="noopener noreferrer">New tab</a>
+  <button onclick="exitSplit()" title="Close Firenote and go back to the tool by itself">✕ Tool only</button>
 </div>
 <div class="split" id="split">
   <!-- Firenote pane. Cross-origin: the browser itself prevents this page
@@ -48,7 +48,7 @@ iframe{border:0;display:block}
   </div>
   <div class="divider" id="divider" aria-label="Drag to resize"></div>
   <div class="pane" id="paneTool">
-    <iframe src="index.html" title="Luminos Admission Tools" allow="clipboard-read; clipboard-write"></iframe>
+    <iframe id="toolFrame" src="index.html" title="Luminos Admission Tools" allow="clipboard-read; clipboard-write"></iframe>
   </div>
 </div>
 <script>
@@ -83,6 +83,15 @@ function nudge(d){ fit = true; step = Math.max(0, Math.min(STEPS.length-1, step 
 fitBtn.addEventListener('click', () => { fit = !fit; save(); layout(); });
 new ResizeObserver(layout).observe(emrPane);
 layout();
+
+/* ── Back to tool-only view. Checks the TOOL pane (same site) for entered
+   data before leaving; never looks at the Firenote pane. */
+function exitSplit(){
+  let dirty = false;
+  try{ const w = document.getElementById('toolFrame').contentWindow; dirty = !!(w.toolHasEnteredData && w.toolHasEnteredData()); }catch(e){}
+  if (dirty && !confirm('Going back to tool-only view restarts the tool, so anything you have entered or checked will be cleared.\n\nSwitch now?')) return;
+  window.location.href = 'index.html';
+}
 
 /* ── Drag-to-resize divider (touch + mouse). Reads pointer position only. */
 (function(){
