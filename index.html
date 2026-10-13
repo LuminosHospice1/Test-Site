@@ -8811,11 +8811,19 @@ function buildNarrativePrompt() {
 
   if (!draft) { alert('Please enter your draft narrative or notes first.'); return; }
 
+  // Realistic length target based on the nurse's own draft. Drafts are often shorthand that
+  // grows when written as sentences, so allow up to ~1.8x — floor 150 / ceiling 300 words.
+  // Auditors expect nurse-length notes, not essays.
+  const draftWords = draft.split(/\s+/).filter(Boolean).length;
+  const narrMax = Math.max(150, Math.min(300, Math.round(draftWords * 1.8)));
+  const narrMin = Math.max(100, Math.round(narrMax * 0.6));
+  const narrTarget = narrMin + '–' + narrMax + ' words';
+
   const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, MAC audit guidance, and NHPCO guidelines.
 
-A hospice admission nurse needs help strengthening a clinical nursing narrative. Please:
-1. Rewrite it with stronger clinical language in first-person nursing voice, past tense, professional clinical tone, paragraph form — no bullet points
-2. Ensure ALL of the following required hospice admission elements are present and clearly documented:
+A hospice admission nurse needs help tightening up her admission narrative. Please:
+1. Rewrite it so it reads like a skilled, experienced hospice RN wrote it herself at the end of the visit — clear, specific, and believable to an auditor as genuine nurse charting (see LENGTH AND VOICE RULES below)
+2. Make sure each of these required hospice admission elements that IS in the draft comes through clearly (routine items like medication review, depression screening, verbal certification, and IDG coordination need only one short sentence each):
    - Patient and caregiver identification and relationship
    - Primary diagnosis and related conditions with symptom burden
    - LCD criteria documentation (functional decline, clinical indicators supporting 6-month prognosis)
@@ -8830,6 +8838,17 @@ A hospice admission nurse needs help strengthening a clinical nursing narrative.
 
 CRITICAL — DO NOT WRITE ABOUT GAPS INSIDE THE NARRATIVE ITSELF: The STRENGTHENED NARRATIVE section must describe ONLY what actually happened during the visit and what was actually assessed or documented in the draft notes below. NEVER write sentences in the narrative stating that something "was not included," "was not documented," "should be completed," "is missing from the notes," or similar — that kind of statement must NEVER appear inside the narrative text, because this narrative may be copied directly into the permanent clinical record, and a sentence documenting that documentation is missing becomes a compliance liability once it's in the chart. If an element is missing or incomplete, simply omit any mention of it from the narrative and instead flag it ONLY in the ELEMENT CHECKLIST section below, marked MISSING or PARTIAL. The narrative and the checklist serve different purposes: the narrative describes the visit as documented; the checklist tells the nurse what still needs follow-up before this narrative can be considered complete.
 
+LENGTH AND VOICE RULES — THESE MATTER AS MUCH AS CONTENT:
+- LENGTH: Keep it close to the length of the nurse's draft. Target ${narrTarget}. Never pad. If the draft is short, add only enough words to state the documented facts clearly — do not invent detail to fill space. A real admission narrative is a few short paragraphs, not an essay.
+- VOICE: First person, past tense, the way a nurse actually charts ("I met with pt and daughter at bedside…", "Pt reports…", "Daughter states…"). Plain, direct sentences of normal length. Common nursing abbreviations are fine where a nurse would use them (pt, CG, PRN, SOB, PPS, FAST, O2, BLE, hx).
+- FACTS OVER ADJECTIVES: Keep every number, score, and observation from the draft (weights, PPS/FAST/MAC, pain scores, intake, hospitalizations, falls). These carry the prognosis — not descriptive language.
+- DO NOT USE these phrasings, which read as AI-written: "comprehensive", "holistic", "robust", "multifaceted", "meticulous", "it is important to note", "notably", "furthermore", "additionally", "moreover", "demonstrates", "underscores", "highlights", "in alignment with", "ensuring", "in order to", "a testament to", "navigating", "journey", strings of 3+ adjectives, or sentences that restate the same point twice.
+- NO REGULATORY LANGUAGE IN THE NARRATIVE: never mention CMS, LCD, 42 CFR, Medicare criteria, "meets eligibility", or "supports a prognosis of six months or less" — describe the clinical findings and let them speak for themselves.
+- Do not add symptoms, negatives ("denies X, Y, Z…"), findings, or education that are not in the draft.
+
+TONE EXAMPLE (style only — do NOT copy any content from it):
+"I met with pt and her daughter (primary CG) at bedside. Pt is bedbound, PPS 30%, and has lost 12 lbs since August per daughter. She is eating 2–3 bites per meal and sleeps most of the day. Reported pain 4/10 to lower back, relieved with PRN morphine. Hospice philosophy, covered meds, and DME reviewed with daughter, who verbalized understanding and agreed with comfort-focused goals."
+
 PRIMARY HOSPICE DIAGNOSIS: ${dx || 'Not specified — infer from narrative'}
 
 DRAFT NARRATIVE / NOTES:
@@ -8838,7 +8857,7 @@ ${draft}
 FORMAT YOUR RESPONSE EXACTLY AS:
 
 STRENGTHENED NARRATIVE:
-[Full rewritten narrative — paragraphs only, no headers, no bullets, first-person past tense. Describes ONLY what was actually documented/assessed. Contains NO commentary about missing, absent, or incomplete documentation — that belongs exclusively in the checklist below.]
+[Rewritten narrative — ${narrTarget}, 2–4 short paragraphs, no headers, no bullets, first-person past tense, written the way an experienced hospice RN actually charts. Describes ONLY what was actually documented/assessed. Contains NO commentary about missing, absent, or incomplete documentation — that belongs exclusively in the checklist below.]
 
 ---
 
@@ -8868,6 +8887,7 @@ function clearNarrative() {
   const wrap = document.getElementById('narr-output-wrap');
   if (wrap) wrap.classList.remove('show');
   const pasteBack = document.getElementById('narr-paste-back');
+  var _nlc = document.getElementById('narr-length-check'); if (_nlc) _nlc.style.display = 'none';
   if (pasteBack) pasteBack.value = '';
   const chkDisplay = document.getElementById('narr-chk-display');
   if (chkDisplay) chkDisplay.classList.remove('show');
@@ -8912,6 +8932,36 @@ function handleNarrativePasteBack() {
   if (!ta) return;
   const cleaned = parseNarrativeChecklist(ta.value);
   if (cleaned !== ta.value) ta.value = cleaned;
+  showNarrativeLengthCheck(ta);
+}
+
+// Flags a pasted-back narrative that's longer or more "AI-sounding" than a nurse would
+// realistically chart, so it can be trimmed before it goes into Firenote.
+var NARR_AI_PHRASES = /\b(comprehensive|holistic|robust|multifaceted|meticulous(ly)?|it is important to note|notably|furthermore|moreover|underscores?|in alignment with|a testament to|navigat(e|ing)|journey)\b/gi;
+function showNarrativeLengthCheck(ta) {
+  var box = document.getElementById('narr-length-check');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'narr-length-check';
+    box.style.cssText = 'margin-top:8px;padding:9px 12px;border-radius:6px;font-size:.82rem;line-height:1.5;display:none';
+    ta.parentNode.insertBefore(box, ta.nextSibling);
+  }
+  var text = (ta.value || '').trim();
+  if (!text) { box.style.display = 'none'; return; }
+  var words = text.split(/\s+/).filter(Boolean).length;
+  var hits = (text.match(NARR_AI_PHRASES) || []).map(function(w) { return w.toLowerCase(); });
+  hits = hits.filter(function(w, i) { return hits.indexOf(w) === i; });
+  var notes = [];
+  if (words > 350) notes.push('<strong>' + words + ' words</strong> — long for an admission narrative. Most nurse-written narratives run 150–300 words. Consider trimming, or re-run Copilot and ask it to "shorten to under 300 words and keep it in my voice."');
+  if (hits.length) notes.push('Phrases that tend to read as AI-written: <em>' + hits.map(escapeHtml).join(', ') + '</em>. Consider rewording these in your own words.');
+  if (!notes.length) {
+    box.style.cssText += ';background:var(--green-bg);color:var(--green);border:1px solid #bfe3cf';
+    box.innerHTML = '✓ ' + words + ' words — realistic length.';
+  } else {
+    box.style.cssText += ';background:var(--amber-bg);color:#7a4200;border:1px solid #ffe082';
+    box.innerHTML = '⚠ ' + notes.join('<br>');
+  }
+  box.style.display = 'block';
 }
 
 // Tracks the most recently parsed checklist state (missing/partial counts) so
