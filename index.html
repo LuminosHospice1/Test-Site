@@ -8979,6 +8979,14 @@ function parseNarrativeChecklist(rawText) {
     }
   }
 
+  // Strip Copilot's own section label ("STRENGTHENED NARRATIVE:", "**Revised Narrative**", "## Narrative")
+  // from the top, and the "---" divider it leaves before the checklist, so the box holds only the
+  // narrative text that goes into Firenote.
+  narrativePart = narrativePart
+    .replace(/^\s*(?:#{1,6}\s*)?(?:\*{1,2})?\s*(?:STRENGTHENED|REVISED|REWRITTEN|UPDATED|FINAL|IMPROVED)?\s*(?:RN\s+|NURSING\s+|ADMISSION\s+)*NARRATIVE\s*:?\s*(?:\*{1,2})?\s*:?[ \t]*(?:\r?\n)+/i, '')
+    .replace(/(?:\r?\n)\s*[-–—_*]{3,}\s*$/, '')
+    .trim();
+
   // Safety-net check: flag any sentence in the narrative itself that describes documentation
   // gaps rather than the visit — this must never be copied into the permanent clinical record.
   var metaWarningEl = document.getElementById('narr-meta-warning');
