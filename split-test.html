@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Firenote Split View Test</title>
+<style>
+:root{--navy:#1a2744;--navy-mid:#2d3f6b;--gold:#c9972c}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--navy);font-family:-apple-system,'Segoe UI',Arial,sans-serif}
+.bar{height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--navy);color:#fff;font-size:.8rem}
+.bar strong{color:var(--gold);margin-right:auto;white-space:nowrap}
+.bar button,.bar a{min-height:34px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+.split{display:flex;height:calc(100% - 44px)}
+.split.swapped{flex-direction:row-reverse}
+.pane{position:relative;min-width:200px;background:#fff}
+#paneEmr{flex:0 0 55%}
+#paneTool{flex:1 1 auto}
+iframe{width:100%;height:100%;border:0;display:block}
+.divider{flex:0 0 14px;background:var(--navy-mid);cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
+.divider::after{content:"";width:4px;height:44px;border-radius:2px;background:var(--gold)}
+.dragging iframe{pointer-events:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>Firenote Split View — TEST</strong>
+  <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap sides</button>
+  <a href="https://luminos.firenote.io/" target="_blank" rel="noopener noreferrer">Open Firenote in new tab</a>
+</div>
+<div class="split" id="split">
+  <!-- Firenote pane. Cross-origin: the browser itself prevents this page
+       from reading anything inside it. Nothing here touches its content. -->
+  <div class="pane" id="paneEmr">
+    <iframe src="https://luminos.firenote.io/" title="Firenote" referrerpolicy="no-referrer"
+      allow="clipboard-read; clipboard-write"></iframe>
+  </div>
+  <div class="divider" id="divider" aria-label="Drag to resize"></div>
+  <div class="pane" id="paneTool">
+    <iframe src="index.html" title="Luminos Admission Tools" allow="clipboard-read; clipboard-write"></iframe>
+  </div>
+</div>
+<script>
+// Drag-to-resize divider (touch + mouse). Only reads pointer position.
+(function(){
+  const split=document.getElementById('split'), div=document.getElementById('divider'), emr=document.getElementById('paneEmr');
+  let on=false;
+  div.addEventListener('pointerdown',e=>{on=true;div.setPointerCapture(e.pointerId);split.classList.add('dragging')});
+  div.addEventListener('pointermove',e=>{
+    if(!on) return;
+    const r=split.getBoundingClientRect();
+    let pct=(e.clientX-r.left)/r.width*100;
+    if(split.classList.contains('swapped')) pct=100-pct;
+    emr.style.flexBasis=Math.min(80,Math.max(20,pct))+'%';
+  });
+  const stop=()=>{on=false;split.classList.remove('dragging')};
+  div.addEventListener('pointerup',stop); div.addEventListener('pointercancel',stop);
+})();
+</script>
+</body>
+</html>
