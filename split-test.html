@@ -7,32 +7,43 @@
 <style>
 :root{--navy:#1a2744;--navy-mid:#2d3f6b;--gold:#c9972c}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--navy);font-family:-apple-system,'Segoe UI',Arial,sans-serif}
-.bar{height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--navy);color:#fff;font-size:.8rem}
-.bar strong{color:var(--gold);margin-right:auto;white-space:nowrap}
-.bar button,.bar a{min-height:34px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+html,body{height:100%;background:var(--navy);font-family:-apple-system,'Segoe UI',Arial,sans-serif;overflow:hidden}
+.bar{height:44px;display:flex;align-items:center;gap:6px;padding:0 8px;background:var(--navy);color:#fff;font-size:.78rem}
+.bar strong{color:var(--gold);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button,.bar a{min-height:34px;min-width:34px;padding:0 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;white-space:nowrap}
+.bar button.on{border-color:var(--gold);background:rgba(201,151,44,.2)}
+.zoom{display:inline-flex;gap:4px;align-items:center}
 .split{display:flex;height:calc(100% - 44px)}
 .split.swapped{flex-direction:row-reverse}
-.pane{position:relative;min-width:200px;background:#fff}
+.pane{position:relative;min-width:200px;background:#fff;overflow:hidden}
 #paneEmr{flex:0 0 55%}
 #paneTool{flex:1 1 auto}
-iframe{width:100%;height:100%;border:0;display:block}
+iframe{border:0;display:block}
+#paneTool iframe{width:100%;height:100%}
+/* Firenote frame: rendered at a desktop width, then scaled to fit the pane */
+#emrFrame{position:absolute;top:0;left:0;transform-origin:0 0}
 .divider{flex:0 0 14px;background:var(--navy-mid);cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
 .divider::after{content:"";width:4px;height:44px;border-radius:2px;background:var(--gold)}
 .dragging iframe{pointer-events:none}
+@media(max-width:700px){.bar strong{display:none}}
 </style>
 </head>
 <body>
 <div class="bar">
   <strong>Firenote Split View — TEST</strong>
-  <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap sides</button>
-  <a href="https://luminos.firenote.io/" target="_blank" rel="noopener noreferrer">Open Firenote in new tab</a>
+  <span class="zoom">
+    <button id="fitBtn" class="on" title="Shrink Firenote to fit with no side-scrolling">Fit</button>
+    <button onclick="nudge(-1)" title="Smaller text, more fits">A−</button>
+    <button onclick="nudge(1)" title="Larger text">A+</button>
+  </span>
+  <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap</button>
+  <a href="https://luminos.firenote.io/" target="_blank" rel="noopener noreferrer">New tab</a>
 </div>
 <div class="split" id="split">
   <!-- Firenote pane. Cross-origin: the browser itself prevents this page
-       from reading anything inside it. Nothing here touches its content. -->
+       from reading anything inside it. This page only sets the frame's size. -->
   <div class="pane" id="paneEmr">
-    <iframe src="https://luminos.firenote.io/" title="Firenote" referrerpolicy="no-referrer"
+    <iframe id="emrFrame" src="https://luminos.firenote.io/" title="Firenote" referrerpolicy="no-referrer"
       allow="clipboard-read; clipboard-write"></iframe>
   </div>
   <div class="divider" id="divider" aria-label="Drag to resize"></div>
@@ -41,20 +52,52 @@ iframe{width:100%;height:100%;border:0;display:block}
   </div>
 </div>
 <script>
-// Drag-to-resize divider (touch + mouse). Only reads pointer position.
+/* ── Fit-to-pane scaling for Firenote ───────────────────────────────
+   Firenote is laid out for roughly desktop width. We give its frame a
+   "virtual" width (default 1100px) and scale it down to the pane's real
+   width, so nothing needs side-scrolling. A−/A+ change the virtual width
+   (smaller virtual width = bigger text). Fit off = native size. */
+const emrPane = document.getElementById('paneEmr');
+const emrFrame = document.getElementById('emrFrame');
+const fitBtn = document.getElementById('fitBtn');
+const STEPS = [1400, 1250, 1100, 980, 880, 800];   // virtual widths, small text → large text
+let step = 2, fit = true;
+try{
+  const s = JSON.parse(localStorage.getItem('fnSplitView') || '{}');
+  if (Number.isInteger(s.step) && STEPS[s.step]) step = s.step;
+  if (typeof s.fit === 'boolean') fit = s.fit;
+}catch(e){}
+function save(){ try{ localStorage.setItem('fnSplitView', JSON.stringify({step, fit})); }catch(e){} }
+
+function layout(){
+  const w = emrPane.clientWidth, h = emrPane.clientHeight;
+  const virtualW = STEPS[step];
+  const scale = fit ? Math.min(1, w / virtualW) : 1;
+  const frameW = fit ? Math.max(w, virtualW) : w;
+  emrFrame.style.width  = (fit && scale < 1 ? virtualW : frameW) + 'px';
+  emrFrame.style.height = (h / scale) + 'px';
+  emrFrame.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+  fitBtn.classList.toggle('on', fit);
+}
+function nudge(d){ fit = true; step = Math.max(0, Math.min(STEPS.length-1, step + d)); save(); layout(); }
+fitBtn.addEventListener('click', () => { fit = !fit; save(); layout(); });
+new ResizeObserver(layout).observe(emrPane);
+layout();
+
+/* ── Drag-to-resize divider (touch + mouse). Reads pointer position only. */
 (function(){
-  const split=document.getElementById('split'), div=document.getElementById('divider'), emr=document.getElementById('paneEmr');
-  let on=false;
-  div.addEventListener('pointerdown',e=>{on=true;div.setPointerCapture(e.pointerId);split.classList.add('dragging')});
-  div.addEventListener('pointermove',e=>{
-    if(!on) return;
-    const r=split.getBoundingClientRect();
-    let pct=(e.clientX-r.left)/r.width*100;
-    if(split.classList.contains('swapped')) pct=100-pct;
-    emr.style.flexBasis=Math.min(80,Math.max(20,pct))+'%';
+  const split = document.getElementById('split'), div = document.getElementById('divider');
+  let on = false;
+  div.addEventListener('pointerdown', e => { on = true; div.setPointerCapture(e.pointerId); split.classList.add('dragging'); });
+  div.addEventListener('pointermove', e => {
+    if (!on) return;
+    const r = split.getBoundingClientRect();
+    let pct = (e.clientX - r.left) / r.width * 100;
+    if (split.classList.contains('swapped')) pct = 100 - pct;
+    emrPane.style.flexBasis = Math.min(80, Math.max(20, pct)) + '%';
   });
-  const stop=()=>{on=false;split.classList.remove('dragging')};
-  div.addEventListener('pointerup',stop); div.addEventListener('pointercancel',stop);
+  const stop = () => { on = false; split.classList.remove('dragging'); };
+  div.addEventListener('pointerup', stop); div.addEventListener('pointercancel', stop);
 })();
 </script>
 </body>
