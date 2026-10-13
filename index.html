@@ -3914,6 +3914,7 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
     </div>
 
     <div id="tier-check" class="checker-section">
+      <div id="tier-fn-list" class="tier-fn-list" style="display:none"></div>
       <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🗂️</span><div>
         <strong>How this works:</strong> Paste the active problem list, identify the primary hospice diagnosis, and AI will suggest a tier (1, 2, or 3) for each diagnosis using the three-tier framework from the Care Plan walkthrough — plus flag any commonly-related diagnoses that may be missing from the list. <strong>These are suggestions for nurse review, not final care plan decisions.</strong>
       </div></div>
@@ -12548,6 +12549,7 @@ function escapeHtml(str) {
 }
 
 function clearTierChecker() {
+  var _tfl = document.getElementById('tier-fn-list'); if (_tfl) { _tfl.style.display = 'none'; _tfl.innerHTML = ''; }
   ['tier-primary','tier-input','tier-patient-details'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -12609,6 +12611,24 @@ function buildLocalIcdDatabase() {
 
 // Additional synonym/alias mappings not in the Reference database
 var LOCAL_ICD_SYNONYMS = {
+  // Added Oct 2026 after bedside misses — high-frequency entries
+  'type 2 diabetes mellitus': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'E11.9',  label: 'Type 2 diabetes mellitus without complications' },
+    { code: 'E11.65', label: 'Type 2 diabetes mellitus with hyperglycemia' },
+    { code: 'E11.649', label: 'Type 2 diabetes mellitus with hypoglycemia without coma' },
+    { code: 'E11.22', label: 'Type 2 diabetes mellitus with diabetic chronic kidney disease' },
+    { code: 'E11.40', label: 'Type 2 diabetes mellitus with diabetic neuropathy, unspecified' },
+    { code: 'E11.51', label: 'Type 2 diabetes mellitus with diabetic peripheral angiopathy without gangrene' }
+  ]},
+  'mild cognitive impairment': { code: null, desc: null, resolve: false, clarify: true, options: [
+    { code: 'G31.84', label: 'Mild cognitive impairment of uncertain or known etiology' },
+    { code: 'F06.70', label: 'Mild neurocognitive disorder due to known physiological condition without behavioral disturbance' },
+    { code: 'F06.71', label: 'Mild neurocognitive disorder due to known physiological condition with behavioral disturbance' }
+  ]},
+  'stress incontinence': { code: 'N39.3', desc: 'Stress incontinence (female) (male)', resolve: true },
+  'urge incontinence': { code: 'N39.41', desc: 'Urge incontinence', resolve: true },
+  'mixed incontinence': { code: 'N39.46', desc: 'Mixed incontinence', resolve: true },
+  'incontinence of urine': { code: 'R32', desc: 'Unspecified urinary incontinence', resolve: true },
   // Exact-match overrides — these always resolve to a specific code
   'essential hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
   'hypertension': { code: 'I10', desc: 'Essential (primary) hypertension', resolve: true },
@@ -13245,6 +13265,15 @@ function fcCancel() {
 
 // ─── END F-CODE ENGINE ─────────────────────────────────────────────────────
 
+(function addIcdSynonymAliases(){
+  var T = LOCAL_ICD_SYNONYMS;
+  ['type 2 diabetes','type ii diabetes','type ii diabetes mellitus','diabetes mellitus type 2','diabetes mellitus type ii',
+   'diabetes type 2','dm2','dm 2','dm ii','t2dm','niddm','type 2 dm','dm type 2'].forEach(function(k){ T[k] = T['type 2 diabetes mellitus']; });
+  ['mci','mild cognitive impairment so stated','mild neurocognitive disorder'].forEach(function(k){ T[k] = T['mild cognitive impairment']; });
+  ['urinary stress incontinence'].forEach(function(k){ T[k] = T['stress incontinence']; });
+  ['overactive bladder with incontinence'].forEach(function(k){ T[k] = T['urge incontinence']; });
+})();
+
 function localIcdLookup(diagnosis, hasCancerContext) {
   var norm = normalizeForLookup(diagnosis);
   var orig = diagnosis.toLowerCase().trim();
@@ -13287,15 +13316,28 @@ function localIcdLookup(diagnosis, hasCancerContext) {
   // appearing anywhere inside a longer sentence (pasted paragraph, or a short run-on line
   // joining several conditions with "with"/"and"/"plus") can't silently hijack the whole
   // line and discard everything else that was documented.
+  // Oct 2026: previously the FIRST key found anywhere in the line won, so a generic key
+  // ("incontinence") hijacked specific lines ("stress incontinence", "incontinence of urine")
+  // and offered the wrong family (bowel). Now: the LONGEST matching key wins, and it is only
+  // trusted if every other meaningful word in the line is a harmless filler word. Anything
+  // with an extra clinical qualifier goes to the AI instead of being guessed locally.
   var origWordCount = orig.split(/\s+/).filter(Boolean).length;
   if (origWordCount <= 8) {
+    var HARMLESS = { unspecified:1, chronic:1, acute:1, history:1, hx:1, known:1, dx:1, diagnosis:1, disease:1, disorder:1, condition:1, other:1, the:1, of:1, pt:1, patient:1, noted:1, current:1, active:1 };
     var synKeys = Object.keys(LOCAL_ICD_SYNONYMS);
+    var bestKey = null;
     for (var i = 0; i < synKeys.length; i++) {
       var key = synKeys[i];
       if (key.length > 6 && (orig.indexOf(key) !== -1 || norm.indexOf(key) !== -1)) {
         if (lineLikelyHasMultipleConcepts(norm, key)) { continue; }
-        return LOCAL_ICD_SYNONYMS[key];
+        if (!bestKey || key.length > bestKey.length) bestKey = key;
       }
+    }
+    if (bestKey) {
+      var keyWords = normalizeForLookup(bestKey).split(' ');
+      var extra = norm.split(' ').filter(function(w) { return w && keyWords.indexOf(w) === -1 && !HARMLESS[w] && !/^\d+$/.test(w); });
+      if (extra.length === 0) return LOCAL_ICD_SYNONYMS[bestKey];
+      // else: line says more than the key does — let the AI code it precisely
     }
   }
 
@@ -13331,6 +13373,92 @@ function localIcdLookup(diagnosis, hasCancerContext) {
 
   return null; // send to API
 }
+
+// Pull the JSON object out of an AI reply even if it added a sentence or code fence around it.
+function icdParseAiJson(rawText) {
+  var t = String(rawText || '').replace(/```json|```/g, '').trim();
+  try { return JSON.parse(t); } catch (e) {}
+  var a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a !== -1 && b > a) return JSON.parse(t.slice(a, b + 1));
+  throw new Error('No JSON in AI response');
+}
+
+// ── "Not right? Ask AI" — per-line second opinion ─────────────────────
+// Sends ONLY the diagnosis text for that one line (no patient identifiers) and replaces
+// the line's choices with the AI's best 2-6 candidate codes for the nurse to pick from.
+async function icdAskAiForLine(idx, btnEl) {
+  var item = icdLookupResults[idx];
+  if (!item) return;
+  var orig = btnEl ? btnEl.textContent : '';
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Asking AI…'; }
+  var prompt = 'You are a hospice clinical coding expert. A hospice nurse entered this diagnosis and needs the correct ICD-10-CM code.'
+    + '\n\nDiagnosis: "' + item.diagnosis + '"'
+    + (item.code ? '\nThe code currently suggested is ' + item.code + ' and the nurse says it may be wrong.' : '')
+    + '\n\nReturn the 2-6 most likely valid, billable ICD-10-CM codes, most likely first. Interpret nurse shorthand (DM2, CHF, COPD, MCI, etc.). Never fabricate codes. Never return an empty list.'
+    + '\nFor dementia, return the etiology code (G30.x, G31.x, etc.), not F-codes. Never use G89.3 unless the text ties pain to cancer.'
+    + '\n\nRespond ONLY with JSON: {"options":[{"code":"E11.9","label":"Type 2 diabetes mellitus without complications"}]}';
+  try {
+    var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 800 }) });
+    var data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+    var parsed = icdParseAiJson(data.content && data.content[0] && data.content[0].text);
+    var opts = (parsed.options || []).map(function(o) {
+      return { code: String(o.code || '').toUpperCase().trim(), label: o.label || o.description || o.name || '' };
+    }).filter(function(o) { return /^[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$/.test(o.code) && o.label; });
+    if (!opts.length) throw new Error('AI returned no usable codes');
+    item.options = opts;
+    item.source = 'api';
+    item.code = null; item.description = null;
+    reopenIcdOption(idx); // re-renders the line as a pick-list with these options
+  } catch (e) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = orig; }
+    alert('AI could not suggest codes for this line right now (' + e.message + '). Try again, or use "Other — enter code manually".');
+  }
+}
+
+// Official-style name for a resolved line: the code description, cleaned of
+// "(CODE)" suffixes and guidance text after an em dash; falls back to the nurse's text.
+function icdOfficialName(item) {
+  var d = String(item.description || '').replace(/\s*\([A-Z][0-9][0-9A-Z.]*\)\s*$/, '');
+  d = d.split(' — ')[0].trim();
+  return d || item.diagnosis;
+}
+
+// ── Copy-ready list at the top of Problem List Tiering ──────────────────
+function renderTierFirenoteList() {
+  var box = document.getElementById('tier-fn-list');
+  if (!box) return;
+  var items = icdLookupResults.filter(function(r) { return r.code && r.code !== '__manual__'; });
+  if (!items.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  var primary = icdPrimaryIdx >= 0 ? icdLookupResults[icdPrimaryIdx] : null;
+  var ordered = primary && primary.code ? [primary].concat(items.filter(function(r) { return r !== primary; })) : items;
+  var seenCodes = {};
+  ordered = ordered.filter(function(r) { var k = r.code.toUpperCase(); if (seenCodes[k]) return false; seenCodes[k] = 1; return true; }); // Firenote takes each code once
+  var lines = ordered.map(function(r) { return r.code + ' - ' + icdOfficialName(r); });
+  box.innerHTML = '<div class="tfl-hd"><div><strong>📋 Diagnosis list for Firenote</strong>'
+    + '<span>' + lines.length + ' diagnoses from ICD-10 Lookup' + (primary ? ' · primary listed first' : '') + '</span></div>'
+    + '<button type="button" class="tfl-copy-all" onclick="copyTierFirenoteList(this)">📋 Copy all</button></div>'
+    + '<ol class="tfl-list">' + ordered.map(function(r, i) {
+        return '<li><span class="tfl-text"><b>' + escapeHtml(r.code) + '</b> - ' + escapeHtml(icdOfficialName(r)) + (r === primary ? ' <em>⭐ Primary</em>' : '') + '</span>'
+          + '<button type="button" onclick="copyTierFirenoteLine(this,' + i + ')">Copy</button></li>';
+      }).join('') + '</ol>';
+  box._lines = lines;
+  box.style.display = 'block';
+}
+function tflCopy(text, btn) {
+  var done = function() { var o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(function() { btn.textContent = o; }, 1400); };
+  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done, function() { tflCopyFallback(text); done(); }); }
+  else { tflCopyFallback(text); done(); }
+}
+function tflCopyFallback(text) {
+  var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta);
+  ta.select(); ta.setSelectionRange(0, text.length);
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+function copyTierFirenoteList(btn) { var box = document.getElementById('tier-fn-list'); tflCopy((box._lines || []).join('\n'), btn); }
+function copyTierFirenoteLine(btn, i) { var box = document.getElementById('tier-fn-list'); tflCopy((box._lines || [])[i] || '', btn); }
 
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
@@ -13375,10 +13503,10 @@ async function runIcdLookup() {
   var apiBatchErrors = [];
   if (needsApi.length > 0) {
     btn.textContent = '\u23f3 Coding ' + needsApi.length + ' remaining via AI...';
-    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
-    const ICD_API_JSON_SPEC = '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: "code" and "label" (NOT "description", NOT "name"). Example: [{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"}]\n\nRespond ONLY with valid JSON:\n{"results":[{"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
+    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- ABBREVIATIONS / LAY TERMS: Nurses type shorthand (DM2, T2DM, CHF, COPD, CKD3, MCI, UTI, HTN, A-fib, BPH, OA, PVD). Interpret them clinically and code them; never treat shorthand as unknown.\n- NEVER return an empty result. If you cannot pick one code with confidence, return needsClarification:true with the 2-6 most likely codes as options. A diagnosis with code:null and no options is not allowed.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
+    const ICD_API_JSON_SPEC = '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: "code" and "label" (NOT "description", NOT "name"). Example: [{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"}]\n\nEach result MUST include "line": the number of the diagnosis as listed above, and "diagnosis": the text exactly as given.\n\nRespond ONLY with valid JSON:\n{"results":[{"line":1,"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"line":2,"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
 
-    const ICD_API_BATCH_SIZE = 8;
+    const ICD_API_BATCH_SIZE = 5; // smaller batches = faster responses, well inside the function time limit
     const batches = [];
     for (let bi = 0; bi < needsApi.length; bi += ICD_API_BATCH_SIZE) {
       batches.push(needsApi.slice(bi, bi + ICD_API_BATCH_SIZE));
@@ -13395,14 +13523,39 @@ async function runIcdLookup() {
           const data = await resp.json();
           if (data.error) { errMsg = String(data.error).slice(0, 200); } else {
             const rawText = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
-            try { parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim()); } catch (e) { errMsg = 'Parse error: ' + e.message; }
+            try { parsed = icdParseAiJson(rawText); } catch (e) { errMsg = 'Parse error: ' + e.message; }
           }
         }
       } catch (e) { errMsg = 'Network error: ' + e.message; }
       return { batchLines: batchLines, parsed: parsed, errMsg: errMsg };
     }
 
+    function recordIcdBatch(outcome) {
+      if (!(outcome.parsed && outcome.parsed.results)) return;
+      outcome.parsed.results.forEach(function(r, ri) {
+        // Match by line number first (robust to the AI rewording the diagnosis text),
+        // then by position for single-line calls.
+        var n = parseInt(r.line, 10);
+        var src = (n >= 1 && n <= outcome.batchLines.length) ? outcome.batchLines[n - 1]
+                : (outcome.batchLines.length === 1 ? outcome.batchLines[0] : null);
+        if (src && !apiResults[src]) { apiResults[src] = Object.assign({}, r, { diagnosis: src }); apiResults[src.toLowerCase()] = apiResults[src]; }
+      });
+    }
+
     const batchOutcomes = await Promise.all(batches.map(runIcdApiBatch));
+    batchOutcomes.forEach(recordIcdBatch);
+
+    // Automatic second pass: any line still missing (timeout, bad JSON, skipped by the AI)
+    // is retried on its own, all in parallel, before anything is shown as "not found".
+    var missingAfterFirst = needsApi.filter(function(l) { return !apiResults[l]; });
+    if (missingAfterFirst.length > 0) {
+      btn.textContent = '\u23f3 Re-checking ' + missingAfterFirst.length + ' with AI...';
+      const retryOutcomes = await Promise.all(missingAfterFirst.map(function(l) { return runIcdApiBatch([l]); }));
+      retryOutcomes.forEach(recordIcdBatch);
+      // Only lines that failed BOTH passes are reported as errors below.
+      batchOutcomes.length = 0;
+      retryOutcomes.forEach(function(o) { batchOutcomes.push(o); });
+    }
 
     batchOutcomes.forEach(function(outcome) {
       if (outcome.parsed && outcome.parsed.results) {
@@ -14133,6 +14286,8 @@ function sendIcdToTierChecker() {
       const input = document.getElementById('tier-input');
       if (input) { input.value = diagList; input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
+      renderTierFirenoteList();
+
       if (primaryItem) {
         const primaryField = document.getElementById('tier-primary');
         if (primaryField) {
@@ -14145,7 +14300,8 @@ function sendIcdToTierChecker() {
 }
 
 function icdPrimaryBtnHtml(idx) {
-  var removeBtn = '<button onclick="removeIcdLookupItem(' + idx + ')" title="Remove this line" style="font-size:.75rem;color:#c0392b;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:6px">🗑 Remove</button>';
+  var askAiBtn = '<button onclick="icdAskAiForLine(' + idx + ', this)" title="Code looks wrong or missing? Get AI-suggested options for this line" style="font-size:.75rem;color:#5b3fa0;background:#f4f1fb;border:1px solid #d7cdef;border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:6px">🤖 Not right? Ask AI</button>';
+  var removeBtn = askAiBtn + '<button onclick="removeIcdLookupItem(' + idx + ')" title="Remove this line" style="font-size:.75rem;color:#c0392b;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:6px">🗑 Remove</button>';
   if (icdPrimaryIdx === idx) {
     return '<span style="font-size:.7rem;background:var(--navy);color:#fff;padding:1px 8px;border-radius:10px;font-weight:700">⭐ PRIMARY</span>'
       + '<button onclick="markIcdPrimary(-1)" style="font-size:.72rem;color:var(--text-lt);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit">✕ Unmark</button>'
@@ -14654,6 +14810,21 @@ html.in-split .split-open-btn{display:none}
 html.in-split .hdr-top{padding:4px 12px}
 html.in-split .hdr-logo{width:26px;height:26px}
 html.in-split .hdr-text h1{font-size:.85rem}
+
+/* Copy-ready "ICD-10 - Diagnosis Name" list at top of Problem List Tiering */
+.tier-fn-list{background:#fff;border:2px solid var(--navy);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.tier-fn-list .tfl-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--navy);color:#fff;padding:10px 14px}
+.tier-fn-list .tfl-hd strong{display:block;font-size:.95rem}
+.tier-fn-list .tfl-hd span{font-size:.74rem;color:rgba(255,255,255,.65)}
+.tier-fn-list .tfl-copy-all{min-height:40px;padding:0 16px;background:var(--gold);color:#fff;border:none;border-radius:6px;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.tier-fn-list .tfl-list{margin:0;padding:6px 14px 8px 38px}
+.tier-fn-list li{padding:6px 0;border-bottom:1px solid var(--border-lt);font-size:.9rem;color:var(--text)}
+.tier-fn-list li:last-child{border-bottom:none}
+.tier-fn-list li{display:list-item}
+.tier-fn-list .tfl-text{display:inline}
+.tier-fn-list .tfl-text b{font-family:monospace;color:var(--navy)}
+.tier-fn-list .tfl-text em{font-style:normal;font-size:.72rem;background:var(--navy);color:#fff;padding:1px 7px;border-radius:10px;margin-left:4px}
+.tier-fn-list li button{float:right;margin-left:8px;min-height:30px;padding:0 10px;background:var(--row-alt);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--navy);cursor:pointer}
 </style>
 <script id="split-view-mode-js">
 (function(){
