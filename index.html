@@ -8935,33 +8935,24 @@ function handleNarrativePasteBack() {
   showNarrativeLengthCheck(ta);
 }
 
-// Flags a pasted-back narrative that's longer or more "AI-sounding" than a nurse would
-// realistically chart, so it can be trimmed before it goes into Firenote.
-var NARR_AI_PHRASES = /\b(comprehensive|holistic|robust|multifaceted|meticulous(ly)?|it is important to note|notably|furthermore|moreover|underscores?|in alignment with|a testament to|navigat(e|ing)|journey)\b/gi;
+// Quiet length note: only appears when a pasted-back narrative is unusually long for
+// a nursing note. No phrase-level flags (removed Oct 2026 per Josh).
 function showNarrativeLengthCheck(ta) {
   var box = document.getElementById('narr-length-check');
   if (!box) {
     box = document.createElement('div');
     box.id = 'narr-length-check';
-    box.style.cssText = 'margin-top:8px;padding:9px 12px;border-radius:6px;font-size:.82rem;line-height:1.5;display:none';
+    box.style.cssText = 'margin-top:6px;font-size:.78rem;color:var(--text-lt);display:none';
     ta.parentNode.insertBefore(box, ta.nextSibling);
   }
   var text = (ta.value || '').trim();
-  if (!text) { box.style.display = 'none'; return; }
-  var words = text.split(/\s+/).filter(Boolean).length;
-  var hits = (text.match(NARR_AI_PHRASES) || []).map(function(w) { return w.toLowerCase(); });
-  hits = hits.filter(function(w, i) { return hits.indexOf(w) === i; });
-  var notes = [];
-  if (words > 350) notes.push('<strong>' + words + ' words</strong> — long for an admission narrative. Most nurse-written narratives run 150–300 words. Consider trimming, or re-run Copilot and ask it to "shorten to under 300 words and keep it in my voice."');
-  if (hits.length) notes.push('Phrases that tend to read as AI-written: <em>' + hits.map(escapeHtml).join(', ') + '</em>. Consider rewording these in your own words.');
-  if (!notes.length) {
-    box.style.cssText += ';background:var(--green-bg);color:var(--green);border:1px solid #bfe3cf';
-    box.innerHTML = '✓ ' + words + ' words — realistic length.';
+  var words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  if (words > 350) {
+    box.textContent = words + ' words — on the long side for an admission narrative (most run 150–300). You can ask Copilot to "shorten to under 300 words."';
+    box.style.display = 'block';
   } else {
-    box.style.cssText += ';background:var(--amber-bg);color:#7a4200;border:1px solid #ffe082';
-    box.innerHTML = '⚠ ' + notes.join('<br>');
+    box.style.display = 'none';
   }
-  box.style.display = 'block';
 }
 
 // Tracks the most recently parsed checklist state (missing/partial counts) so
