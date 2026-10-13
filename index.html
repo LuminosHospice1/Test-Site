@@ -7965,7 +7965,7 @@ function renderCarePlan(text) {
       ? '<div style="font-size:.76rem;color:#7a4200;background:#fff8ee;border:1px solid #ffe082;border-radius:5px;padding:5px 9px;margin-bottom:8px">📌 In Firenote\'s Goal Builder, select Category: Custom to unlock the Focus/Measurement/Duration fields below.</div>'
       : '';
     out.push(
-      '<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
+      '<div data-cp-sec="' + escHtml(sec.title.toUpperCase()) + '" style="margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--row-alt);border-bottom:1px solid var(--border)">'
       + '<span style="font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.08em">' + escHtml(sec.title) + '</span>'
       + '</div>'
@@ -8284,6 +8284,8 @@ var _cpActiveHardcodedProblemText = null;
 
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
+  const problemName = dxNameForProse(problem); // diagnosis without its ICD-10 code, for prose
+  const problemCodeNote = icdCodeNoteForPrompt(problem);
   const primaryDx = document.getElementById('cp-primary-dx').value.trim();
   const details = document.getElementById('cp-details').value.trim();
   const goals = document.getElementById('cp-goals').value;
@@ -8380,12 +8382,12 @@ async function runCarePlanBuilder() {
 
 Generate a hospice SAFETY care plan for the following:
 
-CARE PLAN PROBLEM: ${problem}
+CARE PLAN PROBLEM: ${problemName}${problemCodeNote}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
 SAFETY FOCUS: ${goalsLabel}
 
-CRITICAL: This care plan addresses "${problem}" as a safety or crisis concern. The goal must focus on RISK REDUCTION and PATIENT SAFETY — not comfort or symptom management. Do NOT use comfort-focused hospice goal language.
+CRITICAL: This care plan addresses "${problemName}" as a safety or crisis concern. The goal must focus on RISK REDUCTION and PATIENT SAFETY — not comfort or symptom management. Do NOT use comfort-focused hospice goal language.
 
 REQUIREMENTS:
 
@@ -8423,12 +8425,12 @@ GOAL DURATION: [exact duration value]
 
 Generate a hospice CARE COORDINATION care plan for the following:
 
-CARE PLAN PROBLEM: ${problem}
+CARE PLAN PROBLEM: ${problemName}${problemCodeNote}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
 COORDINATION FOCUS: ${goalsLabel}
 
-CRITICAL: "${problem}" is a care coordination or planning problem — NOT a clinical diagnosis. The goal must reflect a coordination or transition outcome. Do NOT use clinical symptom-management goal language.
+CRITICAL: "${problemName}" is a care coordination or planning problem — NOT a clinical diagnosis. The goal must reflect a coordination or transition outcome. Do NOT use clinical symptom-management goal language.
 
 REQUIREMENTS:
 
@@ -8437,7 +8439,7 @@ REQUIREMENTS:
    GOAL MEASUREMENT: short phrase (no trailing period) naming the measurable indicator, e.g. "documented care plan agreement between hospice and facility staff"
    GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more appropriate.
 
-2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}" coordination needs:
+2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problemName}" coordination needs:
    ASSESS — Nurse will assess [specific coordination need, readiness, or barrier]
    EDUCATE — Nurse will educate patient/caregiver/facility on [specific coordination topic]
    PERFORM — Nurse will perform or coordinate [specific coordination action]
@@ -8468,12 +8470,12 @@ GOAL DURATION: [exact duration value]
 
 Generate a hospice PSYCHOSOCIAL care plan for the following:
 
-CARE PLAN PROBLEM: ${problem}
+CARE PLAN PROBLEM: ${problemName}${problemCodeNote}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
 PSYCHOSOCIAL FOCUS: ${goalsLabel}
 
-CRITICAL: "${problem}" is a psychosocial or emotional care problem. The goal must focus on EMOTIONAL SUPPORT, COPING, and WELLBEING — not physical comfort or symptom management.
+CRITICAL: "${problemName}" is a psychosocial or emotional care problem. The goal must focus on EMOTIONAL SUPPORT, COPING, and WELLBEING — not physical comfort or symptom management.
 
 REQUIREMENTS:
 
@@ -8482,7 +8484,7 @@ REQUIREMENTS:
    GOAL MEASUREMENT: short phrase (no trailing period) naming the observable indicator, e.g. "patient/family report of improved emotional adjustment and engagement with support services"
    GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more appropriate.
 
-2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problem}":
+2. INTERVENTIONS: Generate a minimum of one ASSESS, one EDUCATE, and one PERFORM intervention. You may add additional individual lines (up to 6 total) if clinically appropriate. Every intervention must be a single standalone line — do NOT group into numbered sections or categories. All must be specific to "${problemName}":
    ASSESS — Nurse will assess [specific psychosocial or emotional indicator]
    EDUCATE — Nurse will educate patient/caregiver on [specific coping or support topic]
    PERFORM — Nurse will perform [specific supportive or referral action]
@@ -8513,12 +8515,12 @@ GOAL DURATION: [exact duration value]
 
 Generate a complete hospice care plan for the following:
 
-CARE PLAN PROBLEM/DIAGNOSIS: ${problem}
+CARE PLAN PROBLEM/DIAGNOSIS: ${problemName}${problemCodeNote}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${details || 'Not provided'}
 GOALS OF CARE EMPHASIS: ${goalsLabel}
 
-CRITICAL: This care plan is for the specific problem "${problem}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problem}" specifically. Do not write a generic care plan for the primary diagnosis.
+CRITICAL: This care plan is for the specific problem "${problemName}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problemName}" specifically. Do not write a generic care plan for the primary diagnosis.
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
@@ -8527,15 +8529,15 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
    GOAL FOCUS: short phrase (no trailing period), e.g. "optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible"
    GOAL MEASUREMENT: short phrase (no trailing period), e.g. "patient/caregiver report of comfort and absence of unnecessary suffering"
    GOAL DURATION: "end of the current benefit period" unless a shorter window is clearly more appropriate.`
-  : `Must be comfort-focused and specific to "${problem}".
-   GOAL FOCUS: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${problem}-related distress" — adapt to the specific problem.
-   GOAL MEASUREMENT: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${problem}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+  : `Must be comfort-focused and specific to "${problemName}".
+   GOAL FOCUS: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${problemName}-related distress" — adapt to the specific problem.
+   GOAL MEASUREMENT: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${problemName}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
    GOAL DURATION: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.`}
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problem}":
-   ASSESS — Nurse will assess [specific symptom or indicator related to ${problem}] at each visit
-   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problem}]
-   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problem}]
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problemName}":
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${problemName}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problemName}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problemName}]
 
    You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three. Do NOT use any other intervention type labels.
 ${requiredPrimaryBlock}
@@ -8572,7 +8574,33 @@ GOAL DURATION: [exact duration value]
     const text = data.content && data.content[0] && data.content[0].text
       ? data.content[0].text
       : (data.error || 'No response received.');
-    outputEl.innerHTML = renderCarePlan(text);
+    const cleanText = stripIcdCodes(text, icdCodesInText(problem));
+    outputEl.innerHTML = renderCarePlan(cleanText);
+    // "Show different intervention options" under the Interventions section
+    (function() {
+      var ivSecEl = Array.prototype.find.call(outputEl.querySelectorAll('[data-cp-sec]'), function(el) { return /INTERVENTION/.test(el.getAttribute('data-cp-sec')); });
+      var target = ivSecEl ? ivSecEl.lastElementChild : outputEl;
+      var existing = cleanText.split('\n').map(function(l) { return l.trim().replace(/\*\*/g, ''); })
+        .filter(function(l) { return /^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)\b/i.test(l); });
+      mountMoreInterventions(target, {
+        problem: problem, primaryDx: primaryDx, details: details, existing: existing,
+        renderRow: function(prefix, txt, into) {
+          var color = prefix === 'ASSESS' ? 'var(--blue)' : prefix === 'EDUCATE' ? 'var(--green)' : 'var(--gold)';
+          var bg = prefix === 'ASSESS' ? '#eef3fb' : prefix === 'EDUCATE' ? 'var(--green-bg)' : 'var(--amber-bg)';
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:10px;align-items:flex-start;margin:5px 0;padding:8px 12px;background:' + bg + ';border-radius:6px;border-left:3px solid ' + color;
+          row.innerHTML = '<span style="font-size:.72rem;font-weight:700;color:' + color + ';text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;padding-top:2px;min-width:58px">' + prefix + '</span>'
+            + '<span style="font-size:.88rem;color:var(--text);flex:1"></span>';
+          row.children[1].textContent = txt;
+          var cb = document.createElement('button');
+          cb.textContent = '📋';
+          cb.style.cssText = 'margin-left:6px;padding:4px 10px;flex-shrink:0;background:var(--navy);color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:.75rem;cursor:pointer';
+          cb.addEventListener('click', function() { copyAllCpText(cb, txt); });
+          row.appendChild(cb);
+          into.appendChild(row);
+        }
+      });
+    })();
     outputWrap.classList.add('show');
     outputWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
   } catch(err) {
@@ -9738,29 +9766,31 @@ function cpQuickFillAndGenerate(problem, primary, details) {
 // inline "Generate Care Plan" buttons on situational cards (wound, infection, opioid-induced
 // constipation) so the result renders right there in the card instead of switching tabs.
 async function generateInlineCarePlanResult(problemText, primaryDx, patientDetails) {
+  const problemName = dxNameForProse(problemText);
+  const problemCodeNote = icdCodeNoteForPrompt(problemText);
   const prompt = `You are an expert hospice clinical documentation specialist with deep knowledge of CMS hospice benefit standards, 42 CFR §418, LCD requirements, and NHPCO guidelines.
 
 Generate a complete hospice care plan for the following:
 
-CARE PLAN PROBLEM/DIAGNOSIS: ${problemText}
+CARE PLAN PROBLEM/DIAGNOSIS: ${problemName}${problemCodeNote}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${patientDetails || 'Not provided'}
 GOALS OF CARE EMPHASIS: comfort and symptom management
 
-CRITICAL: This care plan is for the specific problem "${problemText}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problemText}" specifically. Do not write a generic care plan for the primary diagnosis.
+CRITICAL: This care plan is for the specific problem "${problemName}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${problemName}" specifically. Do not write a generic care plan for the primary diagnosis.
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
-1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence. Generate each specific to "${problemText}":
-   - goalFocus: A short phrase (not a full sentence, no trailing period) naming WHAT the goal is about. Format example: "comfort and freedom from ${problemText}-related distress" — adapt the wording to the specific problem.
-   - goalMeasurement: A short phrase (not a full sentence, no trailing period) naming HOW progress will be measured — the observable/reportable indicators. Format example: "patient report (if able), observed [clinical indicators specific to ${problemText}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+1. GOAL — Firenote's Custom Goal Builder now requires three separate fields instead of one sentence. Generate each specific to "${problemName}":
+   - goalFocus: A short phrase (not a full sentence, no trailing period) naming WHAT the goal is about. Format example: "comfort and freedom from ${problemName}-related distress" — adapt the wording to the specific problem.
+   - goalMeasurement: A short phrase (not a full sentence, no trailing period) naming HOW progress will be measured — the observable/reportable indicators. Format example: "patient report (if able), observed [clinical indicators specific to ${problemName}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
    - goalDuration: Must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problemText}" and follow this exact structure:
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${problemName}" and follow this exact structure:
 
-   ASSESS — Nurse will assess [specific symptom or indicator related to ${problemText}] at each visit
-   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problemText}]
-   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problemText}]
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${problemName}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${problemName}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${problemName}]
 
    You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
 
@@ -11748,12 +11778,12 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
 Generate a complete hospice care plan for the following:
 
-CARE PLAN PROBLEM/DIAGNOSIS: ${it.diagnosis}
+CARE PLAN PROBLEM/DIAGNOSIS: ${dxNameForProse(it.diagnosis)}${icdCodeNoteForPrompt(it.diagnosis)}
 PRIMARY HOSPICE DIAGNOSIS: ${primaryDx || 'Not specified'}
 PATIENT DETAILS: ${patientDetails || 'Not provided'}
 GOALS OF CARE EMPHASIS: ${goalsEmphasis}
 
-CRITICAL: This care plan is for the specific problem "${it.diagnosis}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${it.diagnosis}" specifically. Do not write a generic care plan for the primary diagnosis.
+CRITICAL: This care plan is for the specific problem "${dxNameForProse(it.diagnosis)}" — NOT for the primary diagnosis. The goal, interventions, and coordination note must all address "${dxNameForProse(it.diagnosis)}" specifically. Do not write a generic care plan for the primary diagnosis.
 
 REQUIREMENTS — STRICTLY FOLLOW THESE:
 
@@ -11762,16 +11792,16 @@ REQUIREMENTS — STRICTLY FOLLOW THESE:
    - goalFocus: short phrase (no trailing period), e.g. "optimal comfort, dignity, and quality of life consistent with hospice goals of care, with symptoms (including pain, dyspnea, anxiety, and any other distressing symptoms) managed to the greatest extent possible"
    - goalMeasurement: short phrase (no trailing period), e.g. "patient/caregiver report of comfort and absence of unnecessary suffering"
    - goalDuration: "end of the current benefit period" unless a shorter window is clearly more appropriate.`
-  : `Specific to "${it.diagnosis}".
-   - goalFocus: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${it.diagnosis}-related distress" — adapt to the specific problem.
-   - goalMeasurement: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${it.diagnosis}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
+  : `Specific to "${dxNameForProse(it.diagnosis)}".
+   - goalFocus: short phrase (no trailing period) naming WHAT the goal is about, e.g. "comfort and freedom from ${dxNameForProse(it.diagnosis)}-related distress" — adapt to the specific problem.
+   - goalMeasurement: short phrase (no trailing period) naming HOW progress is measured, e.g. "patient report (if able), observed [clinical indicators specific to ${dxNameForProse(it.diagnosis)}], and trends in caregiver feedback" — adapt the clinical indicators to the specific problem.
    - goalDuration: must be EXACTLY one of these values (matching Firenote's duration buttons, do not invent others): "3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "180 days", "end of the current benefit period". Use "end of the current benefit period" unless a shorter reassessment window is clearly more clinically appropriate for this specific problem.`}
 
-2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${it.diagnosis}" and follow this exact structure:
+2. INTERVENTIONS: Generate a minimum of 3 interventions — one of each type below, plus additional as clinically appropriate (up to 6 total). Every intervention MUST be specific to "${dxNameForProse(it.diagnosis)}" and follow this exact structure:
 
-   ASSESS — Nurse will assess [specific symptom or indicator related to ${it.diagnosis}] at each visit
-   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${it.diagnosis}]
-   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${it.diagnosis}]
+   ASSESS — Nurse will assess [specific symptom or indicator related to ${dxNameForProse(it.diagnosis)}] at each visit
+   EDUCATE — Nurse will educate patient/caregiver on [specific topic relevant to ${dxNameForProse(it.diagnosis)}]
+   PERFORM — Nurse will perform [specific skilled nursing task relevant to ${dxNameForProse(it.diagnosis)}]
 
    You may add additional ASSESS, EDUCATE, or PERFORM interventions beyond the minimum three if clinically appropriate for the problem. Do NOT use any other intervention type labels.
    IMPORTANT: Do NOT include interventions about medication administration responsibility, bereavement assessment, or Full Code status in this list -- those are added separately.
@@ -12158,7 +12188,108 @@ function buildSituationalCards(flags, primaryDx, data) {
   return cards;
 }
 
+// ── "Show different intervention options" (Oct 2026) ─────────────────────
+// Adds new AI-suggested interventions BELOW the existing ones (nothing is replaced),
+// telling the AI what is already on screen so it doesn't repeat itself. Goal and REQ
+// groups are untouched. Sends only the problem name, primary dx, and the nurse's optional
+// focus text — the same clinical (non-identifying) content the original generation used.
+function mountMoreInterventions(container, ctx) {
+  if (!container) return;
+  var shown = (ctx.existing || []).slice();
+  var round = 0;
+  var wrap = document.createElement('div');
+  wrap.className = 'more-iv';
+  wrap.innerHTML = '<div class="more-iv-row">'
+    + '<input type="text" class="more-iv-focus" placeholder="Optional: what are you looking for? (e.g. fall prevention, caregiver teaching)">'
+    + '<button type="button" class="more-iv-btn">🔄 Show different intervention options</button></div>'
+    + '<div class="more-iv-out"></div>';
+  container.appendChild(wrap);
+  var btn = wrap.querySelector('.more-iv-btn'), focusEl = wrap.querySelector('.more-iv-focus'), out = wrap.querySelector('.more-iv-out');
+  btn.addEventListener('click', async function() {
+    var orig = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Getting new options…';
+    var focus = focusEl.value.trim();
+    var prompt = 'You are an expert hospice clinical documentation specialist (CMS hospice benefit, 42 CFR §418).'
+      + '\n\nCARE PLAN PROBLEM: ' + dxNameForProse(ctx.problem)
+      + '\nPRIMARY HOSPICE DIAGNOSIS: ' + (dxNameForProse(ctx.primaryDx || '') || 'Not specified')
+      + (ctx.details ? '\nPATIENT DETAILS: ' + ctx.details : '')
+      + (focus ? '\nTHE NURSE IS SPECIFICALLY LOOKING FOR: ' + focus : '')
+      + '\n\nThe nurse already has these interventions and wants DIFFERENT ones — do not repeat or reword any of them:\n'
+      + shown.map(function(t) { return '- ' + t; }).join('\n')
+      + '\n\nWrite 4-6 NEW nursing interventions specific to this problem. Rules: comfort-focused, never curative; each starts with ASSESS:, EDUCATE:, or PERFORM: followed by "Nurse will..."; include at least one of each type unless the nurse\'s focus clearly calls for one type; concrete and Firenote-ready; NEVER include ICD-10 codes.'
+      + '\n\nRespond ONLY with JSON: {"interventions":["ASSESS: Nurse will ...","EDUCATE: Nurse will ...","PERFORM: Nurse will ..."]}';
+    try {
+      var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 1200 }) });
+      var data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+      var parsed = icdParseAiJson(data.content && data.content[0] && data.content[0].text);
+      var codes = icdCodesInText(ctx.problem);
+      var bare = function(t) { return String(t).replace(/^(ASSESS|EDUCATE|PERFORM|INTERVENE|DOCUMENT)[:\s\u2014\-]+\s*/i, '').slice(0, 50).toLowerCase(); };
+      var seen = shown.map(bare);
+      var items = (parsed.interventions || []).map(function(iv) {
+        var m = String(iv).trim().match(/^(ASSESS|EDUCATE|PERFORM)[:\s—\-]+\s*(.*)$/i);
+        return m ? { prefix: m[1].toUpperCase(), text: stripIcdCodes(m[2], codes) } : null;
+      }).filter(function(x) { return x && x.text && seen.indexOf(bare(x.text)) === -1; });
+      if (!items.length) { btn.disabled = false; btn.textContent = orig; alert('The AI only came back with options you already have. Try typing what you\'re looking for in the box (e.g. "pain at night", "caregiver teaching") and click again.'); return; }
+      round++;
+      var grp = document.createElement('div');
+      grp.className = 'more-iv-grp';
+      grp.innerHTML = '<div class="more-iv-hd">New options' + (round > 1 ? ' — set ' + round : '') + (focus ? ' · focus: ' + escapeHtml(focus) : '') + '</div>';
+      items.forEach(function(it) { ctx.renderRow(it.prefix, it.text, grp); shown.push(it.prefix + ': ' + it.text); });
+      out.appendChild(grp);
+      btn.textContent = '🔄 Show more options';
+      btn.disabled = false;
+    } catch (e) {
+      btn.disabled = false; btn.textContent = orig;
+      alert('Could not get new options right now (' + e.message + '). Please try again.');
+    }
+  });
+}
+
+// ── Keep ICD-10 codes OUT of care plan prose (Oct 2026) ──────────────────
+// Diagnoses arrive as "N18.4 Chronic kidney disease stage 4". The code belongs on the
+// problem title, never inside a goal or intervention sentence. Only codes that appear in
+// the diagnosis itself are stripped, so policy references like Z91.89 elsewhere are untouched.
+var ICD_CODE_TOKEN = /[A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?/;
+function icdCodesInText(s) {
+  var out = [], str = String(s || '');
+  var lead = str.match(/^\s*\(?([A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?)\)?(?=[\s\-–—:]|$)/);
+  if (lead) out.push(lead[1]);
+  (str.match(/\(([A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?)\)/g) || []).forEach(function(m) { out.push(m.replace(/[()]/g, '')); });
+  (str.match(/\b[A-TV-Z][0-9][0-9A-Z]\.[0-9A-Z]{1,4}\b/g) || []).forEach(function(m) { out.push(m); });
+  return out.filter(function(c, i) { return out.indexOf(c) === i; });
+}
+var ICD_PROPER_NOUNS = /^(Alzheimer|Parkinson|Lewy|Huntington|Pick|Crohn|Hodgkin|Kaposi|Guillain|Creutzfeldt|Paget|Raynaud|Cushing|Addison|Graves|Hashimoto|Sjogren|Wernicke|Korsakoff|Down|Lou)\b/;
+function stripIcdCodes(text, codes) {
+  var t = String(text || '');
+  (codes || []).forEach(function(c) {
+    var esc = c.replace(/\./g, '\\.');
+    t = t.replace(new RegExp('(^|[\\s(\\[])' + '\\(?' + esc + '\\)?' + '(?![0-9A-Z.])(\\s+[-–—:]\\s*|\\s*:\\s*|\\s+)?', 'g'), function(m, pre, offset) {
+      return pre === '(' || pre === '[' ? '' : pre;
+    });
+  });
+  t = t.replace(/\(\s*\)/g, '').replace(/ +-(?=[a-z])/g, '-').replace(/[ \t]{2,}/g, ' ').replace(/ +([,.;)])/g, '$1');
+  // "freedom from Chronic kidney disease" → "freedom from chronic kidney disease" (mid-sentence only, not proper nouns or acronyms)
+  t = t.replace(/([a-z,] )([A-Z][a-z]+)(?=[\s\-])/g, function(m, pre, word) { return ICD_PROPER_NOUNS.test(word) ? m : pre + word.toLowerCase(); });
+  return t.trim();
+}
+function dxNameForProse(dx) { return stripIcdCodes(dx, icdCodesInText(dx)).replace(/^[\s\-–—:]+/, '') || String(dx || ''); }
+function icdCodeNoteForPrompt(dx) {
+  var codes = icdCodesInText(dx);
+  return codes.length ? '\nICD-10 CODE (reference only): ' + codes.join(', ') + '. NEVER write any ICD-10 code inside the goal, measurement, interventions, or any other output text — refer to the condition by name only, in natural clinical wording.' : '';
+}
+function cleanCarePlanResultCodes(result, dx) {
+  if (!result) return result;
+  var codes = icdCodesInText(dx);
+  if (!codes.length) return result;
+  ['goalFocus', 'goalMeasurement', 'goalDuration', 'physicianCoordination'].forEach(function(k) {
+    if (typeof result[k] === 'string') result[k] = stripIcdCodes(result[k], codes);
+  });
+  if (Array.isArray(result.interventions)) result.interventions = result.interventions.map(function(iv) { return typeof iv === 'string' ? stripIcdCodes(iv, codes) : iv; });
+  return result;
+}
+
 function renderAllCpCard(body, result, dx, patientDetails) {
+  cleanCarePlanResultCodes(result, dx);
   if (!result || !result.goalFocus) {
     body.innerHTML = '<div style="color:var(--red);font-size:.84rem;padding:8px 0">⚠ Could not generate care plan. Please use the Care Plan Builder tab to generate individually.</div>';
     return;
@@ -12265,6 +12396,15 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   }
 
   clinicalIvs.forEach(function(iv) { renderIvRow(iv.prefix, iv.text, ivSec); });
+  if (!result._noMoreIv) {
+    mountMoreInterventions(ivSec, {
+      problem: dx || '',
+      primaryDx: (typeof tierCurrentPrimaryDx !== 'undefined' && tierCurrentPrimaryDx) || ((document.getElementById('tier-primary') || {}).value || ''),
+      details: patientDetails || '',
+      existing: clinicalIvs.map(function(iv) { return iv.prefix + ': ' + iv.text; }).concat(requiredGroups.reduce(function(a, g) { return a.concat(g.items.map(function(i) { return i.prefix + ': ' + i.text; })); }, [])),
+      renderRow: renderIvRow
+    });
+  }
 
   // Render required groups
   requiredGroups.forEach(function(grp) {
@@ -14810,6 +14950,15 @@ html.in-split .split-open-btn{display:none}
 html.in-split .hdr-top{padding:4px 12px}
 html.in-split .hdr-logo{width:26px;height:26px}
 html.in-split .hdr-text h1{font-size:.85rem}
+
+/* "Show different intervention options" */
+.more-iv{margin-top:10px;padding:10px;border:1px dashed #d7cdef;border-radius:7px;background:#faf8fe}
+.more-iv-row{display:flex;gap:8px;flex-wrap:wrap}
+.more-iv-focus{flex:1 1 220px;min-height:40px;padding:8px 11px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.85rem}
+.more-iv-btn{min-height:40px;padding:0 14px;background:#5b3fa0;color:#fff;border:none;border-radius:6px;font-family:inherit;font-weight:700;font-size:.84rem;cursor:pointer}
+.more-iv-btn:disabled{opacity:.6;cursor:wait}
+.more-iv-grp{margin-top:10px}
+.more-iv-hd{font-size:.72rem;font-weight:700;color:#5b3fa0;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 
 /* Copy-ready "ICD-10 - Diagnosis Name" list at top of Problem List Tiering */
 .tier-fn-list{background:#fff;border:2px solid var(--navy);border-radius:8px;margin-bottom:16px;overflow:hidden}
