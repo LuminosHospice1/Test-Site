@@ -25,6 +25,9 @@ iframe{border:0;display:block}
 .divider{flex:0 0 14px;background:var(--navy-mid);cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:center}
 .divider::after{content:"";width:4px;height:44px;border-radius:2px;background:var(--gold)}
 .dragging iframe{pointer-events:none}
+.emr-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;color:#3d4f6e;font-size:.95rem;line-height:1.6;text-align:center}
+.emr-hint strong{color:var(--navy);font-size:1.05rem}
+#emrFrame{z-index:1;background:transparent}
 @media(max-width:700px){.bar strong{display:none}}
 </style>
 </head>
@@ -36,6 +39,8 @@ iframe{border:0;display:block}
     <button onclick="nudge(-1)" title="Smaller text, more fits">A−</button>
     <button onclick="nudge(1)" title="Larger text">A+</button>
   </span>
+  <a href="https://luminos.firenote.io/" target="_blank" rel="noopener" title="Firenote side blank? Log in here in a normal tab, then tap Reload">🔑 Log in</a>
+  <button onclick="reloadEmr()" title="Reload the Firenote side after logging in">↻ Reload</button>
   <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap</button>
   <button onclick="exitSplit()" title="Close Firenote and go back to the tool by itself">✕ Tool only</button>
 </div>
@@ -43,6 +48,13 @@ iframe{border:0;display:block}
   <!-- Firenote pane. Cross-origin: the browser itself prevents this page
        from reading anything inside it. This page only sets the frame's size. -->
   <div class="pane" id="paneEmr">
+    <!-- Sits BEHIND the Firenote frame: only visible if Firenote shows nothing
+         (e.g. logged out on iPad). Once Firenote draws its page, this is covered. -->
+    <div class="emr-hint"><div>
+      <strong>Firenote side blank?</strong><br>
+      1. Tap <b>🔑 Log in</b> and sign in to Firenote in that tab.<br>
+      2. Come back here and tap <b>↻ Reload</b>.
+    </div></div>
     <iframe id="emrFrame" src="https://luminos.firenote.io/" title="Firenote" referrerpolicy="no-referrer"
       allow="clipboard-read; clipboard-write"></iframe>
   </div>
@@ -83,6 +95,8 @@ function nudge(d){ fit = true; step = Math.max(0, Math.min(STEPS.length-1, step 
 fitBtn.addEventListener('click', () => { fit = !fit; save(); layout(); });
 new ResizeObserver(layout).observe(emrPane);
 layout();
+
+function reloadEmr(){ const u = emrFrame.src; emrFrame.src = 'about:blank'; setTimeout(()=>{ emrFrame.src = u; }, 50); }
 
 /* ── Back to tool-only view. Checks the TOOL pane (same site) for entered
    data before leaving; never looks at the Firenote pane. */
