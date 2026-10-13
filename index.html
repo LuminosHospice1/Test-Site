@@ -13626,7 +13626,7 @@ function renderTierFirenoteList() {
   var lines = ordered.map(function(r) { return r.code + ' - ' + icdOfficialName(r); });
   box.innerHTML = '<div class="tfl-hd"><div><strong>📋 Diagnosis list for Firenote</strong>'
     + '<span>' + lines.length + ' diagnoses from ICD-10 Lookup' + (primary ? ' · primary listed first' : '') + '</span></div>'
-    + '<button type="button" class="tfl-copy-all" onclick="copyTierFirenoteList(this)">📋 Copy all</button></div>'
+    + '</div>'
     + '<ol class="tfl-list">' + ordered.map(function(r, i) {
         return '<li><span class="tfl-text"><b>' + escapeHtml(r.code) + '</b> - ' + escapeHtml(icdOfficialName(r)) + (r === primary ? ' <em>⭐ Primary</em>' : '') + '</span>'
           + '<button type="button" onclick="copyTierFirenoteLine(this,' + i + ')">Copy</button></li>';
@@ -13646,7 +13646,6 @@ function tflCopyFallback(text) {
   try { document.execCommand('copy'); } catch (e) {}
   document.body.removeChild(ta);
 }
-function copyTierFirenoteList(btn) { var box = document.getElementById('tier-fn-list'); tflCopy((box._lines || []).join('\n'), btn); }
 function copyTierFirenoteLine(btn, i) { var box = document.getElementById('tier-fn-list'); tflCopy((box._lines || [])[i] || '', btn); }
 
 async function runIcdLookup() {
@@ -15013,7 +15012,6 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .tier-fn-list .tfl-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--navy);color:#fff;padding:10px 14px}
 .tier-fn-list .tfl-hd strong{display:block;font-size:.95rem}
 .tier-fn-list .tfl-hd span{font-size:.74rem;color:rgba(255,255,255,.65)}
-.tier-fn-list .tfl-copy-all{min-height:40px;padding:0 16px;background:var(--gold);color:#fff;border:none;border-radius:6px;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
 .tier-fn-list .tfl-list{margin:0;padding:6px 14px 8px 38px}
 .tier-fn-list li{padding:6px 0;border-bottom:1px solid var(--border-lt);font-size:.9rem;color:var(--text)}
 .tier-fn-list li:last-child{border-bottom:none}
