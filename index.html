@@ -14217,7 +14217,7 @@ function clearIcdLookup() {
 <div class="subpanel" id="panel-careplan">
 <div class="container">
 
-<div class="subtab-bar" style="background:var(--navy);margin:-22px -16px 18px;border-radius:0">
+<div class="subtab-bar subtab-bleed">
   <button class="subtab-btn" onclick="switchCheckerTab('icd-lookup', document.querySelector('[onclick*=icd-lookup]'))">🔎 ICD-10 Code Lookup</button>
   <button class="subtab-btn" onclick="switchCheckerTab('tier-check', document.querySelector('[onclick*=tier-check]'))">🗂️ Problem List Tiering</button>
   <button class="subtab-btn active">📋 Care Plan Builder</button>
@@ -14426,7 +14426,7 @@ function clearIcdLookup() {
 <div class="subpanel" id="panel-narrative">
 <div class="container">
 
-<div class="subtab-bar" style="background:var(--navy);margin:-22px -16px 18px;border-radius:0">
+<div class="subtab-bar subtab-bleed">
   <button class="subtab-btn" onclick="switchCheckerTab('icd-lookup', document.querySelector('[onclick*=icd-lookup]'))">🔎 ICD-10 Code Lookup</button>
   <button class="subtab-btn" onclick="switchCheckerTab('tier-check', document.querySelector('[onclick*=tier-check]'))">🗂️ Problem List Tiering</button>
   <button class="subtab-btn" onclick="switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan'))">📋 Care Plan Builder</button>
@@ -14593,4 +14593,52 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
   </div>
 </div>
 
+<style id="responsive-nav-fix">
+/* ── RESPONSIVE NAV (iPad split view / narrow widths) ─────────────────
+   Every tab bar must stay fully reachable at any width. Tabs wrap onto
+   extra rows instead of being clipped (checker-tabs sat inside an
+   overflow:hidden card) or hidden behind an invisible horizontal scroll
+   (subtab-bar). Placed last so it overrides the earlier per-breakpoint
+   rules. Touch targets kept at >=44px for iPad. */
+
+/* Main tabs: 4 tabs (grid was set for 5), labels wrap instead of ellipsis */
+.tab-inner{grid-template-columns:repeat(4,1fr)}
+.tab-btn{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25;min-height:44px;display:flex;align-items:center;justify-content:center}
+
+/* Clinical Tools sub-tabs (8): one row on desktop, 4 across on tablet/split, 2 across on phone */
+.checker-tabs{display:grid;grid-template-columns:repeat(8,1fr)}
+.checker-tab{white-space:normal;line-height:1.25;padding:9px 6px;font-size:.8rem;min-height:44px;margin-bottom:0;text-align:center;display:flex;align-items:center;justify-content:center}
+@media(max-width:900px){
+  .checker-tabs{grid-template-columns:repeat(4,1fr)}
+  .checker-tab{border-top:1px solid rgba(255,255,255,.06)}
+}
+@media(max-width:480px){
+  .checker-tabs{grid-template-columns:repeat(2,1fr)}
+  .checker-tab{font-size:.76rem}
+}
+
+/* Learn / reference sub-tab bars: wrap rows instead of hidden side-scroll */
+.subtab-bar{flex-wrap:wrap;overflow-x:visible}
+.subtab-btn{flex:1 1 auto;min-height:44px;margin-bottom:0;text-align:center}
+@media(max-width:900px){
+  .subtab-btn{white-space:normal;line-height:1.25;padding:9px 10px;font-size:.8rem;flex-basis:25%}
+}
+@media(max-width:480px){
+  .subtab-btn{flex-basis:50%;font-size:.76rem}
+}
+
+/* Full-bleed sub-tab bars at top of Care Plan / Narrative panels — margins
+   track .container padding at each breakpoint so they never clip */
+.subtab-bleed{background:var(--navy);border-radius:0;margin:-22px -16px 18px}
+@media(max-width:900px){.subtab-bleed{margin:-14px -16px 14px}}
+@media(max-width:640px){.subtab-bleed{margin:-12px -12px 12px}}
+
+/* Wide reference tables: side-scroll inside their card instead of being cut off */
+.icd-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:640px){
+  .qtable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%}
+  /* the table IS the scroll box here; a 500px min-width pushed its right edge off-screen */
+  table.dtable{min-width:0;max-width:100%}
+}
+</style>
 </body>
