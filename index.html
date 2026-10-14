@@ -8811,11 +8811,11 @@ function buildNarrativePrompt() {
 
   if (!draft) { alert('Please enter your draft narrative or notes first.'); return; }
 
-  // Realistic length target based on the nurse's own draft. Drafts are often shorthand that
-  // grows when written as sentences, so allow up to ~1.8x — floor 150 / ceiling 300 words.
-  // Auditors expect nurse-length notes, not essays.
+  // Length target based on the nurse's own input. Shorthand drafts grow when written as
+  // sentences (~1.8x); a pasted Review & Finish is long and fact-dense. Floor 150 / ceiling
+  // 450 words. Facts always outrank length — see KEEP EVERY FACT rule in the prompt.
   const draftWords = draft.split(/\s+/).filter(Boolean).length;
-  const narrMax = Math.max(150, Math.min(300, Math.round(draftWords * 1.8)));
+  const narrMax = Math.max(150, Math.min(450, Math.round(draftWords * 1.8)));
   const narrMin = Math.max(100, Math.round(narrMax * 0.6));
   const narrTarget = narrMin + '–' + narrMax + ' words';
 
@@ -8823,23 +8823,33 @@ function buildNarrativePrompt() {
 
 A hospice admission nurse needs help tightening up her admission narrative. Please:
 1. Rewrite it so it reads like a skilled, experienced hospice RN wrote it herself at the end of the visit — clear, specific, and believable to an auditor as genuine nurse charting (see LENGTH AND VOICE RULES below)
-2. Make sure each of these required hospice admission elements that IS in the draft comes through clearly (routine items like medication review, depression screening, verbal certification, and IDG coordination need only one short sentence each):
+2. Make sure each of these required hospice admission elements that IS in the draft comes through clearly (routine items like medication review, verbal certification, and IDG coordination need only one short sentence each; depression screening must state the tool and RESULT if given, e.g. "PHQ-2 negative" or "PHQ-9 score 6"):
    - Patient and caregiver identification and relationship
    - Primary diagnosis and related conditions with symptom burden
    - LCD criteria documentation (functional decline, clinical indicators supporting 6-month prognosis)
    - Pain assessment findings (scale, location, character, current management)
-   - Symptom assessment (dyspnea, nausea, anxiety, agitation, constipation as applicable)
    - Medication review (hospice-covered medications, supplies, and DME reviewed with patient/family/legal representative)
-   - Depression screening documented
+   - Depression screening with result (tool and score/outcome)
    - Verbal certification status (obtained, or transfer patient exception noted)
    - IDG coordination statement
    - Goals of care and patient/family understanding of hospice philosophy
-3. Return a checklist showing each element as PRESENT, PARTIAL, or MISSING with a brief note
+3. Return a checklist showing each element above as PRESENT, PARTIAL, or MISSING with a brief note. Do NOT add a checklist line for symptom screening / symptom impact assessment — that is documented in the structured section of the Firenote note, not required in the narrative. (Symptom findings that ARE in the draft still belong in the narrative.)
 
 CRITICAL — DO NOT WRITE ABOUT GAPS INSIDE THE NARRATIVE ITSELF: The STRENGTHENED NARRATIVE section must describe ONLY what actually happened during the visit and what was actually assessed or documented in the draft notes below. NEVER write sentences in the narrative stating that something "was not included," "was not documented," "should be completed," "is missing from the notes," or similar — that kind of statement must NEVER appear inside the narrative text, because this narrative may be copied directly into the permanent clinical record, and a sentence documenting that documentation is missing becomes a compliance liability once it's in the chart. If an element is missing or incomplete, simply omit any mention of it from the narrative and instead flag it ONLY in the ELEMENT CHECKLIST section below, marked MISSING or PARTIAL. The narrative and the checklist serve different purposes: the narrative describes the visit as documented; the checklist tells the nurse what still needs follow-up before this narrative can be considered complete.
 
 LENGTH AND VOICE RULES — THESE MATTER AS MUCH AS CONTENT:
-- LENGTH: Keep it close to the length of the nurse's draft. Target ${narrTarget}. Never pad. If the draft is short, add only enough words to state the documented facts clearly — do not invent detail to fill space. A real admission narrative is a few short paragraphs, not an essay.
+- KEEP EVERY PROGNOSTIC FACT — THIS OUTRANKS LENGTH: Never drop a fact to save words. Cut wording, not facts. Every one of these that appears in the input MUST appear in the narrative:
+  • functional scores (PPS, FAST, KPS, NYHA) and ADL dependence / assist level
+  • weights, weight loss (amount + timeframe), MAC, intake
+  • vital signs — one compact line is fine (e.g. "VS: BP 170/70, HR 65, RR 18, SpO2 97% RA, T 98.0, wt 125 lb")
+  • hospitalizations, ED visits, infections, procedures, with dates
+  • every comorbidity or finding contributing to decline — especially masses, suspected malignancy, organ failure
+  • abnormal labs (values can be listed compactly)
+  • symptoms with severity/scores, pain location/character/score/goal
+  • comfort meds by name with purpose (a short list is fine), DME and supplies
+  • depression screening tool and result (e.g. "PHQ-2 negative")
+  • education provided and to whom, family understanding, MD/verbal cert, IDG
+- LENGTH: Target ${narrTarget}, achieved by tight wording — short sentences, compact lists, no repetition, no filler, no summarizing conclusions ("consistent with limited prognosis…"). If every fact above cannot fit, go over the target rather than drop a fact. Never pad a short draft with invented detail.
 - VOICE: First person, past tense, the way a nurse actually charts ("I met with pt and daughter at bedside…", "Pt reports…", "Daughter states…"). Plain, direct sentences of normal length. Common nursing abbreviations are fine where a nurse would use them (pt, CG, PRN, SOB, PPS, FAST, O2, BLE, hx).
 - FACTS OVER ADJECTIVES: Keep every number, score, and observation from the draft (weights, PPS/FAST/MAC, pain scores, intake, hospitalizations, falls). These carry the prognosis — not descriptive language.
 - DO NOT USE these phrasings, which read as AI-written: "comprehensive", "holistic", "robust", "multifaceted", "meticulous", "it is important to note", "notably", "furthermore", "additionally", "moreover", "demonstrates", "underscores", "highlights", "in alignment with", "ensuring", "in order to", "a testament to", "navigating", "journey", strings of 3+ adjectives, or sentences that restate the same point twice.
@@ -8857,7 +8867,7 @@ ${draft}
 FORMAT YOUR RESPONSE EXACTLY AS:
 
 STRENGTHENED NARRATIVE:
-[Rewritten narrative — ${narrTarget}, 2–4 short paragraphs, no headers, no bullets, first-person past tense, written the way an experienced hospice RN actually charts. Describes ONLY what was actually documented/assessed. Contains NO commentary about missing, absent, or incomplete documentation — that belongs exclusively in the checklist below.]
+[Rewritten narrative — about ${narrTarget} (facts first; never drop a documented fact to hit the length), 2–4 short paragraphs, no headers, no bullets, first-person past tense, written the way an experienced hospice RN actually charts. Describes ONLY what was actually documented/assessed. Contains NO commentary about missing, absent, or incomplete documentation — that belongs exclusively in the checklist below.]
 
 ---
 
@@ -8947,8 +8957,8 @@ function showNarrativeLengthCheck(ta) {
   }
   var text = (ta.value || '').trim();
   var words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-  if (words > 350) {
-    box.textContent = words + ' words — on the long side for an admission narrative (most run 150–300). You can ask Copilot to "shorten to under 300 words."';
+  if (words > 500) {
+    box.textContent = words + ' words — on the long side for an admission narrative. You can ask Copilot to "tighten the wording without removing any clinical facts."';
     box.style.display = 'block';
   } else {
     box.style.display = 'none';
@@ -13628,26 +13638,11 @@ function renderTierFirenoteList() {
     + '<span>' + lines.length + ' diagnoses from ICD-10 Lookup' + (primary ? ' · primary listed first' : '') + '</span></div>'
     + '</div>'
     + '<ol class="tfl-list">' + ordered.map(function(r, i) {
-        return '<li><span class="tfl-text"><b>' + escapeHtml(r.code) + '</b> - ' + escapeHtml(icdOfficialName(r)) + (r === primary ? ' <em>⭐ Primary</em>' : '') + '</span>'
-          + '<button type="button" onclick="copyTierFirenoteLine(this,' + i + ')">Copy</button></li>';
+        return '<li><span class="tfl-text"><b>' + escapeHtml(r.code) + '</b> - ' + escapeHtml(icdOfficialName(r)) + (r === primary ? ' <em>⭐ Primary</em>' : '') + '</span></li>';
       }).join('') + '</ol>';
   box._lines = lines;
   box.style.display = 'block';
 }
-function tflCopy(text, btn) {
-  var done = function() { var o = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(function() { btn.textContent = o; }, 1400); };
-  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done, function() { tflCopyFallback(text); done(); }); }
-  else { tflCopyFallback(text); done(); }
-}
-function tflCopyFallback(text) {
-  var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
-  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta);
-  ta.select(); ta.setSelectionRange(0, text.length);
-  try { document.execCommand('copy'); } catch (e) {}
-  document.body.removeChild(ta);
-}
-function copyTierFirenoteLine(btn, i) { var box = document.getElementById('tier-fn-list'); tflCopy((box._lines || [])[i] || '', btn); }
-
 async function runIcdLookup() {
   const raw = document.getElementById('icd-lookup-input').value.trim();
   if (!raw) { alert('Please enter at least one diagnosis.'); return; }
@@ -15019,7 +15014,6 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .tier-fn-list .tfl-text{display:inline}
 .tier-fn-list .tfl-text b{font-family:monospace;color:var(--navy)}
 .tier-fn-list .tfl-text em{font-style:normal;font-size:.72rem;background:var(--navy);color:#fff;padding:1px 7px;border-radius:10px;margin-left:4px}
-.tier-fn-list li button{float:right;margin-left:8px;min-height:30px;padding:0 10px;background:var(--row-alt);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.75rem;font-weight:600;color:var(--navy);cursor:pointer}
 </style>
 <script id="split-view-mode-js">
 (function(){
