@@ -991,7 +991,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     </div>
     <div class="tab-card">
       <div class="tab-card-hdr"><span class="tab-card-icon">🧠</span><span class="tab-card-title">Clinical Tools</span><span class="tab-card-tag ai">AI-Powered</span></div>
-      <div class="tab-card-body">Three sub-tools: Medication Coverage Checker, Diagnosis Relatedness Checker, and Drug Interaction Parser — each backed by AI analysis of CMS hospice benefit rules.</div>
+      <div class="tab-card-body">Sub-tools including ICD-10 Code Lookup, Problem List Tiering, Medication Coverage, Diagnosis Relatedness, Drug Interaction Parser, Non-Covered Explanation (addendum wording), and Recert Narrative — each backed by AI and CMS hospice benefit rules.</div>
     </div>
     <div class="tab-card">
       <div class="tab-card-hdr"><span class="tab-card-icon">📋</span><span class="tab-card-title">Care Plan Builder</span><span class="tab-card-tag ai">AI-Powered</span></div>
@@ -1285,6 +1285,23 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
   </div>
   <div class="section-body">
     <p>The Clinical Tools tab contains three AI-powered analysis tools organized as sub-tabs. Each one analyzes your input against CMS hospice benefit rules and returns detailed clinical guidance.</p>
+
+    <div class="sub-gold">🚫 Non-Covered Explanation</div>
+    <p>For every item, service, or drug the hospice determines is <strong>unrelated</strong>, the election statement addendum must include a written <strong>clinical explanation</strong> of why — not just the unrelated diagnosis or an ICD-10 code. Firenote's default text ("Related to unrelated condition: E03.9 Hypothyroidism") does not meet this.</p>
+    <ul class="blist">
+      <li>Pick the type, enter the item, the condition it treats, and the primary hospice diagnosis. Add any notes that support it being unrelated (stable for years, no symptoms, not affecting comfort).</li>
+      <li>You get three wording options (Brief, Standard, Detailed) in plain language — copy one into Firenote's reason non-covered field and edit to fit the patient.</li>
+      <li>If the item looks <strong>related</strong> (comfort meds, symptom management, conditions tied to the terminal illness), a red or yellow warning tells you to confirm with the hospice physician first.</li>
+      <li>No patient names or MRNs — only the clinical details are sent to AI.</li>
+    </ul>
+
+    <div class="sub-gold">🔁 Recert Narrative</div>
+    <p>Builds a Copilot prompt for your RN recertification summary. Enter the benefit period, primary diagnosis, and <strong>then vs. now</strong> measures (PPS, weight, MAC, FAST, ADLs, intake), plus events and current symptoms — or paste your own draft to enhance it.</p>
+    <ul class="blist">
+      <li>Copy the prompt into Copilot (Luminos account), then paste Copilot's full response into Step 2 — the heading and element checklist are pulled out automatically.</li>
+      <li>The narrative compares every measure then vs. now, keeps all your facts, and never invents decline. If the findings don't show decline, the checklist summary will tell you to discuss with the hospice physician.</li>
+      <li>For the 3rd benefit period and beyond, enter the face-to-face encounter date and clinician.</li>
+    </ul>
 
     <div class="sub-gold">Sub-Tab 1 — 💊 Medication Coverage Checker</div>
     <p>Enter a medication name and the patient's active related diagnoses. The AI applies the local rule engine and CMS guidelines to determine likely coverage status.</p>
@@ -2652,6 +2669,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
   <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
   <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
   <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('noncov-check', document.querySelector('.checker-tab[onclick*=noncov-check]'))">🚫 Non-Covered Explanation</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('recert-check', document.querySelector('.checker-tab[onclick*=recert-check]'))">🔁 Recert Narrative</button>
 </div>
 
 <div class="container">
@@ -3773,6 +3792,8 @@ Use these results as a starting point for your MD conversation, not as a final a
     <button class="checker-tab" onclick="switchCheckerTab('dx-check', this)">🔗 Diagnosis Relatedness</button>
     <button class="checker-tab" onclick="switchCheckerTab('meds-check', this)">💊 Medication Coverage</button>
     <button class="checker-tab" onclick="switchCheckerTab('drug-interactions', this)">⚠️ Drug Interaction Parser</button>
+    <button class="checker-tab" onclick="switchCheckerTab('noncov-check', this)">🚫 Non-Covered Explanation</button>
+    <button class="checker-tab" onclick="switchCheckerTab('recert-check', this)">🔁 Recert Narrative</button>
   </div>
   <div class="checker-body">
 
@@ -4010,6 +4031,129 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
         <button class="ai-clear-btn" onclick="clearIcdLookup()" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="icd-lookup-results" style="display:none;margin-top:20px"></div>
+    </div>
+
+
+    <!-- ══ NON-COVERED ITEM EXPLANATION (§418.24(c) addendum) ══ -->
+    <div id="noncov-check" class="checker-section">
+      <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🚫</span><div>
+        <strong>How this works:</strong> Enter one drug, item, service, or treatment the hospice has determined is <strong>unrelated</strong> and won't be covered. The tool writes a plain-language <strong>clinical explanation</strong> you can use in Firenote's "reason non-covered" field and on the election statement addendum — instead of the EMR's default "Related to unrelated condition: E03.9" text, which does not meet the requirement.
+      </div></div>
+      <div class="alert danger" style="margin-bottom:14px;font-size:.82rem"><span>🔒</span><div><strong>No patient names, MRNs, or dates of birth.</strong> Only the clinical details below are sent to AI.</div></div>
+
+      <div class="checker-field">
+        <label>Type</label>
+        <div class="nc-types" id="nc-type-wrap">
+          <label class="nc-type"><input type="radio" name="nc-type" value="medication" checked> 💊 Medication</label>
+          <label class="nc-type"><input type="radio" name="nc-type" value="DME (equipment)"> 🦽 DME</label>
+          <label class="nc-type"><input type="radio" name="nc-type" value="medical supply"> 📦 Supply</label>
+          <label class="nc-type"><input type="radio" name="nc-type" value="service"> 🩺 Service</label>
+          <label class="nc-type"><input type="radio" name="nc-type" value="treatment or procedure"> 🏥 Treatment / Procedure</label>
+        </div>
+      </div>
+      <div class="checker-field">
+        <label>Non-Covered Item <span style="color:#c0392b">*</span></label>
+        <input type="text" id="nc-item" placeholder="e.g. Levothyroxine 50 mcg daily, CPAP machine, outpatient dialysis, routine eye exam">
+      </div>
+      <div class="checker-field">
+        <label>Condition It Treats / Reason It's Used <span style="color:#c0392b">*</span></label>
+        <input type="text" id="nc-condition" placeholder="e.g. Hypothyroidism, obstructive sleep apnea, routine vision care">
+      </div>
+      <div class="checker-field">
+        <label>Primary Hospice Diagnosis <span style="color:#c0392b">*</span></label>
+        <input type="text" id="nc-primary" placeholder="e.g. End-stage heart failure, Alzheimer's dementia">
+      </div>
+      <div class="checker-field">
+        <label>Pertinent Notes <span style="font-weight:400;color:var(--text-lt);text-transform:none">(optional — makes the explanation stronger)</span></label>
+        <textarea id="nc-notes" placeholder="e.g. Hypothyroidism diagnosed 15 yrs ago, stable on same dose, no fatigue or weight changes attributed to thyroid, TSH normal 6 mo ago, MD agrees unrelated"></textarea>
+      </div>
+
+      <div class="checker-examples">
+        <p>Quick examples — click to fill:</p>
+        <div class="example-chips">
+          <span class="example-chip" onclick="ncExample('medication','Levothyroxine 50 mcg daily','Hypothyroidism','End-stage heart failure','Long-standing, stable on same dose for years, no thyroid-related symptoms')">Levothyroxine</span>
+          <span class="example-chip" onclick="ncExample('medication','Atorvastatin 20 mg daily','Hyperlipidemia','Alzheimer\'s dementia, end stage','Preventive cholesterol medication, no active cardiac disease')">Atorvastatin</span>
+          <span class="example-chip" onclick="ncExample('service','Routine eye exam and new eyeglasses','Routine vision correction','Lung cancer with metastasis to bone','Annual routine exam, no eye symptoms')">Routine eye exam</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="checker-btn" id="nc-btn" onclick="runNonCoveredExplanation()"><span class="spinner"></span><span class="btn-text">✍️ Write Clinical Explanation</span></button>
+        <button class="checker-clear-btn" onclick="clearNonCovered()">✕ Clear</button>
+      </div>
+      <div id="nc-result" style="display:none;margin-top:18px"></div>
+    </div>
+
+    <!-- ══ RECERTIFICATION NARRATIVE (RN summary via Copilot) ══ -->
+    <div id="recert-check" class="checker-section">
+      <div class="alert info" style="margin-bottom:14px;border-left:3px solid var(--gold)"><span>🔁</span><div>
+        <strong>How this works:</strong> Enter what's changed since the last certification. The tool builds a prompt for <strong>Microsoft Copilot</strong> (Luminos account) that writes your RN recertification summary in your voice — showing decline with real numbers, comparing then vs. now. Paste Copilot's full response back in Step 2 for a clean, copy-ready narrative and an element checklist.
+      </div></div>
+
+      <div class="checker-field">
+        <label>Benefit Period Being Certified <span style="color:#c0392b">*</span></label>
+        <select id="rc-period" onchange="rcTogglePeriod()" style="width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.9rem">
+          <option value="2">2nd benefit period (90 days)</option>
+          <option value="3">3rd benefit period (60 days) — F2F required</option>
+          <option value="4">4th or later benefit period (60 days) — F2F required</option>
+        </select>
+      </div>
+      <div class="checker-field" id="rc-f2f-wrap" style="display:none">
+        <label>Face-to-Face Encounter <span style="font-weight:400;color:var(--text-lt);text-transform:none">(date and who completed it, if done)</span></label>
+        <input type="text" id="rc-f2f" placeholder="e.g. F2F completed 10/12 by Dr. Patel / NP Smith">
+      </div>
+      <div class="checker-field">
+        <label>Primary Hospice Diagnosis <span style="color:#c0392b">*</span></label>
+        <input type="text" id="rc-primary" placeholder="e.g. Alzheimer's dementia, end-stage COPD">
+      </div>
+
+      <div class="checker-field">
+        <label>Then vs. Now <span style="font-weight:400;color:var(--text-lt);text-transform:none">(fill what you have — decline is shown by the comparison)</span></label>
+        <div class="rc-grid">
+          <div class="rc-h"></div><div class="rc-h">At last cert / admission</div><div class="rc-h">Now</div>
+          <div class="rc-l">PPS</div><input id="rc-pps-p" placeholder="e.g. 50%"><input id="rc-pps-c" placeholder="e.g. 30%">
+          <div class="rc-l">Weight</div><input id="rc-wt-p" placeholder="e.g. 142 lb"><input id="rc-wt-c" placeholder="e.g. 128 lb">
+          <div class="rc-l">MAC</div><input id="rc-mac-p" placeholder="e.g. 24 cm"><input id="rc-mac-c" placeholder="e.g. 21.5 cm">
+          <div class="rc-l">FAST / disease scale</div><input id="rc-scale-p" placeholder="e.g. FAST 7a"><input id="rc-scale-c" placeholder="e.g. FAST 7c">
+          <div class="rc-l">ADLs / mobility</div><input id="rc-adl-p" placeholder="e.g. walker, assist x1"><input id="rc-adl-c" placeholder="e.g. bedbound, total care">
+          <div class="rc-l">Oral intake</div><input id="rc-intake-p" placeholder="e.g. 50% of meals"><input id="rc-intake-c" placeholder="e.g. bites only, thin liquids">
+        </div>
+      </div>
+      <div class="checker-field">
+        <label>Events This Benefit Period</label>
+        <textarea id="rc-events" placeholder="e.g. 2 falls (8/30, 9/14), UTI treated 9/2, new stage 2 sacral wound, ED visit 9/20 for SOB, increased sleep"></textarea>
+      </div>
+      <div class="checker-field">
+        <label>Current Symptoms &amp; Management</label>
+        <textarea id="rc-symptoms" placeholder="e.g. dyspnea w/ minimal exertion on 2L O2, morphine increased to 5 mg q4h PRN; agitation evenings, lorazepam 0.5 mg PRN effective"></textarea>
+      </div>
+      <div class="checker-field">
+        <label>Other Notes or Your Current Draft <span style="font-weight:400;color:var(--text-lt);text-transform:none">(optional — paste a draft to enhance it)</span></label>
+        <textarea id="rc-notes" style="min-height:90px" placeholder="Comorbidities, labs, caregiver changes, anything else relevant — or paste your draft recert narrative here"></textarea>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="checker-btn" onclick="buildRecertPrompt()"><span class="btn-text">🔁 Build Copilot Prompt</span></button>
+        <button class="checker-clear-btn" onclick="clearRecert()">✕ Clear</button>
+      </div>
+
+      <div id="rc-prompt-wrap" style="display:none;margin-top:18px">
+        <div class="rc-step">📝 Step 1 — Copy this prompt into Copilot</div>
+        <pre id="rc-prompt" class="rc-prompt"></pre>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="checker-btn" onclick="copyAllCpText(this, document.getElementById('rc-prompt').textContent)">📋 Copy Prompt</button>
+          <button class="checker-clear-btn" onclick="openCopilot()">↗ Open Copilot</button>
+        </div>
+
+        <div class="rc-step" style="margin-top:20px">📋 Step 2 — Paste Copilot's full response here</div>
+        <textarea id="rc-paste" class="rc-paste" oninput="handleRecertPasteBack()" onpaste="setTimeout(handleRecertPasteBack, 50)" placeholder="Paste Copilot's full response here — the heading and element checklist are pulled out automatically. Edit the narrative to reflect your clinical judgment before copying into Firenote..."></textarea>
+        <div id="rc-length" style="display:none;margin-top:6px;font-size:.78rem;color:var(--text-lt)"></div>
+        <div id="rc-meta" class="alert danger" style="display:none;margin-top:10px;font-size:.82rem"></div>
+        <div id="rc-checklist" style="display:none;margin-top:12px"></div>
+        <div style="margin-top:12px">
+          <button class="checker-btn" onclick="copyAllCpText(this, cleanNarrativeOutput(document.getElementById('rc-paste').value))">📋 Copy Narrative for Firenote</button>
+        </div>
+      </div>
     </div>
 
 </div></div><!-- end panel checker -->
@@ -8062,6 +8206,86 @@ function getMedAdminResponsibilityText(setting) {
   return 'Nurse has identified and documented that [Name/Relationship — e.g., daughter Jane Smith] is responsible for administering all medications. Medication education assessed and provided including purpose, dosing, administration, and potential side effects.';
 }
 
+// ── REQUIRED PRIMARY-DX INTERVENTIONS (Oct 2026) ─────────────────────────
+// Single source of truth for the interventions every admission needs under the
+// primary diagnosis problem. Added by the TOOL (never left to the AI to copy),
+// so they cannot be dropped or reworded.
+function getRequiredPrimaryGroups(flags) {
+  flags = flags || {};
+  var groups = [];
+  if (flags.fullCode) groups.push({
+    label: 'Full Code Status — Interventions Only (no separate goal needed)',
+    badge: 'REQUIRED — WHEN APPLICABLE',
+    items: [
+      { prefix: 'ASSESS',  text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
+      { prefix: 'EDUCATE', text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
+      { prefix: 'PERFORM', text: 'Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.' }
+    ]
+  });
+  groups.push({
+    label: 'Medication Administration & Education',
+    badge: 'REQUIRED — ALL ADMISSIONS',
+    items: [
+      { prefix: 'PERFORM', text: getMedAdminResponsibilityText(flags.setting) },
+      { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
+    ]
+  });
+  groups.push({
+    label: 'Bereavement Assessment',
+    badge: 'REQUIRED — ALL ADMISSIONS',
+    items: [
+      { prefix: 'ASSESS',  text: 'Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.' },
+      { prefix: 'PERFORM', text: 'Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.' },
+      { prefix: 'PERFORM', text: 'Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.' },
+      { prefix: 'EDUCATE', text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
+    ]
+  });
+  return groups;
+}
+
+// Care Plan Builder output is markdown rendered by renderCarePlan(); append the required
+// groups as their own sections in the same "**PREFIX** — text" format it already styles.
+function appendRequiredPrimarySections(text, isPrimary, flags) {
+  if (!isPrimary) return text;
+  var out = String(text || '').replace(/\s+$/, '');
+  getRequiredPrimaryGroups(flags).forEach(function(g) {
+    out += '\n\n## ' + g.badge + ' — ' + g.label.toUpperCase() + '\n'
+      + g.items.map(function(i) { return '**' + i.prefix + '** — ' + i.text; }).join('\n');
+  });
+  return out;
+}
+
+// How closely does a diagnosis line match the primary hospice diagnosis? 0 = no match.
+// Tolerant of ICD codes anywhere ("E46 …", "… (E46)"), punctuation, word order, and
+// filler words, so an AI-reworded or nurse-shortened name still matches.
+var DX_FILLER = { unspecified:1, other:1, disease:1, disorder:1, condition:1, type:1, the:1, and:1, with:1, without:1, due:1, of:1, end:1, stage:1, chronic:1, primary:1, hospice:1, diagnosis:1, dx:1, terminal:1 };
+function dxPrimaryMatchScore(dx, primary) {
+  if (!dx || !primary) return 0;
+  var codeRe = /\b[A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?\b/g;
+  var c1 = (String(dx).toUpperCase().match(codeRe) || []), c2 = (String(primary).toUpperCase().match(codeRe) || []);
+  if (c1.some(function(c) { return c2.indexOf(c) !== -1; })) return 100;
+  var norm = function(s) { return String(s).replace(codeRe, ' ').replace(/['’]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); };
+  var a = norm(dx), b = norm(primary);
+  if (!a || !b) return 0;
+  if (a === b) return 95;
+  if (a.indexOf(b) !== -1 || b.indexOf(a) !== -1) return 85;
+  var words = function(s) { return s.split(' ').filter(function(w) { return w.length > 2 && !DX_FILLER[w]; }).map(function(w) { return w.replace(/(s|ic|ia)$/, ''); }); };
+  var wa = words(a), wb = words(b);
+  if (!wa.length || !wb.length) return 0;
+  var shared = wa.filter(function(w) { return wb.indexOf(w) !== -1; }).length;
+  var ratio = shared / Math.min(wa.length, wb.length);
+  return ratio >= 0.6 ? Math.round(50 + ratio * 30) : 0;
+}
+// Index of the single best-matching item for the primary dx, or -1 if nothing matches.
+function pickPrimaryIndex(items, primary) {
+  var best = -1, bestScore = 0;
+  (items || []).forEach(function(it, i) {
+    var sc = dxPrimaryMatchScore(it && it.diagnosis, primary);
+    if (sc > bestScore) { bestScore = sc; best = i; }
+  });
+  return best;
+}
+
 function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
   const lines = [];
 
@@ -8073,9 +8297,9 @@ function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
     facility: `PERFORM: Nurse will instruct facility staff to administer medications based on the hospice plan of care. SN may administer when present.`,
     snf: `PERFORM: Nurse will confirm the facility staff will be responsible for administering medications. SN may administer when present. (Note: Facility Delineation Form required — ensure on file.)`
   };
-  if (isPrimaryDxPlan) {
-    lines.push(`\nMEDICATION ADMINISTRATION SETTING (${flags.setting.toUpperCase()}):\n${medLang[flags.setting] || medLang.home}`);
-  }
+  // Medication-administration responsibility for the primary DX is appended by the tool itself
+  // (getRequiredPrimaryGroups) rather than passed to the AI.
+  void medLang; void isPrimaryDxPlan;
 
   // ── Continuous Oxygen ───────────────────────────────────────────
   if (flags.oxygen) {
@@ -8319,10 +8543,7 @@ async function runCarePlanBuilder() {
   _cpActiveHardcodedProblemText = null;
 
 
-  const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && (
-    problem.toLowerCase().includes(primaryDx.toLowerCase()) ||
-    primaryDx.toLowerCase().includes(problem.toLowerCase()) ||
-    normalizeForLookup(problem) === normalizeForLookup(primaryDx)));
+  const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && dxPrimaryMatchScore(problem, primaryDx) > 0);
 
   const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver);
 
@@ -8368,10 +8589,12 @@ async function runCarePlanBuilder() {
 
   const bereavementBlockCp = '\n\n--- BEREAVEMENT ASSESSMENT (required on every admission -- add these interventions under this primary DX problem, mark each Performed) ---\n   ASSESS -- Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.\n   PERFORM -- Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.\n   PERFORM -- Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.\n   EDUCATE -- Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.';
 
+  // Required primary-DX interventions (medication responsibility, bereavement, Full Code) are
+  // appended by the tool after the AI responds — see appendRequiredPrimarySections(). The AI is
+  // told NOT to write them, so they can't be dropped, reworded, or duplicated.
+  void fullCodeBlock; void bereavementBlockCp;
   const requiredPrimaryBlock = isPrimaryDxPlan
-    ? '\n3. REQUIRED ADDITIONAL INTERVENTIONS -- This is the primary hospice diagnosis care plan. Include these exact interventions verbatim IN ADDITION to the ones above:\n   PERFORM -- ' + getMedAdminResponsibilityText(flags.setting) + '\n   PERFORM -- Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.'
-      + fullCodeBlock
-      + bereavementBlockCp
+    ? '\n3. This is the primary hospice diagnosis care plan. Do NOT write interventions about medication administration responsibility, medication understanding, bereavement assessment, or Full Code status — the tool adds those required interventions automatically.'
     : '';
 
   let prompt;
@@ -8574,7 +8797,7 @@ GOAL DURATION: [exact duration value]
     const text = data.content && data.content[0] && data.content[0].text
       ? data.content[0].text
       : (data.error || 'No response received.');
-    const cleanText = stripIcdCodes(text, icdCodesInText(problem));
+    const cleanText = appendRequiredPrimarySections(stripIcdCodes(text, icdCodesInText(problem)), isPrimaryDxPlan, flags);
     outputEl.innerHTML = renderCarePlan(cleanText);
     // "Show different intervention options" under the Interventions section
     (function() {
@@ -11697,6 +11920,10 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   // Normalize dx strings for comparison: strip ICD code prefix, lowercase, trim
   function normDx(s) { return (s||'').replace(/^[A-Z][0-9][0-9A-Z]\.?[0-9A-Z]*\s*/i,'').toLowerCase().trim(); }
 
+  // Choose the ONE primary card up front with a forgiving match (code, name, or word overlap).
+  // If nothing matches, the required interventions get their own card instead of vanishing.
+  const primaryIdx = pickPrimaryIndex(tier1Items, primaryDx);
+
   // Create a card placeholder for each Tier 1 item
   const cards = tier1Items.map(function(it, idx) {
     const card = document.createElement('div');
@@ -11705,7 +11932,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
     const hdr = document.createElement('div');
     hdr.style.cssText = 'padding:10px 14px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none';
-    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(it.diagnosis) + (normDx(it.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(it.diagnosis).includes(normDx(primaryDx))) ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span>' : '') + '</span>'
+    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(it.diagnosis) + (idx === primaryIdx ? ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span>' : '') + '</span>'
       + '<span class="card-chevron" style="font-size:.8rem;transition:transform .2s">▼</span>';
     hdr.addEventListener('click', function() {
       const body = card.querySelector('.all-cp-body');
@@ -11725,6 +11952,22 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
     wrap.appendChild(card);
     return { card: card, body: body, item: it };
   });
+
+  // Fallback card when no Tier 1 line matches the primary diagnosis — the primary care plan
+  // and its required interventions get their own card at the top instead of disappearing.
+  function makeRequiredOnlyCard(wrapEl, primaryText) {
+    const card = document.createElement('div');
+    card.style.cssText = 'border:2px solid #c0392b;border-radius:8px;overflow:hidden;margin-bottom:10px';
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'padding:10px 14px;background:var(--navy);color:#fff';
+    hdr.innerHTML = '<span style="font-weight:700;font-size:.88rem">' + escapeHtml(primaryText || 'Primary hospice diagnosis') + ' <span style="font-size:.7rem;background:rgba(255,255,255,.2);padding:1px 7px;border-radius:10px;margin-left:6px">PRIMARY</span></span>';
+    const body = document.createElement('div');
+    body.className = 'all-cp-body';
+    body.style.cssText = 'padding:12px 14px';
+    card.appendChild(hdr); card.appendChild(body);
+    wrapEl.insertBefore(card, wrapEl.firstChild);
+    return { card: card, body: body, item: null, isFallbackPrimary: true };
+  }
 
   // Get flags before Promise.all so they're available inside the async callbacks
   // Always read live checkbox state at the moment Build All is clicked. The `flags` parameter
@@ -11756,41 +11999,14 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
       goalDuration: immGoalDuration,
       interventions: immInterventions,
       physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.',
-      _requiredGroups: [
-        (flags && flags.fullCode) ? {
-          label: 'Full Code Status — Interventions Only (no separate goal needed)',
-          badge: 'REQUIRED — WHEN APPLICABLE',
-          items: [
-            { prefix: 'ASSESS',  text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
-            { prefix: 'EDUCATE', text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
-            { prefix: 'PERFORM', text: 'Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.' }
-          ]
-        } : null,
-        {
-          label: 'Medication Administration & Education',
-          badge: 'REQUIRED — ALL ADMISSIONS',
-          items: [
-            { prefix: 'PERFORM', text: getMedAdminResponsibilityText(flags.setting) },
-            { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
-          ]
-        },
-        {
-          label: 'Bereavement Assessment',
-          badge: 'REQUIRED — ALL ADMISSIONS',
-          items: [
-            { prefix: 'ASSESS',  text: 'Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.' },
-            { prefix: 'PERFORM', text: 'Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.' },
-            { prefix: 'PERFORM', text: 'Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.' },
-            { prefix: 'EDUCATE', text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
-          ]
-        }
-      ].filter(Boolean)
+      _requiredGroups: getRequiredPrimaryGroups(flags)
     };
 
     // Render primary card with imminence care plan
-    cards.forEach(function(c) {
-      var dx = c.item ? c.item.diagnosis : '';
-      if (normDx(dx) === normDx(primaryDx) || (primaryDx && normDx(dx).includes(normDx(primaryDx)))) {
+    if (primaryIdx === -1) { cards.unshift(makeRequiredOnlyCard(wrap, primaryDx)); }
+    cards.forEach(function(c, ci) {
+      var dx = c.item ? c.item.diagnosis : primaryDx;
+      if (primaryIdx === -1 ? ci === 0 : c.item === tier1Items[primaryIdx]) {
         c.body.innerHTML = '';
         renderAllCpCard(c.body, immResult, dx, patientDetails);
       } else {
@@ -11811,7 +12027,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   // Fire all AI calls in parallel
   await Promise.all(cards.map(async function(c) {
     const it = c.item;
-    const isPrimary = normDx(it.diagnosis) === normDx(primaryDx) || (primaryDx && normDx(it.diagnosis).includes(normDx(primaryDx))) || (primaryDx && normDx(primaryDx).includes(normDx(it.diagnosis)));
+    const isPrimary = (it === tier1Items[primaryIdx]);
 
     const goalsMap = {
       comfort: 'comfort and symptom management',
@@ -11889,44 +12105,34 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
     // Attach required intervention groups directly to result so renderAllCpCard
     // can separate them from AI-generated clinical interventions
+    if (isPrimary && !result) {
+      // AI call failed — still give the nurse a usable primary card with every required item.
+      result = {
+        goalFocus: 'optimal comfort, dignity, and quality of life consistent with hospice goals of care, with distressing symptoms managed to the patient\'s/family\'s satisfaction',
+        goalMeasurement: 'patient/caregiver report of comfort and absence of unnecessary suffering',
+        goalDuration: 'end of the current benefit period',
+        interventions: [],
+        _aiFailed: true
+      };
+    }
     if (isPrimary && result) {
-      result._requiredGroups = [];
-
-      if (flags && flags.fullCode) {
-        result._requiredGroups.push({
-          label: 'Full Code Status — Interventions Only (no separate goal needed)',
-          badge: 'REQUIRED — WHEN APPLICABLE',
-          items: [
-            { prefix: 'ASSESS',   text: 'Nurse will assess for risk of hospitalization due to Full Code status.' },
-            { prefix: 'EDUCATE',  text: 'Nurse will educate patient/family on the various code statuses and what they may look like if initiated at time of zero signs of life.' },
-            { prefix: 'PERFORM',  text: 'Nurse will confirm patient/family understanding of various code statuses and desires for end-of-life care.' }
-          ]
-        });
-      }
-
-      result._requiredGroups.push({
-        label: 'Medication Administration & Education',
-        badge: 'REQUIRED — ALL ADMISSIONS',
-        items: [
-          { prefix: 'PERFORM', text: getMedAdminResponsibilityText(flags.setting) },
-          { prefix: 'PERFORM', text: 'Patient/caregiver verbalized understanding of all current medications, their purpose, dosing instructions, and potential side effects.' }
-        ]
-      });
-
-      result._requiredGroups.push({
-        label: 'Bereavement Assessment',
-        badge: 'REQUIRED — ALL ADMISSIONS',
-        items: [
-          { prefix: 'ASSESS',   text: 'Nurse will assess family system and dynamics, including communication patterns, roles, relationships, unresolved conflicts, and the family ability to provide mutual support.' },
-          { prefix: 'PERFORM',  text: 'Nurse will perform and document a bereavement assessment during visits as indicated to identify emotional, spiritual, psychosocial, and practical needs of the patient/family/caregiver.' },
-          { prefix: 'PERFORM',  text: 'Nurse will communicate identified needs and concerns to the interdisciplinary group (IDG) and initiate referrals to social work, chaplain, or bereavement services as appropriate.' },
-          { prefix: 'EDUCATE',  text: 'Nurse will educate the family regarding available hospice resources, including social work services, chaplain support, volunteer services, and bereavement follow-up services.' }
-        ]
-      });
+      result._requiredGroups = getRequiredPrimaryGroups(flags);
     }
 
     renderAllCpCard(c.body, result, it.diagnosis, patientDetails);
   }));
+
+  if (primaryIdx === -1) {
+    const fb = makeRequiredOnlyCard(wrap, primaryDx);
+    renderAllCpCard(fb.body, {
+      goalFocus: 'optimal comfort, dignity, and quality of life consistent with hospice goals of care, with distressing symptoms managed to the patient\'s/family\'s satisfaction',
+      goalMeasurement: 'patient/caregiver report of comfort and absence of unnecessary suffering',
+      goalDuration: 'end of the current benefit period',
+      interventions: [],
+      _fallbackPrimary: true,
+      _requiredGroups: getRequiredPrimaryGroups(flags)
+    }, primaryDx, patientDetails);
+  }
 
   btn.textContent = '✨ Build All Tier 1 Care Plans';
   btn.disabled = false;
@@ -12355,6 +12561,14 @@ function renderAllCpCard(body, result, dx, patientDetails) {
   }
 
   body.innerHTML = '';
+  if (result._aiFailed || result._fallbackPrimary) {
+    const note = document.createElement('div');
+    note.style.cssText = 'margin-bottom:12px;padding:9px 12px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.82rem;color:#7a4200;line-height:1.5';
+    note.innerHTML = result._fallbackPrimary
+      ? '<strong>⚠ The primary diagnosis wasn\'t matched to a Tier 1 line above</strong>, so its care plan is shown here. Add this goal and the required interventions under your <strong>primary diagnosis problem</strong> in Firenote. Use 🔄 below for clinical interventions.'
+      : '<strong>⚠ AI clinical interventions couldn\'t be generated for this card.</strong> The goal and all required interventions below are complete — use 🔄 below to add clinical interventions, or run Build All again.';
+    body.appendChild(note);
+  }
 
   // Goal section — three separate fields matching Firenote's Custom Goal Builder
   // (Focus / Measurement / Duration), each independently copyable into its own field.
@@ -14565,6 +14779,8 @@ function clearIcdLookup() {
   <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
   <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
   <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('noncov-check', document.querySelector('.checker-tab[onclick*=noncov-check]'))">🚫 Non-Covered Explanation</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('recert-check', document.querySelector('.checker-tab[onclick*=recert-check]'))">🔁 Recert Narrative</button>
 </div>
 
 <style>
@@ -14774,6 +14990,8 @@ function clearIcdLookup() {
   <button class="subtab-btn" onclick="switchCheckerTab('dx-check', document.querySelector('[onclick*=dx-check]'))">🔗 Diagnosis Relatedness</button>
   <button class="subtab-btn" onclick="switchCheckerTab('meds-check', document.querySelector('[onclick*=meds-check]'))">💊 Medication Coverage</button>
   <button class="subtab-btn" onclick="switchCheckerTab('drug-interactions', document.querySelector('[onclick*=drug-interactions]'))">⚠️ Drug Interaction Parser</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('noncov-check', document.querySelector('.checker-tab[onclick*=noncov-check]'))">🚫 Non-Covered Explanation</button>
+  <button class="subtab-btn" onclick="switchCheckerTab('recert-check', document.querySelector('.checker-tab[onclick*=recert-check]'))">🔁 Recert Narrative</button>
 </div>
 
 <div class="intro-strip" style="margin-bottom:14px">
@@ -14945,7 +15163,7 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
 .tab-btn{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25;min-height:44px;display:flex;align-items:center;justify-content:center}
 
 /* Clinical Tools sub-tabs (8): one row on desktop, 4 across on tablet/split, 2 across on phone */
-.checker-tabs{display:grid;grid-template-columns:repeat(8,1fr)}
+.checker-tabs{display:grid;grid-template-columns:repeat(5,1fr)}
 .checker-tab{white-space:normal;line-height:1.25;padding:9px 6px;font-size:.8rem;min-height:44px;margin-bottom:0;text-align:center;display:flex;align-items:center;justify-content:center}
 @media(max-width:900px){
   .checker-tabs{grid-template-columns:repeat(4,1fr)}
@@ -14992,6 +15210,15 @@ html.in-split .split-open-btn{display:none}
 html.in-split .hdr-top{padding:4px 12px}
 html.in-split .hdr-logo{width:26px;height:26px}
 html.in-split .hdr-text h1{font-size:.85rem}
+
+/* Radio buttons & checkboxes must never inherit the text-field "width:100%" rule from
+   .checker-field / .ai-field. Chrome quietly ignores it inside these pill labels, but Safari
+   (iPad) stretches the circle across the pill and shoves the icon and label text aside. */
+.checker-field input[type=radio],.checker-field input[type=checkbox],
+.ai-field input[type=radio],.ai-field input[type=checkbox],
+.checker-section input[type=radio],.checker-section input[type=checkbox],
+.ai-tool-body input[type=radio],.ai-tool-body input[type=checkbox]{
+  width:auto;min-width:0;padding:0;margin:0;border:none;box-shadow:none;flex:0 0 auto;-webkit-appearance:auto;appearance:auto}
 
 /* "Show different intervention options" */
 .more-iv{margin-top:10px;padding:10px;border:1px dashed #d7cdef;border-radius:7px;background:#faf8fe}
@@ -15041,4 +15268,230 @@ function openFirenoteSplit(){
   window.location.href = 'split-test.html';
 }
 </script>
+<style id="doc-tools-css">
+/* Non-Covered Explanation + Recert Narrative (Oct 2026) */
+.nc-types{display:flex;gap:8px;flex-wrap:wrap}
+.nc-type{display:flex;align-items:center;gap:7px;padding:8px 13px;border:2px solid var(--border);border-radius:7px;background:var(--row-alt);font-size:.85rem;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--navy);margin:0}
+.nc-type:has(input:checked){border-color:var(--navy);background:#eef2fa}
+.nc-flag{padding:11px 14px;border-radius:7px;font-size:.85rem;line-height:1.55;margin-bottom:12px}
+.nc-flag.high{background:var(--red-bg);border:1px solid rgba(192,57,43,.35);color:#7a1f1a}
+.nc-flag.caution{background:#fff8e1;border:1px solid #ffe082;color:#7a4200}
+.nc-opt{border:1px solid var(--border);border-radius:8px;padding:11px 14px;margin-bottom:10px;background:#fff}
+.nc-opt-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.nc-opt-hd span{font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em}
+.nc-opt-hd button{min-height:34px;padding:0 12px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer}
+.nc-opt p{margin:0;font-size:.9rem;line-height:1.6;color:var(--text)}
+.nc-tip{font-size:.8rem;color:var(--text-mid);background:var(--row-alt);border-radius:6px;padding:8px 12px;margin-top:4px}
+.rc-grid{display:grid;grid-template-columns:minmax(110px,.8fr) 1fr 1fr;gap:6px;align-items:center}
+.rc-grid .rc-h{font-size:.72rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.04em}
+.rc-grid .rc-l{font-size:.84rem;font-weight:600;color:var(--navy)}
+.rc-grid input{width:100%;padding:8px 10px!important;font-size:.86rem!important}
+@media(max-width:520px){.rc-grid{grid-template-columns:1fr 1fr}.rc-grid .rc-h:first-child{display:none}.rc-grid .rc-l{grid-column:1/-1;margin-top:6px}}
+.rc-step{font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:8px}
+.rc-prompt{white-space:pre-wrap;background:var(--row-alt);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:inherit;font-size:.8rem;line-height:1.55;max-height:260px;overflow:auto;margin:0;color:var(--text-mid)}
+.rc-paste{width:100%;min-height:200px;padding:10px 13px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.87rem;line-height:1.6;resize:vertical}
+.rc-chk{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.rc-chk-hd{background:var(--navy);color:#fff;padding:8px 12px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.rc-chk-item{padding:7px 12px;border-bottom:1px solid var(--border-lt);font-size:.84rem;line-height:1.5}
+.rc-chk-item:last-child{border-bottom:none}
+.rc-chk-item.bad{background:#fff5f5}.rc-chk-item.part{background:#fffbea}
+</style>
+<script id="doc-tools-js">
+/* ════════════════════════════════════════════════════════════════════════
+   NON-COVERED ITEM EXPLANATION — 42 CFR §418.24(c) election statement addendum
+   The hospice must give a written CLINICAL explanation for why each item is
+   unrelated — not just name the unrelated diagnosis or list an ICD-10 code.
+   De-identified: only item, type, condition, primary dx and notes are sent.
+   ════════════════════════════════════════════════════════════════════════ */
+function ncExample(type, item, cond, primary, notes) {
+  var r = document.querySelector('input[name="nc-type"][value="' + type + '"]'); if (r) r.checked = true;
+  document.getElementById('nc-item').value = item;
+  document.getElementById('nc-condition').value = cond;
+  document.getElementById('nc-primary').value = primary;
+  document.getElementById('nc-notes').value = notes;
+}
+function clearNonCovered() {
+  ['nc-item','nc-condition','nc-primary','nc-notes'].forEach(function(id) { document.getElementById(id).value = ''; });
+  var r = document.querySelector('input[name="nc-type"][value="medication"]'); if (r) r.checked = true;
+  var out = document.getElementById('nc-result'); out.style.display = 'none'; out.innerHTML = '';
+}
+async function runNonCoveredExplanation() {
+  var type = (document.querySelector('input[name="nc-type"]:checked') || {}).value || 'medication';
+  var item = document.getElementById('nc-item').value.trim();
+  var cond = document.getElementById('nc-condition').value.trim();
+  var primary = document.getElementById('nc-primary').value.trim();
+  var notes = document.getElementById('nc-notes').value.trim();
+  if (!item || !cond || !primary) { alert('Please enter the item, the condition it treats, and the primary hospice diagnosis.'); return; }
+  var btn = document.getElementById('nc-btn'), out = document.getElementById('nc-result');
+  btn.classList.add('loading'); btn.disabled = true;
+  out.style.display = 'block';
+  out.innerHTML = '<div style="padding:14px;text-align:center;color:var(--navy);font-style:italic;font-size:.88rem">Writing clinical explanation…</div>';
+
+  var prompt = 'You are a hospice compliance and clinical documentation expert. Under 42 CFR §418.24(c), when a hospice determines an item, service, or drug is unrelated to the terminal illness and related conditions, it must give the patient a WRITTEN CLINICAL EXPLANATION, in language the patient and family can understand, supporting why it is unrelated — not simply name the unrelated diagnosis or list an ICD-10 code (e.g. "Related to unrelated condition: E03.9 Hypothyroidism" is NOT acceptable).'
+    + '\n\nTYPE: ' + type
+    + '\nNON-COVERED ITEM: ' + item
+    + '\nCONDITION IT TREATS / PURPOSE: ' + cond
+    + '\nPRIMARY HOSPICE (TERMINAL) DIAGNOSIS: ' + dxNameForProse(primary)
+    + (notes ? '\nNURSE NOTES: ' + notes : '')
+    + '\n\nTASK 1 — RELATEDNESS CHECK. Hospice care presumes most conditions are related to the terminal prognosis. Set relatedness.level:'
+    + '\n- "high" if the item treats a symptom of the terminal illness or a related condition, is used for comfort/pain/dyspnea/anxiety/nausea/bowel/skin/sleep management, or the condition clearly contributes to or is worsened by the terminal illness (e.g. diuretics in heart failure, opioids, laxatives with opioids, oxygen with lung disease, anticoagulants after stroke).'
+    + '\n- "caution" if it COULD be related depending on the patient (e.g. diabetes meds when intake is declining, antihypertensives in cardiac/renal disease, antidepressants) and the notes don\'t clearly show otherwise.'
+    + '\n- "low" if it is clearly unrelated (routine/preventive care, a stable long-standing condition with no effect on symptoms or prognosis).'
+    + '\nGive a one-to-two sentence note explaining the level in plain terms for the nurse.'
+    + '\n\nTASK 2 — Write 3 explanation options (Brief = 1 sentence, Standard = 2 sentences, Detailed = 3 sentences). Rules for every option:'
+    + '\n- Plain language a patient or family member understands (about 8th-grade reading level). No jargon, no abbreviations, no regulation citations, NO ICD-10 codes.'
+    + '\n- Name the item and the condition it treats, then give the CLINICAL REASON it is not related to the terminal illness — e.g. the condition is stable/long-standing, is not causing or worsening the patient\'s symptoms, does not affect comfort, or does not contribute to the terminal decline; or the item is routine/preventive care that is not needed for comfort or symptom management. Use details from the nurse notes when given; never invent facts (no made-up lab values or dates).'
+    + '\n- End by stating it is not covered by hospice because of this. Do not tell the patient to stop the item and do not mention costs or other insurance.'
+    + '\n- Write to the patient using "you/your", and refer to the terminal illness by name (e.g. "your heart failure").'
+    + '\n\nTASK 3 — "tip": one short sentence telling the nurse what detail (if any) would make the explanation stronger, or "" if nothing is needed.'
+    + '\n\nRespond ONLY with JSON: {"relatedness":{"level":"low|caution|high","note":"..."},"options":[{"label":"Brief","text":"..."},{"label":"Standard","text":"..."},{"label":"Detailed","text":"..."}],"tip":"..."}';
+
+  try {
+    var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 1200 }) });
+    var data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+    var parsed = icdParseAiJson(data.content && data.content[0] && data.content[0].text);
+    renderNonCovered(parsed, cond + ' ' + primary);
+  } catch (e) {
+    out.innerHTML = '<div class="alert danger"><span>⚠️</span><div><strong>Could not generate an explanation right now.</strong> Please try again. <span style="font-size:.78rem">(' + escapeHtml(e.message) + ')</span></div></div>';
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+function renderNonCovered(parsed, codeSource) {
+  var out = document.getElementById('nc-result');
+  var codes = icdCodesInText(codeSource);
+  var clean = function(t) {
+    return stripIcdCodes(String(t || ''), codes)
+      .replace(/\s*\(?\b[A-TV-Z][0-9][0-9A-Z]\.[0-9A-Z]{1,4}\b\)?/g, '') // any dotted ICD-10 code, with or without parentheses
+      .replace(/\(\s*\)/g, '').replace(/\s+([,.;])/g, '$1').replace(/\s{2,}/g, ' ').trim();
+  };
+  var rel = parsed.relatedness || {};
+  var html = '';
+  if (rel.level === 'high') {
+    html += '<div class="nc-flag high"><strong>⛔ Likely RELATED — review with the hospice physician before listing this as non-covered.</strong><br>' + escapeHtml(rel.note || '') + '<br><span style="font-size:.78rem">If hospice determines it is related, it must be covered and should not appear on the addendum.</span></div>';
+  } else if (rel.level === 'caution') {
+    html += '<div class="nc-flag caution"><strong>⚠ Could be related — confirm with the hospice physician.</strong><br>' + escapeHtml(rel.note || '') + '</div>';
+  }
+  var opts = (parsed.options || []).filter(function(o) { return o && o.text; });
+  if (!opts.length) { out.innerHTML = html + '<div class="alert danger"><span>⚠️</span><div>No explanation came back. Please try again.</div></div>'; return; }
+  html += '<div style="font-size:.78rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Choose one — edit to fit this patient</div>';
+  opts.forEach(function(o, i) {
+    html += '<div class="nc-opt"><div class="nc-opt-hd"><span>' + escapeHtml(o.label || ('Option ' + (i + 1))) + '</span>'
+      + '<button type="button" data-nc="' + i + '">📋 Copy</button></div><p>' + escapeHtml(clean(o.text)) + '</p></div>';
+  });
+  if (parsed.tip) html += '<div class="nc-tip">💡 ' + escapeHtml(parsed.tip) + '</div>';
+  html += '<div class="ai-disclaimer" style="margin-top:10px">The relatedness determination is made by the hospice physician. This wording is a starting point — make sure it matches this patient and the physician\'s determination before entering it in Firenote or on the addendum.</div>';
+  out.innerHTML = html;
+  out.querySelectorAll('button[data-nc]').forEach(function(b) {
+    b.addEventListener('click', function() { copyAllCpText(b, clean(opts[+b.dataset.nc].text)); });
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   RECERTIFICATION NARRATIVE — RN summary built through Copilot (PHI stays
+   in the Luminos Copilot account; nothing here goes to our AI function).
+   ════════════════════════════════════════════════════════════════════════ */
+function rcTogglePeriod() {
+  var p = document.getElementById('rc-period').value;
+  document.getElementById('rc-f2f-wrap').style.display = (p === '3' || p === '4') ? 'block' : 'none';
+}
+var RC_ROWS = [['pps','PPS'],['wt','Weight'],['mac','MAC'],['scale','FAST / disease scale'],['adl','ADLs / mobility'],['intake','Oral intake']];
+function clearRecert() {
+  ['rc-f2f','rc-primary','rc-events','rc-symptoms','rc-notes','rc-paste'].forEach(function(id) { document.getElementById(id).value = ''; });
+  RC_ROWS.forEach(function(r) { document.getElementById('rc-' + r[0] + '-p').value = ''; document.getElementById('rc-' + r[0] + '-c').value = ''; });
+  document.getElementById('rc-period').value = '2'; rcTogglePeriod();
+  ['rc-prompt-wrap','rc-length','rc-meta','rc-checklist'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+}
+function buildRecertPrompt() {
+  var v = function(id) { return document.getElementById(id).value.trim(); };
+  var period = v('rc-period'), primary = v('rc-primary');
+  if (!primary) { alert('Please enter the primary hospice diagnosis.'); return; }
+  var periodText = { '2': '2nd benefit period (90 days)', '3': '3rd benefit period (60 days)', '4': '4th or later benefit period (60 days)' }[period];
+  var rows = RC_ROWS.map(function(r) {
+    var p = v('rc-' + r[0] + '-p'), c = v('rc-' + r[0] + '-c');
+    return (p || c) ? '- ' + r[1] + ': then ' + (p || 'not recorded') + ' → now ' + (c || 'not recorded') : null;
+  }).filter(Boolean);
+  var events = v('rc-events'), sx = v('rc-symptoms'), notes = v('rc-notes'), f2f = v('rc-f2f');
+  if (!rows.length && !events && !sx && !notes) { alert('Please enter at least some findings (Then vs. Now, events, symptoms, or notes).'); return; }
+
+  var inputWords = [rows.join(' '), events, sx, notes].join(' ').split(/\s+/).filter(Boolean).length;
+  var max = Math.max(150, Math.min(400, Math.round(inputWords * 1.8)));
+  var min = Math.max(100, Math.round(max * 0.6));
+  var target = min + '–' + max + ' words';
+  var needsF2F = period === '3' || period === '4';
+
+  var prompt = 'You are an experienced hospice RN case manager helping a nurse write her RECERTIFICATION summary for the ' + periodText + '. The hospice physician reviews this to decide whether the patient still has a prognosis of six months or less, so it must clearly show, with real numbers, how the patient has changed since the last certification.'
+    + '\n\nPRIMARY HOSPICE DIAGNOSIS: ' + primary
+    + (rows.length ? '\n\nTHEN (last cert/admission) vs. NOW:\n' + rows.join('\n') : '')
+    + (events ? '\n\nEVENTS THIS BENEFIT PERIOD:\n' + events : '')
+    + (sx ? '\n\nCURRENT SYMPTOMS & MANAGEMENT:\n' + sx : '')
+    + (notes ? '\n\nOTHER NOTES / NURSE\'S DRAFT:\n' + notes : '')
+    + (needsF2F ? '\n\nFACE-TO-FACE ENCOUNTER: ' + (f2f || 'not provided') : '')
+    + '\n\nWRITE THE NARRATIVE BY THESE RULES:'
+    + '\n- COMPARE THEN VS. NOW: For each measure given, state both values (e.g. "PPS has declined from 50% to 30%", "weight 142 lb → 128 lb, a 14 lb loss"). Calculate a percent weight change only when both weights are given. These comparisons are the heart of the recert.'
+    + '\n- KEEP EVERY FACT: every number, score, date, event, symptom, medication change, and comorbidity in the input must appear. Cut wording, never facts.'
+    + '\n- BE HONEST: never invent or exaggerate decline. If a measure is unchanged or improved, say so plainly — do not hide it. Describe what the nurse observed; let the physician make the prognosis call.'
+    + '\n- VOICE: an experienced hospice RN charting — first person for what you observed ("I assessed…", "Pt now requires…"), present tense for current status. Plain, direct sentences. Normal nursing abbreviations are fine (pt, CG, PRN, PPS, O2, SOB).'
+    + '\n- NO AI-SOUNDING WORDS: avoid "comprehensive", "holistic", "notably", "furthermore", "moreover", "it is important to note", "demonstrates", "underscores", "ensuring", strings of adjectives.'
+    + '\n- NO REGULATORY LANGUAGE: do not mention CMS, LCD, Medicare, "meets criteria", or "prognosis of six months or less". Do not state or predict prognosis — that is the physician\'s determination.'
+    + (needsF2F ? '\n- If the face-to-face encounter date/clinician is given, include one short sentence noting it.' : '')
+    + '\n- LENGTH: about ' + target + ', 2–3 short paragraphs (status & decline comparison; events & symptoms; current plan/care needs). If every fact cannot fit, go over rather than drop a fact.'
+    + '\n- NEVER write about missing information inside the narrative ("was not documented", "should be obtained") — that goes only in the checklist.'
+    + '\n\nFORMAT YOUR RESPONSE EXACTLY AS:'
+    + '\n\nRECERTIFICATION NARRATIVE:\n[the narrative — paragraphs only, no headers, no bullets]'
+    + '\n\n---\n\nELEMENT CHECKLIST:'
+    + '\nMark each as ✅ PRESENT, ⚠️ PARTIAL, or ❌ MISSING with a brief note:'
+    + '\n- Decline shown by then-vs-now comparison of at least one functional measure (PPS/ADLs/scale)'
+    + '\n- Nutritional status compared (weight, MAC, or intake)'
+    + '\n- Events this period (hospitalizations, infections, falls, wounds) or a statement that none occurred'
+    + '\n- Current symptom burden and how it is managed'
+    + '\n- Disease-specific indicators for the primary diagnosis'
+    + (needsF2F ? '\n- Face-to-face encounter (date and clinician)' : '')
+    + '\n\nSUMMARY: [one sentence — "Ready for MD review" or what to add first. If the input does not show decline, say so here and suggest discussing with the hospice physician.]';
+
+  document.getElementById('rc-prompt').textContent = prompt;
+  var wrap = document.getElementById('rc-prompt-wrap');
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function handleRecertPasteBack() {
+  var ta = document.getElementById('rc-paste');
+  var raw = ta.value;
+  var m = raw.search(/---\s*ELEMENT CHECKLIST[^\n]*---|ELEMENT CHECKLIST:|ELEMENT CHECKLIST\s*$/im);
+  var narrative = m !== -1 ? raw.slice(0, m) : raw;
+  var checklist = m !== -1 ? raw.slice(m) : '';
+  narrative = narrative
+    .replace(/^\s*(?:#{1,6}\s*)?(?:\*{1,2})?\s*(?:RN\s+|UPDATED\s+|STRENGTHENED\s+|REVISED\s+)?(?:RECERT(?:IFICATION)?\s+)?(?:SUMMARY|NARRATIVE)\s*:?\s*(?:\*{1,2})?\s*:?[ \t]*(?:\r?\n)+/i, '')
+    .replace(/(?:\r?\n)\s*[-–—_*]{3,}\s*$/, '')
+    .trim();
+  if (narrative !== raw) ta.value = narrative;
+
+  // Checklist
+  var box = document.getElementById('rc-checklist');
+  if (checklist) {
+    var lines = checklist.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+    var items = lines.filter(function(l) { return /^(✅|⚠️|⚠|❌|-\s*(✅|⚠️|❌))/.test(l) || /\b(PRESENT|PARTIAL|MISSING)\b/.test(l); })
+      .filter(function(l) { return !/^Mark each/i.test(l); });
+    var summary = (lines.find(function(l) { return /^SUMMARY:/i.test(l); }) || '').replace(/^SUMMARY:\s*/i, '');
+    box.innerHTML = '<div class="rc-chk"><div class="rc-chk-hd">Element Checklist — not part of the narrative</div>'
+      + items.map(function(l) { var cls = /❌|MISSING/.test(l) ? 'bad' : (/⚠|PARTIAL/.test(l) ? 'part' : ''); return '<div class="rc-chk-item ' + cls + '">' + escapeHtml(l.replace(/^-\s*/, '')) + '</div>'; }).join('')
+      + (summary ? '<div class="rc-chk-item" style="font-weight:600;color:var(--navy)">' + escapeHtml(summary) + '</div>' : '')
+      + '</div>';
+    box.style.display = 'block';
+  }
+  // Gap-commentary safety net (same rule as the Narrative Strengthener)
+  var meta = document.getElementById('rc-meta');
+  var flagged = scanNarrativeForMetaCommentary(narrative);
+  if (flagged.length) {
+    meta.innerHTML = '<span>⚠</span><div><strong>Remove before copying — these sentences describe missing documentation, which should never go into the chart:</strong><ul style="margin:6px 0 0 18px;padding:0">' + flagged.map(function(f) { return '<li>"' + escapeHtml(f) + '"</li>'; }).join('') + '</ul></div>';
+    meta.style.display = 'flex';
+  } else { meta.style.display = 'none'; }
+  var words = narrative ? narrative.split(/\s+/).filter(Boolean).length : 0;
+  var len = document.getElementById('rc-length');
+  if (words > 500) { len.textContent = words + ' words — on the long side. You can ask Copilot to "tighten the wording without removing any clinical facts."'; len.style.display = 'block'; }
+  else len.style.display = 'none';
+}
+</script>
+
 </body>
