@@ -374,6 +374,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       
     </div>
     <button type="button" class="split-open-btn" onclick="openFirenoteSplit()" title="Open Firenote next to this tool in the same window">🔀 Side-by-side with Firenote</button>
+    <button type="button" class="train-mode-btn" onclick="toggleTrainingMode()" title="Training mode (education staff)" aria-label="Training mode">🎓</button>
   </div>
   <div class="tab-bar">
     <div class="tab-inner">
@@ -15206,6 +15207,11 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
 .split-open-btn{margin-left:auto;flex-shrink:0;min-height:40px;padding:0 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(201,151,44,.15);color:#fff;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
 .split-open-btn:hover{background:rgba(201,151,44,.3)}
 @media(max-width:700px){.split-open-btn{display:none}} /* too narrow for two panes */
+.train-mode-btn{flex-shrink:0;min-height:40px;min-width:40px;padding:0 10px;margin-left:6px;border-radius:6px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#fff;font-family:inherit;font-size:.95rem;cursor:pointer;opacity:.55}
+.train-mode-btn:hover{opacity:1;background:rgba(255,255,255,.08)}
+.train-mode-btn.on{opacity:1;background:#e67e22;border-color:#e67e22;font-size:.78rem;font-weight:700}
+@media(max-width:700px){.train-mode-btn{display:none}}
+html.in-split .train-mode-btn{display:none}
 html.in-split .split-open-btn{display:none}
 html.in-split .hdr-top{padding:4px 12px}
 html.in-split .hdr-logo{width:26px;height:26px}
@@ -15270,10 +15276,32 @@ function openFirenoteSplit(){
   window.location.href = isFirenoteTrainingMode() ? 'split-test.html?site=training' : 'split-test.html';
 }
 function isFirenoteTrainingMode() { return /[?&]training=1\b/.test(location.search); }
+// 🎓 button: password-gated switch into training mode (training.firenote.io in side-by-side).
+// Only a SHA-256 hash of the password is stored here. This is a deterrent against
+// accidental use by nurses, not security — the training server has its own login.
+var TRAINING_PW_SHA256 = '115aa86427be8367119e3c6cc66bf592dbe9cbe36a43966f9dfede29c850c2c1';
+async function toggleTrainingMode() {
+  if (isFirenoteTrainingMode()) {
+    if (confirm('Leave training mode and go back to the live Firenote site?')) location.href = 'index.html';
+    return;
+  }
+  var pw = prompt('Training mode is for education staff only.\n\nEnter the training password:');
+  if (pw === null) return;
+  var ok = false;
+  try {
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw.trim()));
+    ok = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('') === TRAINING_PW_SHA256;
+  } catch (e) { ok = false; }
+  if (!ok) { alert('Incorrect password.'); return; }
+  if (toolHasEnteredData() && !confirm('Switching to training mode restarts the tool, so anything you have entered here will be cleared. Continue?')) return;
+  location.href = 'index.html?training=1';
+}
 (function markTrainingButton() {
   if (!isFirenoteTrainingMode()) return;
   var b = document.querySelector('.split-open-btn');
   if (b) { b.textContent = '🎓 Side-by-side with Firenote TRAINING'; b.style.background = '#e67e22'; b.style.borderColor = '#e67e22'; b.title = 'Training mode — opens training.firenote.io'; }
+  var t = document.querySelector('.train-mode-btn');
+  if (t) { t.textContent = '✕ Exit training'; t.classList.add('on'); t.title = 'Leave training mode (back to live Firenote)'; }
 })();
 </script>
 <style id="doc-tools-css">
