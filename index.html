@@ -15265,8 +15265,16 @@ function toolHasEnteredData(doc){
 }
 function openFirenoteSplit(){
   if (toolHasEnteredData() && !confirm('Switching to side-by-side view restarts the tool, so anything you have entered or checked here will be cleared.\n\nTip: choose your view at the start of the admission.\n\nSwitch now?')) return;
-  window.location.href = 'split-test.html';
+  // Hidden training switch: opening the tool as index.html?training=1 makes side-by-side
+  // load training.firenote.io instead of the live site. Nothing visible changes for nurses.
+  window.location.href = isFirenoteTrainingMode() ? 'split-test.html?site=training' : 'split-test.html';
 }
+function isFirenoteTrainingMode() { return /[?&]training=1\b/.test(location.search); }
+(function markTrainingButton() {
+  if (!isFirenoteTrainingMode()) return;
+  var b = document.querySelector('.split-open-btn');
+  if (b) { b.textContent = '🎓 Side-by-side with Firenote TRAINING'; b.style.background = '#e67e22'; b.style.borderColor = '#e67e22'; b.title = 'Training mode — opens training.firenote.io'; }
+})();
 </script>
 <style id="doc-tools-css">
 /* Non-Covered Explanation + Recert Narrative (Oct 2026) */
