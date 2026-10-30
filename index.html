@@ -7504,18 +7504,51 @@ function findMatch(input, ruleArray) {
   const lower = input.toLowerCase();
   // Collect all matches, then return the one with the longest matching term
   // This ensures 'pulmonary hypertension' beats 'hypertension' etc.
+  // Short terms (abbreviations like "uc", "ms", "pe", "ra") must match as WHOLE WORDS —
+  // as plain substrings they matched inside other words ("glaUComa" → ulcerative colitis,
+  // "sympto-MS" → multiple sclerosis, "hy-PE-rtension" → pulmonary embolism). Longer terms
+  // still match as substrings so stems keep working (e.g. "hypertension" in "hypertensive…").
   let bestMatch = null;
   let bestTermLen = 0;
   for (const rule of ruleArray) {
     for (const term of rule.terms) {
       const t = term.toLowerCase();
-      if (lower.includes(t) && t.length > bestTermLen) {
-        bestMatch = rule;
-        bestTermLen = t.length;
-      }
+      if (t.length <= bestTermLen) continue;
+      const hit = t.length <= 4
+        ? new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '($|[^a-z0-9])').test(lower)
+        : lower.includes(t);
+      if (hit) { bestMatch = rule; bestTermLen = t.length; }
     }
   }
   return bestMatch;
+}
+
+// Diagnosis Relatedness rule lookup (Oct 2026):
+//  1. If the nurse typed an ICD-10 code, match a rule by that exact code first.
+//  2. Otherwise match terms against the DIAGNOSIS FIELD ONLY — not the free-text context, where
+//     other conditions are often mentioned ("HTN contributed to CHF") and would hijack the result.
+//  3. Reject a term match whose ICD-10 code is a different family from the code the nurse typed.
+function findDxRule(dxName) {
+  const codes = (dxName.toUpperCase().match(/\b[A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?\b/g) || []);
+  const byCode = function(arr, cat) {
+    const r = arr.find(function(rule) { return rule.icd && codes.indexOf(String(rule.icd).toUpperCase()) !== -1; });
+    return r ? { rule: r, cat: cat } : null;
+  };
+  if (codes.length) {
+    const hit = byCode(DX_NOT_RELATED, 'not-related') || byCode(DX_RELATED, 'related');
+    if (hit) return hit;
+  }
+  const family = function(c) { return String(c || '').toUpperCase().slice(0, 3); };
+  const ok = function(rule) {
+    if (!rule) return false;
+    if (!codes.length || !rule.icd || rule.icd === 'N/A') return true;
+    return codes.some(function(c) { return family(c) === family(rule.icd); });
+  };
+  let m = findMatch(dxName, DX_NOT_RELATED);
+  if (ok(m)) return { rule: m, cat: 'not-related' };
+  m = findMatch(dxName, DX_RELATED);
+  if (ok(m)) return { rule: m, cat: 'related' };
+  return null;
 }
 
 async function runMedCheck() {
@@ -7699,13 +7732,16 @@ async function runDxCheck() {
   const btn = document.getElementById('dx-btn');
 
   // ── Step 1: Run rule engine immediately ───────────────────────
+  // Rules match the diagnosis field only (see findDxRule); context still goes to the AI below.
+  void searchText;
   let ruleCategory = null;
-  let match = findMatch(searchText, DX_NOT_RELATED);
+  const dxHit = findDxRule(dxName);
+  let match = dxHit && dxHit.cat === 'not-related' ? dxHit.rule : null;
   if (match) {
     ruleCategory = 'not-related';
     showDxResult(match.verdict, 'not-related', '❌', dxName, primaryDx, match.icd, match.system||'', null, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||'');
   } else {
-    match = findMatch(searchText, DX_RELATED);
+    match = dxHit && dxHit.cat === 'related' ? dxHit.rule : null;
     if (match) {
       ruleCategory = 'related';
       showDxResult(match.verdict, 'related', '✅', dxName, primaryDx, match.icd, match.system||'', match.q, match.reason, match.nurseDoc||match.doc||'', match.mdDoc||'');
@@ -8917,7 +8953,7 @@ function cpQuickFillSituational(key) {
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
     skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
     // 'wound' preset removed — the Wounds button now opens the interactive multi-entry builder instead.
-    discharge: { problem: 'Z71.89 – Encounter for other specified counseling (Discharge Planning / Live Discharge)', type: 'coordination', goals: 'transition', hint: 'Use when patient is anticipated to discharge from hospice services, or when a patient no longer qualifies (NLQ/voluntary withdrawal). Generates instantly using approved QA language.', hardcoded: true },
+    discharge: { problem: 'Discharge Planning / Live Discharge — under the primary diagnosis problem', type: 'coordination', goals: 'transition', hint: 'Add this goal and these interventions under the PRIMARY DIAGNOSIS problem in Firenote. Do not add Z71.89 — social work uses that code and it cannot be added twice. Use when patient is anticipated to discharge from hospice services, or no longer qualifies (NLQ/voluntary withdrawal). Generates instantly using approved QA language.', hardcoded: true },
     respite: { problem: 'Respite admission — caregiver relief and patient safety during temporary placement', type: 'coordination', goals: 'respite', hint: 'Use when patient is being admitted for a short-term respite level of care.' },
     gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
     imminence: { problem: 'Imminence of death — comfort, dignity, and family support in final hours/days', type: 'psychosocial', goals: 'grief', hint: 'Add when patient shows signs of active dying. Focus on comfort, dignity, and family preparation.' },
@@ -8986,8 +9022,8 @@ function getHardcodedCarePlan(key) {
 **PERFORM** — Nurse will coordinate with facility administration and nursing staff to ensure a smooth transition, confirm understanding of the discharge plan, and document facility collaboration in the patient record.` : '';
 
   var plans = {
-    discharge: `## CARE PLAN PROBLEM
-Z71.89 – Encounter for other specified counseling (Discharge Planning / Live Discharge)
+    discharge: `## WHERE TO ADD THIS IN FIRENOTE
+Add this goal and these interventions under the PRIMARY DIAGNOSIS problem. Do NOT add Z71.89 as a separate problem — social work uses that code and it cannot be added twice.
 
 Patient is anticipated to discharge from hospice services and requires discharge planning and counseling to promote a safe and coordinated transition of care. This includes both planned discharges and situations where the patient no longer meets hospice eligibility criteria (NLQ) or is voluntarily withdrawing from hospice services.
 
