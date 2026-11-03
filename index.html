@@ -9395,43 +9395,86 @@ async function generateCocNote() {
   }
 }
 
-async function generateTeamsNote() {
-  const narrative = document.getElementById('narr-paste-back').value.trim();
-  const patientId = document.getElementById('teams-patient-id').value.trim() || '[PATIENT INITIALS]';
+// ── TEAMS ADMISSION NOTE (Luminos template, Nov 2026) ─────────────────────
+// The note is assembled HERE, in the browser, from the fields above, in the exact
+// template order. AI is used only to PRE-FILL the clinical fields from the narrative
+// (which the AI already reads elsewhere). Patient name, MPOA/contact and funeral home
+// are typed by the nurse and are never sent anywhere.
+var TM_FIELDS = [
+  ['tm-name','Patient Name'],['tm-dx','Dx'],['tm-location','Location'],['tm-mpoa','MPOA/Emergency contact'],
+  ['tm-dnr','DNR'],['tm-dpoa','DPOA – obtained IN HAND at admit?'],['tm-funeral','Funeral Home'],['tm-vet','Veteran?'],
+  ['tm-dme','DME'],['tm-smoker','Smoker?'],['tm-ckit','Comfort kit'],['tm-sn','SN'],['tm-aide','AIDE'],
+  ['tm-ch','CH'],['tm-sw','SW'],['tm-vol','Volunteer'],['tm-supplies','Supplies Needed'],
+  ['tm-hope','HOPE Symptom Impact (Moderate/Severe needing follow-up)']
+];
+function tmVal(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function tmSet(id, v) {
+  var e = document.getElementById(id); if (!e || v == null) return false;
+  v = String(v).trim(); if (!v || e.value.trim()) return false; // never overwrite what the nurse typed
+  if (e.tagName === 'SELECT') {
+    var opt = Array.prototype.find.call(e.options, function(o) { return o.value && o.value.toLowerCase().indexOf(v.toLowerCase()) === 0; });
+    if (!opt) return false; e.value = opt.value;
+  } else e.value = v;
+  e.classList.add('tm-filled'); return true;
+}
+function clearTeamsFields() {
+  TM_FIELDS.forEach(function(f) { var e = document.getElementById(f[0]); if (e) { e.value = ''; e.classList.remove('tm-filled'); } });
+  document.getElementById('tm-ch').value = 'Evaluate within 5 days';
+  document.getElementById('tm-sw').value = 'Evaluate within 5 days';
+  document.getElementById('tm-date').valueAsDate = new Date();
+  ['teams-output-wrap','teams-missing','teams-error'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+}
+async function prefillTeamsFromNarrative() {
+  var narrative = document.getElementById('narr-paste-back').value.trim();
   if (!narrative) { alert('Please paste the narrative in Step 2 first.'); return; }
-
-  const btn = document.getElementById('teams-btn');
-  const errEl = document.getElementById('teams-error');
-  const wrapEl = document.getElementById('teams-output-wrap');
-  const outEl = document.getElementById('teams-output');
-  btn.textContent = '⏳ Generating...'; btn.disabled = true;
-  errEl.style.display = 'none'; wrapEl.style.display = 'none';
-
-  const prompt = 'Based on the following nursing narrative, formulate a brief admission summary for posting in a Microsoft Teams Admissions channel. Use patient identifier "' + patientId + '" (do not use any full names). Include: patient identifier, admission outcome, primary diagnosis, and any immediate follow-up needs or flags for the team. Keep it short — 3 to 5 sentences maximum. Write in plain prose — no bullet points, no bold text, no markdown formatting. Return only the summary — no preamble, no explanation.\n\nNARRATIVE:\n' + narrative;
-
-  let result = '';
+  var btn = document.getElementById('teams-prefill-btn'), errEl = document.getElementById('teams-error');
+  btn.textContent = '⏳ Reading narrative...'; btn.disabled = true; errEl.style.display = 'none';
+  var prompt = 'From the hospice admission nursing narrative below, extract ONLY these fields for a team admission post. Use exactly what the narrative says; if a field is not stated, return an empty string — never guess. Do NOT return any person\'s name, address, or phone number.'
+    + '\n\nFields:\n- dx: primary hospice diagnosis (plain words, no ICD-10 code)\n- location: care setting type only (e.g. "Home", "Home with spouse", "ALF", "SNF", "Group home") — no facility names or addresses\n- dnr: "Yes" if DNR, "No" if Full Code, else ""\n- veteran: "Y" or "N" if stated\n- smoker: "Y" or "N" if stated\n- dme: DME ordered or in the home, comma-separated\n- comfortKit: comfort kit status if stated\n- sn: skilled nursing visit frequency if stated\n- aide: hospice aide frequency or declined, if stated\n- volunteer: volunteer status if stated\n- supplies: supplies needed, comma-separated\n- hope: symptoms scored or described as MODERATE or SEVERE that need follow-up, with severity in parentheses; "No" if the narrative says none were moderate/severe; "" if not stated'
+    + '\n\nNARRATIVE:\n' + narrative
+    + '\n\nRespond ONLY with JSON: {"dx":"","location":"","dnr":"","veteran":"","smoker":"","dme":"","comfortKit":"","sn":"","aide":"","volunteer":"","supplies":"","hope":""}';
+  var filled = 0;
   try {
-    const resp = await fetch('/.netlify/functions/claude', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ prompt: prompt, max_tokens: 800 })
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      result = (data.content && data.content[0] && data.content[0].text) ? cleanNarrativeOutput(data.content[0].text) : '';
-    }
-  } catch(e) {}
-
-  btn.textContent = '✨ Generate'; btn.disabled = false;
-  if (result) {
-    outEl.value = result;
-    wrapEl.style.display = 'block';
-    wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } else {
-    errEl.textContent = '⚠ Unable to generate — please try again.';
-    errEl.style.display = 'block';
+    var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 800 }) });
+    var data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+    var f = icdParseAiJson(data.content && data.content[0] && data.content[0].text);
+    var dx = f.dx ? dxNameForProse(String(f.dx)) : '';
+    [['tm-dx',dx],['tm-location',f.location],['tm-dnr',f.dnr],['tm-vet',f.veteran],['tm-smoker',f.smoker],['tm-dme',f.dme],['tm-ckit',f.comfortKit],
+     ['tm-sn',f.sn],['tm-aide',f.aide],['tm-vol',f.volunteer],['tm-supplies',f.supplies],['tm-hope',f.hope]].forEach(function(x) { if (tmSet(x[0], x[1])) filled++; });
+    errEl.style.cssText = 'display:block;padding:10px 14px;font-size:.82rem;color:var(--green)';
+    errEl.textContent = '✓ Pre-filled ' + filled + ' field' + (filled === 1 ? '' : 's') + ' from the narrative (highlighted). Fill in the rest, then Build Teams Note.';
+  } catch (e) {
+    errEl.style.cssText = 'display:block;padding:10px 14px;font-size:.82rem;color:var(--red)';
+    errEl.textContent = '⚠ Could not read the narrative right now — fill the fields in manually, or try again.';
+  } finally {
+    btn.textContent = '✨ Pre-fill from narrative'; btn.disabled = false;
   }
 }
+function buildTeamsNote() {
+  var d = tmVal('tm-date'), dateTxt = '';
+  if (d) { var p = d.split('-'); dateTxt = p[1] + '/' + p[2] + '/' + p[0]; }
+  var lines = ['ADMISSION ' + (dateTxt || '___')];
+  var missing = [];
+  TM_FIELDS.forEach(function(f) {
+    var v = tmVal(f[0]);
+    if (!v) missing.push(f[1]);
+    var label = f[0] === 'tm-hope' ? 'HOPE Symptom Impact: Were any scores Moderate or Severe – if yes, please note which symptoms need follow up?'
+      : f[0] === 'tm-dpoa' ? 'DPOA – obtained IN HAND at admit? -'
+      : f[1] + ':';
+    lines.push(label + ' ' + (v || ''));
+  });
+  var out = document.getElementById('teams-output');
+  out.value = lines.join('\n').replace(/[ \t]+$/gm, '');
+  document.getElementById('teams-output-wrap').style.display = 'block';
+  var m = document.getElementById('teams-missing');
+  if (missing.length) { m.innerHTML = '<strong>Still blank:</strong> ' + missing.map(escapeHtml).join(', ') + '. Fill them in above and rebuild, or complete them in Teams.'; m.style.display = 'block'; }
+  else m.style.display = 'none';
+  document.getElementById('teams-output-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+// keep the old name working for anything that still calls it
+function generateTeamsNote() { buildTeamsNote(); }
+document.addEventListener('DOMContentLoaded', function() { var e = document.getElementById('tm-date'); if (e && !e.value) e.valueAsDate = new Date(); });
 
 function copyNarrativeOutput(id, btn) {
   const el = document.getElementById(id);
@@ -15129,26 +15172,49 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
             <div id="coc-error" style="display:none;padding:10px 14px;font-size:.82rem;color:var(--red)"></div>
           </div>
 
-          <!-- Teams Admission Note -->
+          <!-- Teams Admission Note (Luminos template) -->
           <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
             <div style="background:var(--row-alt);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
               <div>
                 <div style="font-size:.88rem;font-weight:700;color:var(--navy)">💬 Teams Admission Note</div>
-                <div style="font-size:.76rem;color:var(--text-lt);margin-top:2px">Brief summary for the Admissions channel in Teams</div>
+                <div style="font-size:.76rem;color:var(--text-lt);margin-top:2px">Builds the Admissions channel post in the Luminos template</div>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <div>
-                  <label style="font-size:.75rem;color:var(--text-mid);display:block;margin-bottom:2px">Patient Initials / ID</label>
-                  <input type="text" id="teams-patient-id" placeholder="e.g. J.S." maxlength="20" style="width:100px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;font-size:.82rem;outline:none">
-                </div>
-                <button id="teams-btn" onclick="generateTeamsNote()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;margin-top:14px">✨ Generate</button>
-              </div>
+              <button id="teams-prefill-btn" onclick="prefillTeamsFromNarrative()" style="padding:7px 16px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer">✨ Pre-fill from narrative</button>
             </div>
-            <div id="teams-output-wrap" style="display:none;padding:12px 14px">
-              <textarea id="teams-output" style="width:100%;min-height:100px;padding:9px 11px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;resize:vertical;outline:none;line-height:1.6"></textarea>
+            <div style="padding:12px 14px">
+              <div class="tm-note">🔒 Patient name, MPOA/contact, and funeral home stay on this device — they are never sent to AI. Pre-fill only reads the narrative for the clinical fields; review every field.</div>
+              <div class="tm-grid">
+                <label>Admission date<input type="date" id="tm-date"></label>
+                <label>Patient name 🔒<input type="text" id="tm-name" placeholder="Last, First"></label>
+                <label class="tm-wide">Dx<input type="text" id="tm-dx" placeholder="Primary hospice diagnosis"></label>
+                <label class="tm-wide">Location<input type="text" id="tm-location" placeholder="e.g. Home with daughter / Sunrise ALF rm 12 / SNF"></label>
+                <label class="tm-wide">MPOA / Emergency contact 🔒<input type="text" id="tm-mpoa" placeholder="Name, relationship, phone"></label>
+                <label>DNR<select id="tm-dnr"><option value="">—</option><option>Yes</option><option>No — Full Code</option></select></label>
+                <label>DPOA in hand at admit?<select id="tm-dpoa"><option value="">—</option><option>Y</option><option>N</option><option>N/A — none</option></select></label>
+                <label class="tm-wide">Funeral home 🔒<input type="text" id="tm-funeral" placeholder="Name, or None selected"></label>
+                <label>Veteran?<select id="tm-vet"><option value="">—</option><option>Y</option><option>N</option></select></label>
+                <label>Smoker?<select id="tm-smoker"><option value="">—</option><option>Y</option><option>N</option></select></label>
+                <label class="tm-wide">DME<input type="text" id="tm-dme" placeholder="e.g. Hospital bed, O2 concentrator, BSC"></label>
+                <label class="tm-wide">Comfort kit<input type="text" id="tm-ckit" placeholder="e.g. Ordered, delivery 11/4 / In home"></label>
+                <label>SN<input type="text" id="tm-sn" placeholder="e.g. 2w4, 3 PRN"></label>
+                <label>AIDE<input type="text" id="tm-aide" placeholder="e.g. 2w4 / Declined"></label>
+                <label>CH<input type="text" id="tm-ch" value="Evaluate within 5 days"></label>
+                <label>SW<input type="text" id="tm-sw" value="Evaluate within 5 days"></label>
+                <label>Volunteer<input type="text" id="tm-vol" placeholder="e.g. Requested / Declined"></label>
+                <label class="tm-wide">Supplies needed<input type="text" id="tm-supplies" placeholder="e.g. Briefs L, underpads, gloves"></label>
+                <label class="tm-wide">HOPE Symptom Impact — any Moderate or Severe? Note which need follow-up<input type="text" id="tm-hope" placeholder="e.g. Yes — Anxiety (moderate), Dyspnea (severe) / No"></label>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <button id="teams-btn" onclick="buildTeamsNote()" style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">💬 Build Teams Note</button>
+                <button onclick="clearTeamsFields()" style="padding:8px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
+              </div>
+              <div id="teams-missing" style="display:none;margin-top:10px;padding:8px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.8rem;color:#7a4200"></div>
+            </div>
+            <div id="teams-output-wrap" style="display:none;padding:0 14px 12px">
+              <textarea id="teams-output" style="width:100%;min-height:330px;padding:9px 11px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;resize:vertical;outline:none;line-height:1.55"></textarea>
               <div style="margin-top:8px;display:flex;gap:8px">
                 <button onclick="copyNarrativeOutput('teams-output', this)" style="padding:6px 14px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer">📋 Copy</button>
-                <button onclick="document.getElementById('teams-output-wrap').style.display='none'" style="padding:6px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
+                <button onclick="document.getElementById('teams-output-wrap').style.display='none'" style="padding:6px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Close</button>
               </div>
             </div>
             <div id="teams-error" style="display:none;padding:10px 14px;font-size:.82rem;color:var(--red)"></div>
@@ -15261,6 +15327,15 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .checker-section input[type=radio],.checker-section input[type=checkbox],
 .ai-tool-body input[type=radio],.ai-tool-body input[type=checkbox]{
   width:auto;min-width:0;padding:0;margin:0;border:none;box-shadow:none;flex:0 0 auto;-webkit-appearance:auto;appearance:auto}
+
+/* Teams Admission Note form */
+.tm-note{font-size:.78rem;color:#12502f;background:var(--green-bg);border:1px solid #bfe3cf;border-radius:6px;padding:7px 10px;margin-bottom:10px}
+.tm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.tm-grid label{display:flex;flex-direction:column;gap:3px;font-size:.74rem;font-weight:700;color:var(--navy)}
+.tm-grid .tm-wide{grid-column:1/-1}
+.tm-grid input,.tm-grid select{width:100%;min-height:36px;padding:6px 9px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;font-weight:400;color:var(--text);background:#fff}
+.tm-grid .tm-filled{background:#fffbea;border-color:#e8b84b}
+@media(max-width:520px){.tm-grid{grid-template-columns:1fr}}
 
 /* "Show different intervention options" */
 .more-iv{margin-top:10px;padding:10px;border:1px dashed #d7cdef;border-radius:7px;background:#faf8fe}
