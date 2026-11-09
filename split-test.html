@@ -32,6 +32,8 @@ body.training .bar strong{margin-right:8px}
 .emr-hint strong{color:var(--navy);font-size:1.05rem}
 #emrFrame{z-index:1;background:transparent}
 @media(max-width:700px){.bar strong{display:none}}
+.idle-tip{position:fixed;left:12px;bottom:12px;z-index:50;max-width:420px;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff8e1;border:1px solid #e8b84b;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);font-size:.82rem;line-height:1.45;color:#5a3c00}
+.idle-tip button{flex-shrink:0;min-width:32px;min-height:32px;border:none;background:transparent;font-size:1rem;cursor:pointer;color:#7a4200}
 </style>
 </head>
 <body>
@@ -42,7 +44,7 @@ body.training .bar strong{margin-right:8px}
     <button onclick="nudge(-1)" title="Smaller text, more fits">A−</button>
     <button onclick="nudge(1)" title="Larger text">A+</button>
   </span>
-  <a id="loginLink" href="https://luminos.firenote.io/" target="_blank" rel="noopener" title="Firenote side blank? Log in here in a normal tab, then tap Reload">🔑 Log in</a>
+  <a id="loginLink" href="https://luminos.firenote.io/" target="firenoteLogin" onclick="return openFirenoteLogin(event)" title="Firenote side blank? Log in here, then come back and tap Reload — the login tab closes automatically">🔑 Log in</a>
   <button onclick="reloadEmr()" title="Reload the Firenote side after logging in">↻ Reload</button>
   <button onclick="document.getElementById('split').classList.toggle('swapped')">⇄ Swap</button>
   <button onclick="exitSplit()" title="Close Firenote and go back to the tool by itself">✕ Tool only</button>
@@ -56,7 +58,7 @@ body.training .bar strong{margin-right:8px}
     <div class="emr-hint"><div>
       <strong>Firenote side blank?</strong><br>
       1. Tap <b>🔑 Log in</b> and sign in to Firenote in that tab.<br>
-      2. Come back here and tap <b>↻ Reload</b>.
+      2. Come back here and tap <b>↻ Reload</b> — the login tab closes automatically.
     </div></div>
     <iframe id="emrFrame" src="https://luminos.firenote.io/" title="Firenote" referrerpolicy="no-referrer"
       allow="clipboard-read; clipboard-write"></iframe>
@@ -114,7 +116,25 @@ fitBtn.addEventListener('click', () => { fit = !fit; save(); layout(); });
 new ResizeObserver(layout).observe(emrPane);
 layout();
 
-function reloadEmr(){ const u = emrFrame.src; emrFrame.src = 'about:blank'; setTimeout(()=>{ emrFrame.src = u; }, 50); }
+/* ── Login tab handling (Nov 2026) ────────────────────────────────────────
+   Firenote runs an inactivity timer in every tab. If the tab the nurse logged in on
+   stays open but untouched while she works in the side-by-side frame, that tab's timer
+   can log out the whole session. So: Log in opens Firenote in a tab WE opened, and
+   Reload closes that tab once she's signed in. Nothing is read from Firenote — a page
+   may always close a window it opened itself. */
+let loginWin = null;
+function openFirenoteLogin(ev){
+  const url = document.getElementById('loginLink').href;
+  try { loginWin = window.open(url, 'firenoteLogin'); } catch(e) { loginWin = null; }
+  if (!loginWin) return true;          // popup blocked → let the normal link open it
+  if (ev) ev.preventDefault();
+  return false;
+}
+function closeLoginTab(){
+  try { if (loginWin && !loginWin.closed) loginWin.close(); } catch(e) {}
+  loginWin = null;
+}
+function reloadEmr(){ closeLoginTab(); const u = emrFrame.src; emrFrame.src = 'about:blank'; setTimeout(()=>{ emrFrame.src = u; }, 50); }
 
 /* ── Back to tool-only view. Checks the TOOL pane (same site) for entered
    data before leaving; never looks at the Firenote pane. */
@@ -141,5 +161,10 @@ function exitSplit(){
   div.addEventListener('pointerup', stop); div.addEventListener('pointercancel', stop);
 })();
 </script>
+<div id="idleTip" class="idle-tip" role="status">
+  <span><strong>Logged in to Firenote in another Safari tab?</strong> Close that tab now. An unused Firenote tab can time out and log you out of the side-by-side view while you work.</span>
+  <button onclick="document.getElementById('idleTip').remove()" aria-label="Dismiss">✕</button>
+</div>
+<script>setTimeout(function(){ var t=document.getElementById('idleTip'); if(t) t.remove(); }, 20000);</script>
 </body>
 </html>
