@@ -1120,7 +1120,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
     <div class="sub-gold">Key Clinical Rules in the Walkthrough</div>
     <ul class="blist">
-      <li><strong>Depression Screening:</strong> Must be documented manually in the nursing narrative on every admission — Firenote has no dedicated field. Two paths: patient can participate (PHQ-2 questions) vs. cannot participate (observational documentation).</li>
+      <li><strong>Depression Screening:</strong> Must be documented manually in the nursing narrative on every admission — Firenote has no dedicated field. Two paths: patient can participate (two verbal mood questions) vs. cannot participate (observation and caregiver report). Document the outcome either way.</li>
       <li><strong>FAST Scale:</strong> Validated for Alzheimer's disease; supported for all dementia types at Luminos with documentation of overall functional decline rather than strict stage criteria.</li>
       <li><strong>PPS Scale:</strong> Uses a 5-column table (Ambulation, Activity &amp; Evidence, Self-Care, Intake, Conscious Level). Document the row that best matches the patient's overall status.</li>
       <li><strong>MAC Measurement:</strong> Bi-weekly per Luminos policy.</li>
@@ -1612,7 +1612,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
     <table class="qtable">
       <thead><tr><th>Item</th><th>Rule</th><th>Where in Firenote</th></tr></thead>
       <tbody>
-        <tr><td>Depression Screening</td><td>Both PHQ-2 questions (or observational note if unable). Document result regardless of outcome.</td><td>Typed manually in Nursing Narrative</td></tr>
+        <tr><td>Depression Screening</td><td>The two verbal mood questions (or observation and caregiver report if unable). Document that it was addressed and the outcome, whether positive or negative.</td><td>Typed manually in Nursing Narrative</td></tr>
         <tr><td>Verbal Certification</td><td>Within 48 hours. Transfer patients: not required (prior hospice certification carries over).</td><td>Verbal Certification page</td></tr>
         
         <tr><td>Relatedness Classification</td><td>Every diagnosis must be marked Related or Non-Related. Physician must document reason for Non-Related in the chart.</td><td>Diagnosis List</td></tr>
@@ -1631,7 +1631,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <tbody>
         <tr><td>PPS</td><td>Palliative Performance Scale — overall functional status</td><td>Use the row that best represents the patient's current overall status across all 5 columns</td></tr>
         <tr><td>FAST</td><td>Functional Assessment Staging Test — dementia progression</td><td>Validated for Alzheimer's; supported for all dementia types at Luminos with documentation of overall functional decline</td></tr>
-        <tr><td>PHQ-2</td><td>Depression screening — 2-question tool</td><td>Ask verbally if patient can participate. Positive screen requires full PHQ-9 follow-up and care plan entry.</td></tr>
+        <tr><td>Depression screening</td><td>Mood — two verbal questions, or observation and caregiver report if the patient can't participate</td><td>Document that it was addressed and the outcome. Positive: describe symptoms, notify the care team, reflect in the care plan. See Assessment Walkthrough.</td></tr>
         <tr><td>HOPE Section I</td><td>Symptom impact screening at admission</td><td>Day-of requirement. Score comorbid conditions only for their effect on overall status, not as primary problems.</td></tr>
       </tbody>
     </table>
@@ -9083,13 +9083,13 @@ function buildNarrativePrompt() {
 
 A hospice admission nurse needs help tightening up her admission narrative. Please:
 1. Rewrite it so it reads like a skilled, experienced hospice RN wrote it herself at the end of the visit — clear, specific, and believable to an auditor as genuine nurse charting (see LENGTH AND VOICE RULES below)
-2. Make sure each of these required hospice admission elements that IS in the draft comes through clearly (routine items like medication review, verbal certification, and IDG coordination need only one short sentence each; depression screening must state the tool and RESULT if given, e.g. "PHQ-2 negative" or "PHQ-9 score 6"):
+2. Make sure each of these required hospice admission elements that IS in the draft comes through clearly (routine items like medication review, verbal certification, and IDG coordination need only one short sentence each; the depression screening must state that depression was addressed AND the outcome, e.g. "denied feelings of depression or hopelessness; no observable signs of depression" or "unable to participate; no observable signs, caregiver reports no concerns" — never name or add a screening tool the nurse did not use):
    - Patient and caregiver identification and relationship
    - Primary diagnosis and related conditions with symptom burden
    - LCD criteria documentation (functional decline, clinical indicators supporting 6-month prognosis)
    - Pain assessment findings (scale, location, character, current management)
    - Medication review (hospice-covered medications, supplies, and DME reviewed with patient/family/legal representative)
-   - Depression screening with result (tool and score/outcome)
+   - Depression screening addressed, with the outcome
    - Verbal certification status (obtained, or transfer patient exception noted)
    - IDG coordination statement
    - Goals of care and patient/family understanding of hospice philosophy
@@ -9107,7 +9107,7 @@ LENGTH AND VOICE RULES — THESE MATTER AS MUCH AS CONTENT:
   • abnormal labs (values can be listed compactly)
   • symptoms with severity/scores, pain location/character/score/goal
   • comfort meds by name with purpose (a short list is fine), DME and supplies
-  • depression screening tool and result (e.g. "PHQ-2 negative")
+  • that depression was addressed and its outcome (keep the nurse's own description; do not name a screening tool)
   • education provided and to whom, family understanding, MD/verbal cert, IDG
 - LENGTH: Target ${narrTarget}, achieved by tight wording — short sentences, compact lists, no repetition, no filler, no summarizing conclusions ("consistent with limited prognosis…"). If every fact above cannot fit, go over the target rather than drop a fact. Never pad a short draft with invented detail.
 - VOICE: First person, past tense, the way a nurse actually charts ("I met with pt and daughter at bedside…", "Pt reports…", "Daughter states…"). Plain, direct sentences of normal length. Common nursing abbreviations are fine where a nurse would use them (pt, CG, PRN, SOB, PPS, FAST, O2, BLE, hx).
