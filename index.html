@@ -9093,7 +9093,7 @@ A hospice admission nurse needs help tightening up her admission narrative. Plea
    - Verbal certification status (obtained, or transfer patient exception noted)
    - IDG coordination statement
    - Goals of care and patient/family understanding of hospice philosophy
-3. Return a checklist showing each element above as PRESENT, PARTIAL, or MISSING with a brief note. Do NOT add a checklist line for symptom screening / symptom impact assessment — that is documented in the structured section of the Firenote note, not required in the narrative. (Symptom findings that ARE in the draft still belong in the narrative.)
+3. Return a checklist showing each element above as PRESENT, PARTIAL, or MISSING with a brief note. DEPRESSION: mark it PRESENT whenever the draft says depression/mood was addressed and gives the outcome (e.g. patient denied depression, no observable signs, unable to participate with caregiver report). NEVER ask for, suggest, or mark PARTIAL for a named screening tool (PHQ-2, PHQ-9, GDS or any other), a score, or a scale — none is required. Do NOT add a checklist line for symptom screening / symptom impact assessment — that is documented in the structured section of the Firenote note, not required in the narrative. (Symptom findings that ARE in the draft still belong in the narrative.)
 
 CRITICAL — DO NOT WRITE ABOUT GAPS INSIDE THE NARRATIVE ITSELF: The STRENGTHENED NARRATIVE section must describe ONLY what actually happened during the visit and what was actually assessed or documented in the draft notes below. NEVER write sentences in the narrative stating that something "was not included," "was not documented," "should be completed," "is missing from the notes," or similar — that kind of statement must NEVER appear inside the narrative text, because this narrative may be copied directly into the permanent clinical record, and a sentence documenting that documentation is missing becomes a compliance liability once it's in the chart. If an element is missing or incomplete, simply omit any mention of it from the narrative and instead flag it ONLY in the ELEMENT CHECKLIST section below, marked MISSING or PARTIAL. The narrative and the checklist serve different purposes: the narrative describes the visit as documented; the checklist tells the nurse what still needs follow-up before this narrative can be considered complete.
 
@@ -9296,7 +9296,15 @@ function parseNarrativeChecklist(rawText) {
     var wMatch = trimmed.match(/⚠️\s*PARTIAL[:\s]+(.*)/i);
     var xMatch = trimmed.match(/❌\s*MISSING[:\s]+(.*)/i);
 
-    if (pMatch) items.push({type:'present', icon:'✅', text: pMatch[1].trim()});
+    // Luminos policy: depression only needs to be addressed with its outcome — no named tool or
+    // score is required. If the AI still asks for one, show that line as present without the ask.
+    var depTxt = (wMatch || xMatch) ? (wMatch || xMatch)[1] : '';
+    if (depTxt && /depress|mood/i.test(depTxt) && /PHQ|GDS|\btool\b|\bscore\b|\bscale\b|standardi[sz]ed|validated/i.test(depTxt)) {
+      var depOutcomeGiven = /depress|mood|hopeless|affect|sad/i.test(narrativePart);
+      if (depOutcomeGiven) { items.push({type:'present', icon:'✅', text: 'Depression screening — addressed with outcome'}); continue; }
+      items.push({type: xMatch ? 'missing' : 'partial', icon: xMatch ? '❌' : '⚠️', text: 'Depression screening — note that depression was addressed and the outcome'}); continue;
+    }
+    if (pMatch) items.push({type:'present', icon:'✅', text: pMatch[1].replace(/\s*\(?(?:PHQ-?\d|GDS)[^)—]*\)?/gi, '').trim()});
     else if (wMatch) items.push({type:'partial', icon:'⚠️', text: wMatch[1].trim()});
     else if (xMatch) items.push({type:'missing', icon:'❌', text: xMatch[1].trim()});
   }
