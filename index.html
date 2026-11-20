@@ -1108,13 +1108,14 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         <tr><td>1</td><td>Patient Information Review</td><td>Pre-visit check: confirm legal name, DOB, payor, benefit period, attending MD, and who will be present</td></tr>
         <tr><td>2</td><td>Visit Details</td><td>Date/time entry, facility vs. home documentation, confirm who is present and document their names</td></tr>
         <tr><td>3</td><td>Vitals</td><td>Required at admission and every visit. Blood pressure, pulse, respirations, temperature, O2 sat, weight</td></tr>
-        <tr><td>4</td><td>Symptoms</td><td>HOPE Symptom Impact Screening — covers the past 2 days only. Day-of requirement; 24-hour documentation deadline</td></tr>
-        <tr><td>5</td><td>Observations</td><td>Comprehensive assessment including pain, functional/cognitive status (PPS, FAST), nutrition, skin, fall risk, caregiver, medications, and bereavement</td></tr>
-        <tr><td>6</td><td>Care Plan</td><td>Problem list structure, Assess/Educate/Perform requirement, grouping diagnoses, AI tools, aide care plan rules, medication responsibility interventions</td></tr>
-        <tr><td>7</td><td>Nursing Narrative</td><td>Required narrative elements, depression screening (both paths), Copilot prompt</td></tr>
-        <tr><td>8</td><td>Coordination of Care</td><td>Required IDG coordination statement — all disciplines named, agreement with plan of care</td></tr>
-        <tr><td>9</td><td>HOPE Assessment</td><td>Key compliance points, comorbid-only scoring guidance, common mistakes to avoid</td></tr>
-        <tr><td>10</td><td>Review &amp; Finish</td><td>Final verification checklist, RapidChart editing guidance, what "Performed" means for SNP, common last-minute errors</td></tr>
+        <tr><td>4</td><td>Vitality Index</td><td>Encounter › Vitality Index. 10 questions scored 10–1 against a healthy adult baseline; required at Admission, HUV 1, HUV 2, then every 14 days. Firenote blocks the note until all 10 are answered. Comparative charting rules.</td></tr>
+        <tr><td>5</td><td>Symptoms</td><td>HOPE Symptom Impact Screening — covers the past 2 days only. Day-of requirement; 24-hour documentation deadline</td></tr>
+        <tr><td>6</td><td>Observations</td><td>Comprehensive assessment including pain, functional/cognitive status (PPS, FAST), nutrition, skin, fall risk, caregiver, medications, and bereavement</td></tr>
+        <tr><td>7</td><td>Care Plan</td><td>Problem list structure, Assess/Educate/Perform requirement, grouping diagnoses, AI tools, aide care plan rules, medication responsibility interventions</td></tr>
+        <tr><td>8</td><td>Nursing Narrative</td><td>Required narrative elements, depression screening (both paths), Copilot prompt</td></tr>
+        <tr><td>9</td><td>Coordination of Care</td><td>Required IDG coordination statement — all disciplines named, agreement with plan of care</td></tr>
+        <tr><td>10</td><td>HOPE Assessment</td><td>Key compliance points, comorbid-only scoring guidance, common mistakes to avoid</td></tr>
+        <tr><td>11</td><td>Review &amp; Finish</td><td>Final verification checklist, RapidChart editing guidance, what "Performed" means for SNP, common last-minute errors</td></tr>
       </tbody>
     </table>
 
@@ -1124,6 +1125,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
       <li><strong>FAST Scale:</strong> Validated for Alzheimer's disease; supported for all dementia types at Luminos with documentation of overall functional decline rather than strict stage criteria.</li>
       <li><strong>PPS Scale:</strong> Uses a 5-column table (Ambulation, Activity &amp; Evidence, Self-Care, Intake, Conscious Level). Document the row that best matches the patient's overall status.</li>
       <li><strong>MAC Measurement:</strong> Bi-weekly per Luminos policy.</li>
+      <li><strong>Vitality Index:</strong> Required at Admission, HUV 1, HUV 2, then every 14 days on routine RN visits. Score the typical last 2 days (observed + caregiver report). Enter MAC first — it auto-scores Body Reserve. Review comparative statements before signing.</li>
       <li><strong>Symptom Impact Screening:</strong> Must be completed day-of admission; if not, document why in the narrative within 24 hours.</li>
       <li><strong>Care Plan Goals:</strong> Must be comfort-focused and end-of-life appropriate — never curative or restorative targets.</li>
     </ul>
@@ -1617,6 +1619,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
         
         <tr><td>Relatedness Classification</td><td>Every diagnosis must be marked Related or Non-Related. Physician must document reason for Non-Related in the chart.</td><td>Diagnosis List</td></tr>
         <tr><td>MAC Measurement</td><td>Bi-weekly per Luminos policy.</td><td>Assessment / Vitals</td></tr>
+        <tr><td>Vitality Index</td><td>All 10 questions at Admission, HUV 1, HUV 2, then every 14 days on routine RN visits — Firenote will not let you move forward until complete. Score the typical last 2 days, against a healthy adult baseline. Review comparative statements before signing.</td><td>Encounter › Vitality Index</td></tr>
         <tr><td>Symptom Impact Screening</td><td>Must be completed day-of admission. If not possible, document reason in narrative within 24 hours.</td><td>HOPE Section I</td></tr>
         <tr><td>Care Plan Interventions</td><td>Minimum one Assess, one Educate, one Perform per problem. All Perform interventions must be marked "Performed."</td><td>Care Plan</td></tr>
         <tr><td>QAPI Events</td><td>Required for any wound, skin breakdown, or infection present on admission.</td><td>QAPI section</td></tr>
@@ -1801,9 +1804,66 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 
   </div></div>
 </div>
+<div class="card" id="wvi">
+  <div class="card-hdr" onclick="toggleCard('wvi')">
+    <div class="card-num">4</div>
+    <div class="card-bar"><h2>Vitality Index</h2><div class="sub">Encounter › Vitality Index — Admission, HUV 1, HUV 2, then every 14 days</div><span class="chevron">▼</span></div>
+  </div>
+  <div class="card-body"><div class="card-inner">
+
+<div class="exclaim"><div class="exclaim-icon">!</div><div class="exclaim-body">When the Vitality Index is due, <strong>Firenote will not let you move forward in the note until all 10 questions are answered.</strong> Document it at <strong>Encounter › Vitality Index</strong>.</div></div>
+
+<div class="sub-gold">What It Is</div>
+<p style="font-size:.88rem;color:var(--text-mid);margin:6px 0">A 10-question assessment covering <strong>cognitive, metabolic, functional, support, symptom, and stability</strong> status. Each question is scored <strong>10 down to 1</strong> against a <strong>healthy adult baseline</strong>: 10 = fully intact (a healthy, working adult), 1 = the ability is gone. You never do math — Firenote combines the 10 scores into a <strong>0–100 Vitality Index</strong>. Most hospice patients will never be near 100, and that is expected.</p>
+<table class="dtable"><thead><tr><th>Zone</th><th>VI Score</th><th>What It Means</th></tr></thead><tbody>
+<tr><td><strong>Green</strong></td><td>80–100</td><td>Stable, community-functional; symptoms managed, independent in most ADLs</td></tr>
+<tr><td><strong>Yellow</strong></td><td>50–79</td><td>Declining — growing dependence, rising symptom burden (many hospice patients start here)</td></tr>
+<tr><td><strong>Orange</strong></td><td>30–49</td><td>Significant decline — high dependence, complex symptom management</td></tr>
+<tr><td><strong>Red</strong></td><td>0–29</td><td>Severe decline, total care, actively dying trajectory</td></tr>
+</tbody></table>
+
+<div class="sub-gold" style="margin-top:12px">When It Is Required</div>
+<ul class="blist">
+<li><strong>Admission, HUV 1, HUV 2</strong>, then <strong>every 14 days</strong> on routine RN visits</li>
+<li>Any time you see decline — off-cycle scores are welcome and sharpen the trend</li>
+<li>Ideally completed by the <strong>RN Case Manager</strong> so scoring stays consistent visit to visit</li>
+<li>It also appears in <strong>CHC and Shift Notes</strong> — available there but <strong>not required</strong></li>
+</ul>
+
+<div class="sub-gold" style="margin-top:12px">How to Score It</div>
+<ul class="blist">
+<li><strong>Score the patient's typical state over the last 2 days</strong> — what you observed plus what the caregiver reports. Not the best five minutes of your visit.</li>
+<li>Use the same ladder for every question: <strong>Fully intact → Mild change → Moderate loss → Severe loss → Absent.</strong></li>
+<li><strong>Torn between two levels?</strong> Don't hedge to the middle — score what you actually saw or what the caregiver actually reported.</li>
+<li><strong>Enter MAC in Vitals first</strong> — Body Reserve is auto-scored from it. Same arm, same spot, every time.</li>
+<li><strong>Symptom Burden should match your HOPE symptom ratings</strong> — the two should tell one story.</li>
+<li><strong>Score function, not the diagnosis</strong> (a dementia diagnosis doesn't set the mobility score — the patient's walking does). Know the diagnosis baseline for Instability (a COPD patient at 87% may be at baseline).</li>
+<li><strong>Re-look every time</strong> — carried-forward numbers are how declines get missed. Accurate is kind: a low score is how the system sends the patient more help.</li>
+</ul>
+
+<div class="sub-navy" style="margin-top:10px">The 10 Questions</div>
+<table class="dtable"><thead><tr><th>Dimension</th><th>Top (10)</th><th>Bottom (1)</th><th>Watch For</th></tr></thead><tbody>
+<tr><td><strong>1. Cognitive Processing</strong></td><td>Oriented x4, intact reasoning</td><td>No meaningful response</td><td>Sundowning counts. Always confused but alert stays higher — fading alertness moves it down.</td></tr>
+<tr><td><strong>2. Behavioral Regulation</strong></td><td>Calm, cooperative, safe</td><td>Obtunded, or combative / unsafe without supervision</td><td>Ask about nights — 2 AM counts as much as 2 PM.</td></tr>
+<tr><td><strong>3. Oral Intake</strong></td><td>Eating normal meals</td><td>No intake, or sips only</td><td>Score what is actually swallowed, not what is offered.</td></tr>
+<tr><td><strong>4. Body Reserve (MAC)</strong></td><td>MAC stable, muscle present</td><td>Visible wasting, MAC falling</td><td>Auto-scored from the MAC in vitals.</td></tr>
+<tr><td><strong>5. Mobility</strong></td><td>Walks community distances</td><td>Bedbound, cannot reposition</td><td>Typical, not best — one assisted walk isn't ambulatory.</td></tr>
+<tr><td><strong>6. ADL Independence</strong></td><td>Independent in IADLs and ADLs</td><td>Total care for every ADL</td><td>IADLs go first, feeding goes last.</td></tr>
+<tr><td><strong>7. Caregiver Support</strong></td><td>Needs reliably met at all hours, backup identified</td><td>No dependable support</td><td>Score reliability, not devotion. One caregiver with no backup caps at 7.</td></tr>
+<tr><td><strong>8. Living Environment</strong></td><td>Safe, stable, meets needs</td><td>Unsafe; transition required</td><td>A setting in transition scores down.</td></tr>
+<tr><td><strong>9. Symptom Burden</strong></td><td>Controlled on current plan</td><td>Severe despite intervention</td><td>Match your HOPE symptom ratings.</td></tr>
+<tr><td><strong>10. Instability Risk</strong></td><td>Vitals at patient's own baseline, no recent events</td><td>Repeated destabilizing events</td><td>Infections, UTIs, falls, ER-level episodes.</td></tr>
+</tbody></table>
+
+<div class="sub-gold" style="margin-top:12px">Comparative Charting</div>
+<p style="font-size:.88rem;color:var(--text-mid);margin:6px 0">Firenote compares each Vitality Index to the <strong>last visit, 30 days prior, and 60 days prior</strong>, and automatically adds comparative statements to the clinical note when there is <strong>decline</strong>. If the patient is unchanged or improving, no statements are added. On routine visits this replaces spelling out comparative decline in the care coordination note.</p>
+<div class="alert warning"><span>⚠</span><div><strong>Always review the generated comparative statements for accuracy before signing the note.</strong></div></div>
+
+  </div></div>
+</div>
 <div class="card" id="w4">
   <div class="card-hdr" onclick="toggleCard('w4')">
-    <div class="card-num">4</div>
+    <div class="card-num">5</div>
     <div class="card-bar"><h2>Symptoms</h2><div class="sub">HOPE Symptom Impact Screening — past 2 days only</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -1833,7 +1893,7 @@ header{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 4px
 </div>
 <div class="card" id="w5">
   <div class="card-hdr" onclick="toggleCard('w5')">
-    <div class="card-num">5</div>
+    <div class="card-num">6</div>
     <div class="card-bar"><h2>Observations</h2><div class="sub">Comprehensive assessment — complete in Firenote order</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2195,7 +2255,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div>
 <div class="card" id="w6">
   <div class="card-hdr" onclick="toggleCard('w6')">
-    <div class="card-num">6</div>
+    <div class="card-num">7</div>
     <div class="card-bar"><h2>Care Plan</h2><div class="sub">Build the initial care plan for the patient</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2275,7 +2335,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div>
 <div class="card" id="w7">
   <div class="card-hdr" onclick="toggleCard('w7')">
-    <div class="card-num">7</div>
+    <div class="card-num">8</div>
     <div class="card-bar"><h2>Nursing Narrative</h2><div class="sub">Document the patient's full clinical story</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2405,7 +2465,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div>
 <div class="card" id="w8">
   <div class="card-hdr" onclick="toggleCard('w8')">
-    <div class="card-num">8</div>
+    <div class="card-num">9</div>
     <div class="card-bar"><h2>Coordination of Care</h2><div class="sub">IDG coordination statement — required every admission</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2418,7 +2478,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div>
 <div class="card" id="w9">
   <div class="card-hdr" onclick="toggleCard('w9')">
-    <div class="card-num">9</div>
+    <div class="card-num">10</div>
     <div class="card-bar"><h2>HOPE Assessment</h2><div class="sub">Key compliance points and common mistakes</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2434,7 +2494,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 </div>
 <div class="card" id="w10">
   <div class="card-hdr" onclick="toggleCard('w10')">
-    <div class="card-num">10</div>
+    <div class="card-num">11</div>
     <div class="card-bar"><h2>Review & Finish</h2><div class="sub">Final check before signing</div><span class="chevron">▼</span></div>
   </div>
   <div class="card-body"><div class="card-inner">
@@ -2453,6 +2513,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>QAPI events entered for wounds or infections present on admission</strong></div><span class="tag req">REQ</span></div>
 <div class="chk-item crit"><div class="chk-box"></div><div class="chk-text"><strong>IDG coordination statement documented in Care Coordination section</strong></div><span class="tag req">REQ</span></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>HOPE assessment completed and consistent with care plan, narrative, and medications</strong></div></div>
+<div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Vitality Index completed (all 10 questions) and consistent with the assessment</strong><span class="note">On HUV and routine visits: review Firenote's auto-generated comparative statements for accuracy before signing</span></div></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>Bereavement risk score matches score in the Bereavement Assessment section</strong></div></div>
 <div class="chk-item"><div class="chk-box"></div><div class="chk-text"><strong>RapidChart narration reviewed and edited for accuracy where needed</strong></div></div>
 <div class="alert tip"><span>💡</span><div>Simple rule: Review → Fix → Ask questions → Then sign.</div></div>
@@ -2586,6 +2647,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Pain assessment — all 7 components</strong><span class="note">Location · Severity · Character · Duration · Frequency · Relieves/Worsens · Effect on QOL. Non-verbal: use FLACC/PAINAD. Do not leave blank.</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Bowel assessment completed</strong><span class="note">Last BM date + normal routine. Constipation + opioids = K59.00 required on problem list.</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Depression screening in nursing narrative</strong><span class="note">No Firenote field — must be manually documented every admission</span></div></div>
+        <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Vitality Index — all 10 questions scored</strong><span class="note">Encounter › Vitality Index. Score the typical last 2 days (observed + caregiver report). Enter MAC in Vitals first — Body Reserve auto-scores from it. Symptom Burden should match HOPE ratings. Firenote won't let you move forward until it's complete.</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Fall risk assessment completed</strong><span class="note">If identified → active care plan problem required</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Wound assessment performed</strong> (if wounds present)<span class="note">Each wound coded separately with own goal and interventions</span></div></div>
         <div class="chk-item" onclick="chkItem(this,'cs3')"><div class="chk-box"></div><div class="chk-text"><strong>Psych/Social &amp; Spiritual Assessment performed</strong><span class="note">Both required on ALL admissions. Urgent needs communicated to IDG.</span></div></div>
@@ -2625,6 +2687,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>QAPI events entered</strong> for wounds or infections present on admission</div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>Bereavement interventions entered under primary DX care plan and marked Performed</strong><span class="note">Four interventions required: family dynamics assessment, bereavement assessment documented, IDG referral communication, and family education on hospice resources. All must be marked Performed.</span></div><span class="tag req">REQ</span></div>
     <div class="standalone-chk chk-item crit" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>HOPE assessment consistent</strong> with care plan, narrative, and medications</div><span class="tag req">REQ</span></div>
+    <div class="standalone-chk chk-item" onclick="chkItem(this,'cs4')"><div class="chk-box"></div><div class="chk-text"><strong>Vitality Index matches the assessment</strong><span class="note">Symptom Burden = HOPE symptom ratings · Body Reserve = MAC entered · Mobility/ADLs = PPS and functional findings</span></div></div>
     <div class="alert tip" style="margin-top:10px"><span>💡</span><div><strong>Final Rule:</strong> Assessment = Care Plan = Narrative = HOPE. Everything must match.</div></div>
   </div></div>
 </div>
@@ -4378,8 +4441,11 @@ function toggleSec(id) {
 
 // ── Checklist tracking ─────────────────────────────────────────────
 const totals = {cs0:8, cs1:7, cs2:27, cs3:12, cs4:9, cs5:2};
+// Count the real items so totals never drift when checklist lines are added (Nov 2026)
+['cs0','cs1','cs2','cs3','cs4','cs5'].forEach(function(id){ var el=document.getElementById(id); if (el) totals[id] = el.querySelectorAll('.chk-item').length; });
 const counts  = {cs0:0, cs1:0, cs2:0,  cs3:0,  cs4:0,  cs5:0};
-const totalAll = Object.values(totals).reduce((a,b)=>a+b,0); // 54 total
+const totalAll = Object.values(totals).reduce((a,b)=>a+b,0);
+['cs0','cs1','cs2','cs3','cs4','cs5'].forEach(function(id){ var b=document.getElementById('b_'+id); if (b) b.textContent = '0 / ' + totals[id]; });
 
 function totalDone() { return Object.values(counts).reduce((a,b)=>a+b,0); }
 
@@ -15805,6 +15871,7 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .tm-grid .tm-filled{background:#fffbea;border-color:#e8b84b}
 @media(max-width:520px){.tm-grid{grid-template-columns:1fr}}
 
+.nc-len{margin-left:auto;margin-right:8px;font-size:.72rem;font-weight:400;color:var(--text-lt)}
 /* Foley code + reason notice */
 .foley-notice{display:flex;flex-direction:column;gap:4px;margin:0 0 12px;padding:10px 13px;background:#fff8e1;border:1px solid #ffe082;border-left:4px solid #e0a800;border-radius:6px;font-size:.82rem;line-height:1.5;color:#5a3c00}
 .foley-notice.ok{background:#f1f8f4;border-color:#bfe3cf;border-left-color:#2e8b57;color:#12502f}
@@ -15979,13 +16046,13 @@ async function runNonCoveredExplanation() {
     + '\n- "caution" if it COULD be related depending on the patient (e.g. diabetes meds when intake is declining, antihypertensives in cardiac/renal disease, antidepressants) and the notes don\'t clearly show otherwise.'
     + '\n- "low" if it is clearly unrelated (routine/preventive care, a stable long-standing condition with no effect on symptoms or prognosis).'
     + '\nGive a one-to-two sentence note explaining the level in plain terms for the nurse.'
-    + '\n\nTASK 2 — Write 3 explanation options (Brief = 1 sentence, Standard = 2 sentences, Detailed = 3 sentences). Rules for every option:'
+    + '\n\nTASK 2 — Write 2 explanation options: Standard = 2 sentences; Detailed = up to 3 sentences and NO MORE THAN 400 CHARACTERS total including spaces (count carefully). Rules for every option:'
     + '\n- Plain language a patient or family member understands (about 8th-grade reading level). No jargon, no abbreviations, no regulation citations, NO ICD-10 codes.'
     + '\n- Name the item and the condition it treats, then give the CLINICAL REASON it is not related to the terminal illness — e.g. the condition is stable/long-standing, is not causing or worsening the patient\'s symptoms, does not affect comfort, or does not contribute to the terminal decline; or the item is routine/preventive care that is not needed for comfort or symptom management. Use details from the nurse notes when given; never invent facts (no made-up lab values or dates).'
     + '\n- End by stating it is not covered by hospice because of this. Do not tell the patient to stop the item and do not mention costs or other insurance.'
     + '\n- Write to the patient using "you/your", and refer to the terminal illness by name (e.g. "your heart failure").'
     + '\n\nTASK 3 — "tip": one short sentence telling the nurse what detail (if any) would make the explanation stronger, or "" if nothing is needed.'
-    + '\n\nRespond ONLY with JSON: {"relatedness":{"level":"low|caution|high","note":"..."},"options":[{"label":"Brief","text":"..."},{"label":"Standard","text":"..."},{"label":"Detailed","text":"..."}],"tip":"..."}';
+    + '\n\nRespond ONLY with JSON: {"relatedness":{"level":"low|caution|high","note":"..."},"options":[{"label":"Standard","text":"..."},{"label":"Detailed","text":"..."}],"tip":"..."}';
 
   try {
     var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 1200 }) });
@@ -16014,12 +16081,22 @@ function renderNonCovered(parsed, codeSource) {
   } else if (rel.level === 'caution') {
     html += '<div class="nc-flag caution"><strong>⚠ Could be related — confirm with the hospice physician.</strong><br>' + escapeHtml(rel.note || '') + '</div>';
   }
-  var opts = (parsed.options || []).filter(function(o) { return o && o.text; });
+  // Nov 2026: Brief option removed (too brief); Detailed capped at 400 characters.
+  var NC_MAX = 400;
+  var opts = (parsed.options || []).filter(function(o) { return o && o.text && !/^brief$/i.test(String(o.label || '').trim()); });
+  opts.forEach(function(o) {
+    var t = clean(o.text);
+    if (t.length > NC_MAX) {               // trim back to the last full sentence that fits
+      var cut = t.slice(0, NC_MAX), end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('.'));
+      t = end > 120 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, '') + '.';
+    }
+    o.text = t;
+  });
   if (!opts.length) { out.innerHTML = html + '<div class="alert danger"><span>⚠️</span><div>No explanation came back. Please try again.</div></div>'; return; }
   html += '<div style="font-size:.78rem;font-weight:700;color:var(--text-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Choose one — edit to fit this patient</div>';
   opts.forEach(function(o, i) {
     html += '<div class="nc-opt"><div class="nc-opt-hd"><span>' + escapeHtml(o.label || ('Option ' + (i + 1))) + '</span>'
-      + '<button type="button" data-nc="' + i + '">📋 Copy</button></div><p>' + escapeHtml(clean(o.text)) + '</p></div>';
+      + '<span class="nc-len">' + o.text.length + ' / 400</span><button type="button" data-nc="' + i + '">📋 Copy</button></div><p>' + escapeHtml(o.text) + '</p></div>';
   });
   if (parsed.tip) html += '<div class="nc-tip">💡 ' + escapeHtml(parsed.tip) + '</div>';
   var _ncItem = (document.getElementById('nc-item') || {}).value || '';
@@ -16027,7 +16104,7 @@ function renderNonCovered(parsed, codeSource) {
   html += '<div class="ai-disclaimer" style="margin-top:10px">The relatedness determination is made by the hospice physician. This wording is a starting point — make sure it matches this patient and the physician\'s determination before entering it in Firenote or on the addendum.</div>';
   out.innerHTML = html;
   out.querySelectorAll('button[data-nc]').forEach(function(b) {
-    b.addEventListener('click', function() { copyAllCpText(b, clean(opts[+b.dataset.nc].text)); });
+    b.addEventListener('click', function() { copyAllCpText(b, opts[+b.dataset.nc].text); });
   });
 }
 
