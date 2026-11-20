@@ -3833,7 +3833,7 @@ Use these results as a starting point for your MD conversation, not as a final a
           <span class="spinner"></span>
           <span class="btn-text">Check Coverage</span>
         </button>
-        <button class="checker-clear-btn" onclick="clearMedChecker()">✕ Clear</button>
+        <button class="checker-clear-btn" onclick="confirmClear('#meds-check', 'the Medication Checker', clearMedChecker)">✕ Clear</button>
       </div>
 
       <div class="result-wrap" id="med-result">
@@ -3881,7 +3881,7 @@ Use these results as a starting point for your MD conversation, not as a final a
           <span class="spinner"></span>
           <span class="btn-text">Check Relatedness</span>
         </button>
-        <button class="checker-clear-btn" onclick="clearDxChecker()">✕ Clear</button>
+        <button class="checker-clear-btn" onclick="confirmClear('#dx-check', 'the Diagnosis Checker', clearDxChecker)">✕ Clear</button>
       </div>
 
       <div class="result-wrap" id="dx-result">
@@ -3930,7 +3930,7 @@ The pharmacologic effects of losartan may be decreased by CYP2C9 inhibitors (eg,
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="checker-btn" id="dip-parse-btn" onclick="parseInteractions()">⚠️ Parse Interactions</button>
-        <button class="ai-clear-btn" onclick="clearDrugParser()" style="padding:10px 18px">✕ Clear</button>
+        <button class="ai-clear-btn" onclick="confirmClear('#drug-interactions', 'the Drug Interaction check', clearDrugParser)" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="dip-results" style="display:none;margin-top:20px"></div>
     </div>
@@ -4002,8 +4002,8 @@ Chronic pain"></textarea>
 
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="checker-btn" id="tier-parse-btn" onclick="runTierChecker()">🗂️ Suggest Tiers</button>
-        <button class="ai-clear-btn" onclick="clearTierChecker()" style="padding:10px 18px">✕ Clear</button>
-        <button class="ai-clear-btn" onclick="clearTierCheckerAndReturnToIcdLookup()" style="padding:10px 18px">↩ Clear &amp; Return to ICD-10 Code Lookup</button>
+        <button class="ai-clear-btn" onclick="confirmClear('#tier-check', 'Problem List Tiering — your diagnoses, tiers, flags and any care plans built', clearTierChecker)" style="padding:10px 18px">✕ Clear</button>
+        <button class="ai-clear-btn" onclick="confirmClear('#tier-check, #icd-lookup', 'Problem List Tiering AND the ICD-10 Code Lookup', clearTierCheckerAndReturnToIcdLookup)" style="padding:10px 18px">↩ Clear &amp; Return to ICD-10 Code Lookup</button>
       </div>
       <div id="tier-results" style="display:none;margin-top:20px"></div>
     </div>
@@ -4029,7 +4029,7 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="checker-btn" id="icd-lookup-btn" onclick="runIcdLookup()">🔎 Look Up Codes</button>
-        <button class="ai-clear-btn" onclick="clearIcdLookup()" style="padding:10px 18px">✕ Clear</button>
+        <button class="ai-clear-btn" onclick="confirmClear('#icd-lookup', 'the ICD-10 Code Lookup and its results', clearIcdLookup)" style="padding:10px 18px">✕ Clear</button>
       </div>
       <div id="icd-lookup-results" style="display:none;margin-top:20px"></div>
     </div>
@@ -4080,7 +4080,7 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 
       <div style="margin-top:16px">
         <button class="checker-btn" id="nc-btn" onclick="runNonCoveredExplanation()"><span class="spinner"></span><span class="btn-text">✍️ Write Clinical Explanation</span></button>
-        <button class="checker-clear-btn" onclick="clearNonCovered()">✕ Clear</button>
+        <button class="checker-clear-btn" onclick="confirmClear('#noncov-check', 'the Non-Covered Drug tool', clearNonCovered)">✕ Clear</button>
       </div>
       <div id="nc-result" style="display:none;margin-top:18px"></div>
     </div>
@@ -4135,7 +4135,7 @@ Dependence on supplemental oxygen (continuous use)"></textarea>
 
       <div style="margin-top:16px">
         <button class="checker-btn" onclick="buildRecertPrompt()"><span class="btn-text">🔁 Build Copilot Prompt</span></button>
-        <button class="checker-clear-btn" onclick="clearRecert()">✕ Clear</button>
+        <button class="checker-clear-btn" onclick="confirmClear('#recert-check', 'the Recertification Narrative tool', clearRecert)">✕ Clear</button>
       </div>
 
       <div id="rc-prompt-wrap" style="display:none;margin-top:18px">
@@ -7065,8 +7065,8 @@ const DX_RELATED = [
   {terms:["overactive bladder", "oab", "urgency"],system:'Renal & GU',icd:'N32.81',q:'Q2',reason:'Overactive bladder can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Overactive bladder affects the hospice plan of care.',mdDoc:'Physician should document whether Overactive bladder contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["benign prostatic hyperplasia with luts", "bph with urinary symptoms"],system:'Renal & GU',icd:'N40.1',q:'Q2',reason:'Benign prostatic hyperplasia with LUTS can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Benign prostatic hyperplasia with LUTS affects the hospice plan of care.',mdDoc:'Physician should document whether Benign prostatic hyperplasia with LUTS contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["gross hematuria", "blood in urine"],system:'Renal & GU',icd:'R31.0',q:'Q2',reason:'Gross hematuria can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Gross hematuria affects the hospice plan of care.',mdDoc:'Physician should document whether Gross hematuria contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
-  {terms:["foley catheter status", "urinary catheter presence"],system:'Renal & GU',icd:'Y84.6',q:'Q2',reason:'Foley catheter status can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Foley catheter status affects the hospice plan of care.',mdDoc:'Physician should document whether Foley catheter status contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
-  {terms:["encounter for attention to urinary catheter", "catheter care"],system:'Renal & GU',icd:'Z46.6',q:'Q2',reason:'Encounter for attention to urinary catheter can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Encounter for attention to urinary catheter affects the hospice plan of care.',mdDoc:'Physician should document whether Encounter for attention to urinary catheter contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
+  {terms:["foley catheter status", "urinary catheter presence", "foley catheter", "indwelling urinary catheter", "catheter care"],system:'Renal & GU',icd:'Y84.6',q:'Q2',reason:'Foley catheter status can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Foley catheter status affects the hospice plan of care.',mdDoc:'Physician should document whether Foley catheter status contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
+  {terms:["encounter for attention to urinary catheter"],system:'Renal & GU',icd:'Z46.6',q:'Q2',reason:'Encounter for attention to urinary catheter can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Encounter for attention to urinary catheter affects the hospice plan of care.',mdDoc:'Physician should document whether Encounter for attention to urinary catheter contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["bladder spasm", "spastic bladder"],system:'Renal & GU',icd:'N32.89',q:'Q2',reason:'Bladder spasm can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Bladder spasm affects the hospice plan of care.',mdDoc:'Physician should document whether Bladder spasm contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["kidney stone", "renal calculus", "nephrolithiasis"],system:'Renal & GU',icd:'N20.0',q:'Q2',reason:'Kidney stone can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Kidney stone affects the hospice plan of care.',mdDoc:'Physician should document whether Kidney stone contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["chronic cystitis", "chronic bladder inflammation"],system:'Renal & GU',icd:'N30.20',q:'Q2',reason:'Chronic cystitis can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Chronic cystitis affects the hospice plan of care.',mdDoc:'Physician should document whether Chronic cystitis contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
@@ -8323,7 +8323,13 @@ function pickPrimaryIndex(items, primary) {
   return best;
 }
 
-function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
+// ── Foley / continuous-O2 problem detection (Nov 2026) ─────────────────
+// Used so a situational flag never asks for a SEPARATE care plan for the very
+// problem the nurse is already building or already has on her list.
+function isFoleyProblem(t) { return /\bY84\.6\b|foley|indwelling (urinary )?catheter|urinary catheter(i[sz]ation)?\b|\bcatheter care\b/i.test(String(t || '')); }
+function isO2DependenceProblem(t) { return /\bZ99\.81\b|dependence on (supplemental )?oxygen|continuous (supplemental )?o(xygen|2)/i.test(String(t || '')); }
+
+function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver, problemText) {
   const lines = [];
 
   // Bereavement and Full Code are now hardcoded into requiredPrimaryBlock — not passed to AI prompt
@@ -8339,7 +8345,7 @@ function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver) {
   void medLang; void isPrimaryDxPlan;
 
   // ── Continuous Oxygen ───────────────────────────────────────────
-  if (flags.oxygen) {
+  if (flags.oxygen && !isO2DependenceProblem(problemText)) {
     lines.push(`
 FLAG — CONTINUOUS OXYGEN (generate a SEPARATE care plan for Z99.81 Dependence on supplemental oxygen):
 This patient requires continuous oxygen. Z99.81 must be added as a related problem with its own care plan. Its goal must ALSO use the three-field format — output it prefixed exactly as shown:
@@ -8376,7 +8382,9 @@ Interventions:
   }
 
   // ── Foley Catheter ──────────────────────────────────────────────
-  if (flags.foley) {
+  // Skipped when the care plan being built IS the Foley problem — otherwise the output
+  // repeats it as a "separate" Y84.6 care plan on top of itself.
+  if (flags.foley && !isFoleyProblem(problemText)) {
     lines.push(`
 FLAG — FOLEY CATHETER (generate a SEPARATE care plan for Y84.6 Urinary Catheterization):
 Its goal must ALSO use the three-field format — output it prefixed exactly as shown:
@@ -8546,7 +8554,7 @@ var _cpActiveHardcodedProblemText = null;
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
   const problemName = dxNameForProse(problem); // diagnosis without its ICD-10 code, for prose
-  const problemCodeNote = icdCodeNoteForPrompt(problem);
+  const problemCodeNote = icdCodeNoteForPrompt(problem) + (isFoleyProblem(problem) ? '\nFOLEY RULE: the ICD-10 code for this problem is Y84.6 (Urinary catheterization). Do NOT use or suggest Z96.0 (permanent urogenital implants only), Z46.6, or any other code, and do NOT tell the nurse to create another separate care plan — this IS the Foley care plan.' : '');
   const primaryDx = document.getElementById('cp-primary-dx').value.trim();
   const details = document.getElementById('cp-details').value.trim();
   const goals = document.getElementById('cp-goals').value;
@@ -8582,7 +8590,7 @@ async function runCarePlanBuilder() {
 
   const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && dxPrimaryMatchScore(problem, primaryDx) > 0);
 
-  const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver);
+  const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver, problem);
 
   if (!goals) { alert('Please select a Goals of Care Direction before generating.'); document.getElementById('cp-goals').focus(); return; }
 
@@ -9164,7 +9172,38 @@ function clearNarrative() {
   const metaWarning = document.getElementById('narr-meta-warning');
   if (metaWarning) { metaWarning.style.display = 'none'; metaWarning.innerHTML = ''; }
   _narrChecklistState = null;
+  narrDraftForget();
 }
+
+// ── Narrative safety net (Nov 2026): iPad Safari can silently reload a tab (low memory,
+// side-by-side view), which wiped the Narrative Strengthener. Draft + pasted narrative are
+// kept in sessionStorage — this browser tab only, gone when the tab is closed — and put back
+// after a reload. ✕ Clear erases the saved copy too.
+var NARR_SAVE_IDS = ['narr-input', 'narr-dx', 'narr-paste-back'];
+function narrDraftSave() {
+  try { var o = {}; NARR_SAVE_IDS.forEach(function(id) { var e = document.getElementById(id); if (e) o[id] = e.value; }); sessionStorage.setItem('luminosNarrDraft', JSON.stringify(o)); } catch (e) {}
+}
+function narrDraftForget() { try { sessionStorage.removeItem('luminosNarrDraft'); } catch (e) {} }
+(function narrDraftRestore() {
+  function go() {
+    var saved = null; try { saved = JSON.parse(sessionStorage.getItem('luminosNarrDraft') || 'null'); } catch (e) {}
+    var restored = false;
+    NARR_SAVE_IDS.forEach(function(id) {
+      var e = document.getElementById(id); if (!e) return;
+      if (saved && saved[id] && !e.value.trim()) { e.value = saved[id]; restored = true; }
+      e.addEventListener('input', narrDraftSave);
+    });
+    if (restored) {
+      var pb = document.getElementById('narr-paste-back'); if (pb && pb.value.trim()) { try { handleNarrativePasteBack(); } catch (e) {} }
+      var n = document.createElement('div');
+      n.style.cssText = 'margin:0 0 10px;padding:8px 12px;background:#eef6ff;border:1px solid #b9d6f5;border-radius:6px;font-size:.8rem;color:#1a2744';
+      n.textContent = '↺ Your narrative work was restored after the page reloaded.';
+      var inp = document.getElementById('narr-input'); if (inp && inp.parentNode) inp.parentNode.insertBefore(n, inp);
+      setTimeout(function() { n.remove(); }, 15000);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
 
 // Scans narrative text for sentences that describe documentation gaps rather than describing
 // the visit itself — e.g. "Documentation regarding X was not included in the available notes."
@@ -9201,7 +9240,11 @@ function handleNarrativePasteBack() {
   const ta = document.getElementById('narr-paste-back');
   if (!ta) return;
   const cleaned = parseNarrativeChecklist(ta.value);
-  if (cleaned !== ta.value) ta.value = cleaned;
+  // Only rewrite the box when a checklist/label was actually stripped. (Before: every keystroke
+  // re-trimmed the text, which ate trailing spaces/new lines and jumped the cursor while editing.)
+  if (cleaned !== ta.value.trim()) {
+    ta.value = cleaned;
+  }
   showNarrativeLengthCheck(ta);
 }
 
@@ -9279,7 +9322,8 @@ function parseNarrativeChecklist(rawText) {
   const itemsEl = document.getElementById('narr-chk-items');
   const summaryEl = document.getElementById('narr-chk-summary');
 
-  if (!checklistPart || !display || !itemsEl || !summaryEl) { _narrChecklistState = null; return narrativePart; }
+  // No checklist in the text (e.g. the nurse is editing after the paste) → keep the checklist already shown
+  if (!checklistPart || !display || !itemsEl || !summaryEl) return narrativePart;
 
   const lines = checklistPart.split('\n');
   const items = [];
@@ -10581,6 +10625,11 @@ async function runTierChecker() {
     if (!proceed) return;
   }
 
+  // Re-running replaces tiers, locked items and built care plans — confirm first
+  var _hadTierWork = tierCurrentData && tierCurrentData.items && tierCurrentData.items.length;
+  var _hadCps = document.getElementById('all-tier1-cp-wrap') && document.getElementById('all-tier1-cp-wrap').children.length;
+  if (_hadTierWork && !confirm('Run Suggest Tiers again?\n\nThis replaces the tiers below' + (_hadCps ? ' AND every care plan you\'ve already built' : '') + '.\n\nForgot a diagnosis? Cancel and use "➕ Add a diagnosis you missed" instead — it keeps your work.')) return;
+
   const btn = document.getElementById('tier-parse-btn');
   const origText = btn.textContent;
   btn.textContent = '⏳ Analyzing...';
@@ -10925,6 +10974,10 @@ function fixInvalidTierParents(data) {
 
 function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, flags) {
   const isImminent = !!(flags && flags.imminent);
+  // Keep any care plans already built (Build All) — re-drawing the tier list after an
+  // addition used to wipe them, and the nurse lost that work.
+  const keptCpWrap = document.getElementById('all-tier1-cp-wrap');
+  const keptCpNodes = (keptCpWrap && keptCpWrap.children.length) ? Array.prototype.slice.call(keptCpWrap.childNodes) : null;
   container.innerHTML = '';
 
 
@@ -10949,7 +11002,11 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
   buildAllBtn.id = 'build-all-tier1-btn';
   buildAllBtn.style.cssText = 'display:block;width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:14px';
   buildAllBtn.innerHTML = '✨ Build All Tier 1 Care Plans';
-  buildAllBtn.addEventListener('click', function() { buildAllTier1CarePlans(data, primaryDx, container, flags); });
+  buildAllBtn.addEventListener('click', function() {
+    const existing = document.getElementById('all-tier1-cp-wrap');
+    if (existing && existing.children.length && !confirm('Rebuild ALL Tier 1 care plans?\n\nThis replaces every care plan already built below, including any new intervention options you added.')) return;
+    buildAllTier1CarePlans(data, primaryDx, container, flags);
+  });
   container.appendChild(buildAllBtn);
 
   // Care plan output area (populated by buildAllTier1CarePlans)
@@ -10957,6 +11014,11 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
   allCpWrap.id = 'all-tier1-cp-wrap';
   allCpWrap.style.cssText = 'display:none;margin-bottom:16px';
   container.appendChild(allCpWrap);
+  if (keptCpNodes) {
+    keptCpNodes.forEach(function(n) { allCpWrap.appendChild(n); });
+    allCpWrap.style.display = 'block';
+    buildAllBtn.innerHTML = '🔄 Rebuild All Tier 1 Care Plans';
+  }
 
   if (wasTruncated) {
     const truncWarn = document.createElement('div');
@@ -11248,6 +11310,9 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
     missWrap.appendChild(codeNote);
     container.appendChild(missWrap);
   }
+
+  // ── Add a diagnosis the nurse missed (Nov 2026) ──
+  container.appendChild(buildTierAddPanel(data));
 
   // Wire up "Build Care Plan" buttons (Tier 1)
   container.querySelectorAll('.tier-cp-btn').forEach(function(b) {
@@ -11875,6 +11940,162 @@ function toggleTierQueueItem(btn, suggestion, mi, icd10) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// ADD A MISSED DIAGNOSIS while working in Problem List Tiering (Nov 2026)
+// Nurse types the diagnosis (+ code, or 🔎 Find code), picks Tier 1/2/3 or lets the AI
+// decide. Everything already tiered — and any care plans already built — stays put.
+// A new Tier 1 added after Build All gets its own care plan appended below the others.
+// ════════════════════════════════════════════════════════════════════════
+function buildTierAddPanel(data) {
+  var tier1 = (data.items || []).filter(function(it) { return it.tier === 1; });
+  var wrap = document.createElement('div');
+  wrap.className = 'tadd';
+  wrap.id = 'tier-add-panel';
+  wrap.innerHTML = '<div class="tadd-hd">➕ Add a diagnosis you missed <span>— your tiers and care plans stay as they are</span></div>'
+    + '<div class="tadd-row">'
+    +   '<label class="tadd-dx">Diagnosis<input type="text" id="tadd-dx" placeholder="e.g. Hypothyroidism, Foley catheter"></label>'
+    +   '<label class="tadd-code">ICD-10 code<input type="text" id="tadd-code" placeholder="optional" maxlength="10" oninput="this.value=this.value.toUpperCase()"></label>'
+    +   '<button type="button" class="tadd-find" onclick="tierAddFindCode(this)">🔎 Find code</button>'
+    + '</div>'
+    + '<div id="tadd-opts" class="tadd-opts"></div>'
+    + '<div class="tadd-tiers" role="radiogroup" aria-label="Tier">'
+    +   '<label><input type="radio" name="tadd-tier" value="ai" checked> Let AI decide</label>'
+    +   '<label><input type="radio" name="tadd-tier" value="1"> Tier 1 <small>own care plan</small></label>'
+    +   '<label><input type="radio" name="tadd-tier" value="2"> Tier 2 <small>under another problem</small></label>'
+    +   '<label><input type="radio" name="tadd-tier" value="3"> Tier 3 <small>list only</small></label>'
+    + '</div>'
+    + '<label class="tadd-parent" id="tadd-parent-wrap" style="display:none">Add under (Tier 1 problem)<select id="tadd-parent">'
+    +   tier1.map(function(it) { return '<option>' + escapeHtml(it.diagnosis) + '</option>'; }).join('')
+    + '</select></label>'
+    + '<div id="tadd-msg" class="tadd-msg" style="display:none"></div>'
+    + '<button type="button" class="tadd-go" id="tadd-go" onclick="tierAddDiagnosis()">➕ Add to Problem List</button>';
+  wrap.querySelectorAll('input[name="tadd-tier"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      document.getElementById('tadd-parent-wrap').style.display = (r.value === '2' && r.checked) ? 'flex' : 'none';
+    });
+  });
+  return wrap;
+}
+
+function tierAddMsg(html, kind) {
+  var m = document.getElementById('tadd-msg'); if (!m) return;
+  if (!html) { m.style.display = 'none'; return; }
+  m.className = 'tadd-msg ' + (kind || 'info'); m.innerHTML = html; m.style.display = 'block';
+}
+
+async function tierAddFindCode(btn) {
+  var dx = document.getElementById('tadd-dx').value.trim();
+  if (!dx) { tierAddMsg('Type the diagnosis first, then tap 🔎 Find code.', 'warn'); return; }
+  var orig = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Finding…';
+  var opts = [];
+  var local = (typeof localIcdLookup === 'function') ? localIcdLookup(dx, false) : null;
+  if (local && local.code) opts.push({ code: local.code, label: local.desc });
+  else if (local && local.options) opts = local.options.slice();
+  if (!opts.length || opts.length < 2) {
+    try {
+      var prompt = 'You are a hospice clinical coding expert. A hospice nurse needs the ICD-10-CM code for this diagnosis.'
+        + '\n\nDiagnosis: "' + dx + '"'
+        + '\n\nReturn the 2-6 most likely valid, billable ICD-10-CM codes, most likely first. Interpret nurse shorthand. Never fabricate codes.'
+        + '\nFoley / indwelling urinary catheter = Y84.6 only (never Z96.0 or Z46.6). For dementia, return the etiology code (G30.x, G31.x), not F-codes. Never use G89.3 unless the text ties pain to cancer.'
+        + '\n\nRespond ONLY with JSON: {"options":[{"code":"E03.9","label":"Hypothyroidism, unspecified"}]}';
+      var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 600 }) });
+      var d = await resp.json();
+      if (!resp.ok || d.error) throw new Error(d.error || ('HTTP ' + resp.status));
+      var parsed = icdParseAiJson(d.content && d.content[0] && d.content[0].text);
+      (parsed.options || []).forEach(function(o) {
+        var c = String(o.code || '').toUpperCase().trim();
+        if (/^[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$/.test(c) && !opts.some(function(x) { return x.code === c; })) opts.push({ code: c, label: o.label || o.description || '' });
+      });
+    } catch (e) { if (!opts.length) tierAddMsg('Couldn\'t look up codes right now — enter the code yourself or try again.', 'warn'); }
+  }
+  btn.disabled = false; btn.textContent = orig;
+  var box = document.getElementById('tadd-opts');
+  if (!opts.length) { box.innerHTML = ''; return; }
+  tierAddMsg('');
+  box.innerHTML = '<span>Pick a code:</span>' + opts.slice(0, 6).map(function(o, i) {
+    return '<button type="button" data-i="' + i + '"><b>' + escapeHtml(o.code) + '</b> ' + escapeHtml(icdOfficialName({ description: o.label, diagnosis: '' }) || o.label) + '</button>';
+  }).join('');
+  box.querySelectorAll('button').forEach(function(b) {
+    b.addEventListener('click', function() {
+      var o = opts[+b.dataset.i];
+      document.getElementById('tadd-code').value = o.code;
+      document.getElementById('tadd-dx').dataset.official = icdOfficialName({ description: o.label, diagnosis: '' }) || '';
+      box.querySelectorAll('button').forEach(function(x) { x.classList.toggle('on', x === b); });
+    });
+  });
+}
+
+async function tierAddDiagnosis() {
+  var dxEl = document.getElementById('tadd-dx');
+  var name = dxEl.value.trim();
+  var code = document.getElementById('tadd-code').value.trim().toUpperCase();
+  if (!name && !code) { tierAddMsg('Enter a diagnosis (and a code if you have one).', 'warn'); return; }
+  if (code && !/^[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$/.test(code)) { tierAddMsg('That code doesn\'t look like an ICD-10 code (e.g. E03.9). Fix it or leave it blank.', 'warn'); return; }
+  if (!tierCurrentData) return;
+  var label = (code ? code + ' ' : '') + (name || dxEl.dataset.official || '');
+  // Duplicate check (same code, or same name)
+  var dupe = tierCurrentData.items.filter(function(it) {
+    var d = String(it.diagnosis || '');
+    return (code && d.toUpperCase().indexOf(code) !== -1) || (name && d.toLowerCase().replace(/^[a-z0-9.]+\s+/, '') === name.toLowerCase());
+  })[0];
+  if (dupe && !confirm('"' + dupe.diagnosis + '" is already on the list (Tier ' + dupe.tier + '). Add it again anyway?')) return;
+
+  var choice = (document.querySelector('input[name="tadd-tier"]:checked') || {}).value || 'ai';
+  // Foley and continuous O2 are always their own problem
+  if ((isFoleyProblem(label) || isO2DependenceProblem(label)) && choice !== '1') {
+    if (choice !== 'ai') alert('Per Luminos policy, ' + (isFoleyProblem(label) ? 'a Foley catheter (Y84.6)' : 'continuous oxygen (Z99.81)') + ' is always Tier 1 — its own problem. It will be added as Tier 1.');
+    choice = '1';
+  }
+  var go = document.getElementById('tadd-go'); go.disabled = true; var goText = go.textContent;
+  var hadCarePlans = !!(document.getElementById('all-tier1-cp-wrap') && document.getElementById('all-tier1-cp-wrap').children.length);
+  var resultsEl = document.getElementById('tier-results');
+  var flags = getCpFlags();
+  var newItems = [];
+
+  if (choice === 'ai') {
+    go.textContent = '⏳ Tiering…';
+    tierQueuedAdditions = new Map();
+    tierQueuedAdditions.set(name || label, { suggestion: name || label, icd10: code });
+    newItems = (await reRunTierWithAdditions()) || [];
+  } else {
+    var tier = +choice;
+    var item = { diagnosis: label, tier: tier, reasoning: 'Added by nurse', confidence: 'high', nurseAdded: true };
+    if (tier === 2) {
+      item.parentProblem = (document.getElementById('tadd-parent') || {}).value || '';
+      item.parentRationale = 'Added by nurse under this problem';
+      if (!item.parentProblem) { go.disabled = false; tierAddMsg('There\'s no Tier 1 problem to put it under — choose Tier 1 or 3.', 'warn'); return; }
+    }
+    tierCurrentData.items.push(item);
+    tierLockedItems.set(item.diagnosis.toLowerCase().trim(), item);
+    newItems = [item];
+    renderTierResults(resultsEl, tierCurrentData, tierCurrentPrimaryDx, false, '', flags);
+  }
+
+  // Keep the copy-ready Firenote list (from ICD-10 Lookup) in step
+  newItems.forEach(function(it) {
+    var m = String(it.diagnosis).match(/^([A-TV-Z][0-9][0-9A-Z](?:\.[0-9A-Z]{1,4})?)\s+(.*)$/);
+    if (m && document.getElementById('tier-fn-list') && document.getElementById('tier-fn-list').style.display !== 'none') {
+      icdLookupResults.push({ diagnosis: m[2], code: m[1], description: m[2], needsClarification: false });
+    }
+  });
+  if (typeof renderTierFirenoteList === 'function' && document.getElementById('tier-fn-list') && document.getElementById('tier-fn-list').style.display !== 'none') renderTierFirenoteList();
+
+  // A new Tier 1 after Build All → build just its care plan and append it
+  var newTier1 = newItems.filter(function(it) { return it.tier === 1; });
+  if (hadCarePlans && newTier1.length) {
+    await buildAllTier1CarePlans(tierCurrentData, tierCurrentPrimaryDx, resultsEl, getCpFlags(), { onlyItems: newTier1 });
+  }
+  var addedMsg = newItems.length
+    ? '✓ Added ' + newItems.map(function(it) { return '<b>' + escapeHtml(it.diagnosis) + '</b> as Tier ' + it.tier + (it.tier === 2 && it.parentProblem ? ' under ' + escapeHtml(it.parentProblem) : ''); }).join(', ')
+      + (hadCarePlans && newTier1.length ? ' — its care plan was added below your other care plans.' : (newTier1.length ? ' — Build All (or its Build Care Plan button) will include it.' : '.'))
+    : '';
+  if (newItems.length) {
+    var panel = document.getElementById('tier-add-panel');
+    if (panel) { var m2 = document.getElementById('tadd-msg'); m2.className = 'tadd-msg ok'; m2.innerHTML = addedMsg; m2.style.display = 'block'; if (!(hadCarePlans && newTier1.length)) panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+  var goBtn = document.getElementById('tadd-go'); if (goBtn) { goBtn.disabled = false; goBtn.textContent = goText; }
+}
+
 async function reRunTierWithAdditions() {
   const flags = getCpFlags();
   if (!tierCurrentData || tierQueuedAdditions.size === 0) return;
@@ -11988,10 +12209,15 @@ Respond ONLY with valid JSON, no markdown, no extra whitespace:
 
   // Re-render the full combined results
   renderTierResults(resultsEl, tierCurrentData, primaryDx, false, '', flags);
+  return newParsed.items;
 }
 
-async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
-  const tier1Items = (data.items || []).filter(function(it) { return it.tier === 1; });
+async function buildAllTier1CarePlans(data, primaryDx, container, flags, opts) {
+  opts = opts || {};
+  // opts.onlyItems = build JUST these Tier 1 items and append them below the existing care
+  // plans (used when a nurse adds a forgotten diagnosis after Build All).
+  const appendMode = !!(opts.onlyItems && opts.onlyItems.length);
+  const tier1Items = appendMode ? opts.onlyItems : (data.items || []).filter(function(it) { return it.tier === 1; });
   if (tier1Items.length === 0) { alert('No Tier 1 diagnoses found.'); return; }
 
   const btn = document.getElementById('build-all-tier1-btn');
@@ -12001,7 +12227,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
   btn.textContent = '⏳ Building care plans...';
   btn.disabled = true;
   wrap.style.display = 'block';
-  wrap.innerHTML = '';
+  if (!appendMode) wrap.innerHTML = '';
 
   const patientDetails = (document.getElementById('tier-patient-details') ? document.getElementById('tier-patient-details').value.trim() : '');
 
@@ -12010,7 +12236,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
   // Choose the ONE primary card up front with a forgiving match (code, name, or word overlap).
   // If nothing matches, the required interventions get their own card instead of vanishing.
-  const primaryIdx = pickPrimaryIndex(tier1Items, primaryDx);
+  const primaryIdxRaw = pickPrimaryIndex(tier1Items, primaryDx);
+  // In append mode the primary card already exists unless this new item IS the primary.
+  const primaryIdx = appendMode ? (primaryIdxRaw !== -1 && dxPrimaryMatchScore(tier1Items[primaryIdxRaw].diagnosis, primaryDx) >= 85 ? primaryIdxRaw : -2) : primaryIdxRaw;
 
   // Create a card placeholder for each Tier 1 item
   const cards = tier1Items.map(function(it, idx) {
@@ -12092,6 +12320,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
     // Render primary card with imminence care plan
     if (primaryIdx === -1) { cards.unshift(makeRequiredOnlyCard(wrap, primaryDx)); }
+    if (primaryIdx === -2) { /* append mode, primary already built */ }
     cards.forEach(function(c, ci) {
       var dx = c.item ? c.item.diagnosis : primaryDx;
       if (primaryIdx === -1 ? ci === 0 : c.item === tier1Items[primaryIdx]) {
@@ -12107,8 +12336,9 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags) {
 
     // Render all accumulated cards to DOM (cards are already appended to wrap above)
     // Reset button state
-    btn.textContent = '✨ Build All Tier 1 Care Plans';
+    btn.textContent = '🔄 Rebuild All Tier 1 Care Plans';
     btn.disabled = false;
+    if (appendMode && cards[0]) cards[0].card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return; // Skip the normal Promise.all path
   }
 
@@ -12210,7 +12440,7 @@ Respond ONLY with valid JSON, no markdown, no extra text:
     renderAllCpCard(c.body, result, it.diagnosis, patientDetails);
   }));
 
-  if (primaryIdx === -1) {
+  if (primaryIdx === -1 && !appendMode) {
     const fb = makeRequiredOnlyCard(wrap, primaryDx);
     renderAllCpCard(fb.body, {
       goalFocus: 'optimal comfort, dignity, and quality of life consistent with hospice goals of care, with distressing symptoms managed to the patient\'s/family\'s satisfaction',
@@ -12222,14 +12452,17 @@ Respond ONLY with valid JSON, no markdown, no extra text:
     }, primaryDx, patientDetails);
   }
 
-  btn.textContent = '✨ Build All Tier 1 Care Plans';
+  btn.textContent = '🔄 Rebuild All Tier 1 Care Plans';
   btn.disabled = false;
 
   // Append situational/required care plan cards
-  const sitCards = buildSituationalCards(flags, primaryDx, data);
-  sitCards.forEach(function(sc) { wrap.appendChild(sc); });
+  if (!appendMode) {
+    const sitCards = buildSituationalCards(flags, primaryDx, data);
+    sitCards.forEach(function(sc) { wrap.appendChild(sc); });
+  }
 
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (appendMode && cards[0]) cards[0].card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  else wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function buildSituationalCards(flags, primaryDx, data) {
@@ -12371,8 +12604,11 @@ function buildSituationalCards(flags, primaryDx, data) {
 
   // ── Continuous Oxygen ────────────────────────────────────────────
   if (flags.oxygen) {
-    cards.push(makeCard('💨 Z99.81 — Oxygen Dependence Care Plan', 'Separate Problem Required', teal, [
-      { type: 'flag', label: 'Add Z99.81 as a separate active problem in Firenote', text: 'Continuous oxygen dependence requires its own care plan with a goal and interventions.' },
+    var o2OnList = ((data && data.items) || []).filter(function(it) { return isO2DependenceProblem(it.diagnosis); })[0];
+    cards.push(makeCard(o2OnList ? '💨 Z99.81 — Oxygen Dependence (already on your list)' : '💨 Z99.81 — Oxygen Dependence Care Plan', o2OnList ? 'Use your existing oxygen problem' : 'Separate Problem Required', teal, [
+      o2OnList
+        ? { type: 'flag', label: 'Oxygen dependence is already on your problem list as "' + o2OnList.diagnosis + '"', text: 'Use this goal and these interventions for that problem — do not add a second Z99.81 problem. Keep it Tier 1 with the oxygen order and supplies under it.' }
+        : { type: 'flag', label: 'Add Z99.81 as a separate active problem in Firenote', text: 'Continuous oxygen dependence requires its own care plan with a goal and interventions.' },
       { type: 'goal3', focus: "improved respiratory comfort", measurement: "patient/caregiver report and reduced signs of respiratory distress", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess respiratory status each visit including rate, depth, work of breathing, lung sounds, level of dyspnea, and use of accessory muscles.',
@@ -12408,8 +12644,12 @@ function buildSituationalCards(flags, primaryDx, data) {
 
   // ── Foley Catheter ───────────────────────────────────────────────
   if (flags.foley) {
-    cards.push(makeCard('💧 Y84.6 — Foley Catheter Care Plan', 'Separate Problem Required', teal, [
-      { type: 'flag', label: 'Add Y84.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan. Ensure catheter order and supplies are entered.' },
+    // If Foley is already on the nurse's list, don't tell her to add it again.
+    var foleyOnList = ((data && data.items) || []).filter(function(it) { return isFoleyProblem(it.diagnosis); })[0];
+    cards.push(makeCard(foleyOnList ? '💧 Y84.6 — Foley Catheter (already on your list)' : '💧 Y84.6 — Foley Catheter Care Plan', foleyOnList ? 'Use your existing Foley problem' : 'Separate Problem Required', teal, [
+      foleyOnList
+        ? { type: 'flag', label: 'Foley is already on your problem list as "' + foleyOnList.diagnosis + '"', text: 'Use this goal and these interventions for that problem — do not add a second Foley problem. Code it Y84.6 (not Z96.0), keep it Tier 1, and make sure the catheter order and supplies are entered under it.' }
+        : { type: 'flag', label: 'Add Y84.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan. Ensure catheter order and supplies are entered.' },
       { type: 'goal3', focus: "comfort with minimal catheter-related complications", measurement: "maintained adequate urine flow and absence of catheter complications", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental status changes.',
@@ -12873,7 +13113,9 @@ TIER 2: Addressed under another Tier 1 problem — stays on list, no separate go
 TIER 3: Diagnosis list only — present but not causing symptoms or requiring intervention.
 Route symptoms to Tier 2 under their causing diagnosis (e.g. agitation → dementia, edema → CHF).
 Set associatedSymptom: true when routing a symptom under its causing diagnosis.
-The primary hospice diagnosis is ALWAYS Tier 1.`;
+The primary hospice diagnosis is ALWAYS Tier 1.
+A Foley / indwelling urinary catheter (Y84.6) is ALWAYS Tier 1 — its own problem, never Tier 2 or 3, never Z96.0.
+Continuous oxygen dependence (Z99.81) is ALWAYS Tier 1 — its own problem.`;
 }
 
 function salvageTruncatedTierJson(text) {
@@ -13047,6 +13289,36 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? '' : String(str);
   return div.innerHTML;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// CONFIRM BEFORE CLEARING (Nov 2026, preceptor feedback)
+// Every ✕ Clear button goes through here. If there's anything entered or generated in
+// that tool, the nurse must confirm first. Nothing to lose → it just clears.
+// ════════════════════════════════════════════════════════════════════════
+function clearScopeHasData(selector) {
+  var nodes = Array.prototype.slice.call(document.querySelectorAll(selector));
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    var fields = n.matches('input, textarea, select') ? [n] : Array.prototype.slice.call(n.querySelectorAll('input:not([type=search]):not([type=button]):not([type=submit]), textarea, select'));
+    for (var j = 0; j < fields.length; j++) {
+      var el = fields[j];
+      if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked !== el.defaultChecked) return true; }
+      else if (el.tagName === 'SELECT') { if (el.selectedIndex > 0 && !el.options[el.selectedIndex].defaultSelected) return true; }
+      else if (el.value.trim() && el.value !== el.defaultValue) return true;
+    }
+    // Generated results (care plans, tiers, lookups) count too
+    var outs = n.matches('[id$="-results"], [id$="-output"], [id$="-output-wrap"], .ai-output-box') ? [n] : Array.prototype.slice.call(n.querySelectorAll('[id$="-results"], [id$="-output"], .ai-output-box'));
+    for (var k = 0; k < outs.length; k++) {
+      var o = outs[k];
+      if (o.offsetParent !== null || o.style.display === 'block') { if ((o.value || o.textContent || '').trim()) return true; }
+    }
+  }
+  return false;
+}
+function confirmClear(selector, label, clearFn) {
+  if (clearScopeHasData(selector) && !confirm('Clear ' + label + '?\n\nEverything entered or generated here will be erased and can\'t be undone.')) return;
+  clearFn();
 }
 
 function clearTierChecker() {
@@ -13988,7 +14260,7 @@ async function runIcdLookup() {
   var apiBatchErrors = [];
   if (needsApi.length > 0) {
     btn.textContent = '\u23f3 Coding ' + needsApi.length + ' remaining via AI...';
-    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- ABBREVIATIONS / LAY TERMS: Nurses type shorthand (DM2, T2DM, CHF, COPD, CKD3, MCI, UTI, HTN, A-fib, BPH, OA, PVD). Interpret them clinically and code them; never treat shorthand as unknown.\n- NEVER return an empty result. If you cannot pick one code with confidence, return needsClarification:true with the 2-6 most likely codes as options. A diagnosis with code:null and no options is not allowed.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
+    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- ABBREVIATIONS / LAY TERMS: Nurses type shorthand (DM2, T2DM, CHF, COPD, CKD3, MCI, UTI, HTN, A-fib, BPH, OA, PVD). Interpret them clinically and code them; never treat shorthand as unknown.\n- NEVER return an empty result. If you cannot pick one code with confidence, return needsClarification:true with the 2-6 most likely codes as options. A diagnosis with code:null and no options is not allowed.\n- FOLEY / INDWELLING URINARY CATHETER: always Y84.6. Never Z96.0 (permanent urogenital implants only) or Z46.6 for a Foley.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
     const ICD_API_JSON_SPEC = '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: "code" and "label" (NOT "description", NOT "name"). Example: [{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"}]\n\nEach result MUST include "line": the number of the diagnosis as listed above, and "diagnosis": the text exactly as given.\n\nRespond ONLY with valid JSON:\n{"results":[{"line":1,"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"line":2,"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
 
     const ICD_API_BATCH_SIZE = 5; // smaller batches = faster responses, well inside the function time limit
@@ -14755,6 +15027,9 @@ function updateIcdSendButton(container) {
 }
 
 function sendIcdToTierChecker() {
+  var _ti = document.getElementById('tier-input');
+  if (((_ti && _ti.value.trim()) || (tierCurrentData && tierCurrentData.items && tierCurrentData.items.length))
+      && !confirm('Problem List Tiering already has a list in it.\n\nSending this list replaces what\'s in the Tiering box. Continue?')) return;
   const diagList = icdLookupResults.map(function(r) {
     const diagAlreadyHasCode = r.code && r.diagnosis.trim().toUpperCase().startsWith(r.code.trim().toUpperCase());
     return (r.code && !diagAlreadyHasCode ? r.code + ' ' : '') + r.diagnosis;
@@ -15046,7 +15321,7 @@ function clearIcdLookup() {
         <div class="spinner"></div>
         <span class="btn-text">✨ Generate Care Plan</span>
       </button>
-      <button class="ai-clear-btn" onclick="clearCarePlan()">✕ Clear</button>
+      <button class="ai-clear-btn" onclick="confirmClear('#panel-careplan', 'the Care Plan Builder and the care plan it built', clearCarePlan)">✕ Clear</button>
     </div>
 
     <div class="ai-error" id="cp-error"></div>
@@ -15119,7 +15394,7 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
       <button class="ai-submit-btn" id="narr-btn" onclick="buildNarrativePrompt()">
         <span class="btn-text">🔗 Build Copilot Prompt</span>
       </button>
-      <button class="ai-clear-btn" onclick="clearNarrative()">✕ Clear</button>
+      <button class="ai-clear-btn" onclick="confirmClear('#narr-input, #narr-dx, #narr-paste-back, #narr-output-wrap', 'the Narrative Strengthener — your draft notes and the pasted narrative', clearNarrative)">✕ Clear</button>
     </div>
 
     <div class="ai-output-wrap" id="narr-output-wrap">
@@ -15214,7 +15489,7 @@ Example: 82yo male, end-stage CHF, lives with daughter who is primary caregiver.
               </div>
               <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
                 <button id="teams-btn" onclick="buildTeamsNote()" style="padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:5px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">💬 Build Teams Note</button>
-                <button onclick="clearTeamsFields()" style="padding:8px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
+                <button onclick="confirmClear('[id^=&quot;tm-&quot;]', 'the Teams note fields (and the note built from them)', clearTeamsFields)" style="padding:8px 12px;background:var(--row-alt);color:var(--navy);border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.8rem;cursor:pointer">✕ Clear</button>
               </div>
               <div id="teams-missing" style="display:none;margin-top:10px;padding:8px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.8rem;color:#7a4200"></div>
             </div>
@@ -15344,6 +15619,29 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .tm-grid input,.tm-grid select{width:100%;min-height:36px;padding:6px 9px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.85rem;font-weight:400;color:var(--text);background:#fff}
 .tm-grid .tm-filled{background:#fffbea;border-color:#e8b84b}
 @media(max-width:520px){.tm-grid{grid-template-columns:1fr}}
+
+/* Add a missed diagnosis (Tiering) */
+.tadd{margin:16px 0;padding:14px;border:2px dashed var(--gold);border-radius:8px;background:#fffdf6}
+.tadd-hd{font-size:.92rem;font-weight:700;color:var(--navy);margin-bottom:10px}
+.tadd-hd span{font-weight:400;font-size:.78rem;color:var(--text-lt)}
+.tadd-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.tadd label{display:flex;flex-direction:column;gap:3px;font-size:.74rem;font-weight:700;color:var(--navy)}
+.tadd-dx{flex:1 1 240px}.tadd-code{flex:0 0 120px}
+.tadd input[type=text],.tadd select{min-height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.88rem;font-weight:400;width:100%;background:#fff}
+.tadd-find,.tadd-go{min-height:38px;padding:0 14px;border-radius:6px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer}
+.tadd-find{background:#fff;border:1px solid var(--navy);color:var(--navy)}
+.tadd-go{margin-top:10px;background:var(--navy);color:#fff;border:none}
+.tadd-go:disabled,.tadd-find:disabled{opacity:.6;cursor:wait}
+.tadd-opts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;font-size:.78rem;color:var(--text-mid)}
+.tadd-opts button{min-height:32px;padding:0 10px;border:1px solid var(--border);background:#fff;border-radius:16px;font-family:inherit;font-size:.78rem;cursor:pointer;text-align:left}
+.tadd-opts button.on{border-color:var(--navy);background:#eef2fa}
+.tadd-tiers{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.tadd-tiers label{flex-direction:row;align-items:center;gap:6px;font-weight:600;font-size:.84rem;cursor:pointer}
+.tadd-tiers small{font-weight:400;color:var(--text-lt)}
+.tadd-parent{margin-top:8px;max-width:420px}
+.tadd-msg{margin-top:10px;padding:8px 11px;border-radius:6px;font-size:.82rem;line-height:1.5}
+.tadd-msg.ok{background:var(--green-bg);color:#12502f;border:1px solid #bfe3cf}
+.tadd-msg.warn,.tadd-msg.info{background:#fff8e1;color:#7a4200;border:1px solid #ffe082}
 
 /* "Show different intervention options" */
 .more-iv{margin-top:10px;padding:10px;border:1px dashed #d7cdef;border-radius:7px;background:#faf8fe}
