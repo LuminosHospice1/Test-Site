@@ -8354,6 +8354,12 @@ function foleyReasonNoticeHtml(lines) {
 function isO2DependenceProblem(t) { return /\bZ99\.81\b|dependence on (supplemental )?oxygen|continuous (supplemental )?o(xygen|2)/i.test(String(t || '')); }
 
 function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver, problemText) {
+  // Problems already on the tiered problem list get their own care plan there — don't ask the
+  // AI to add a second, separate one inside this care plan (Nov 2026).
+  flags = Object.assign({}, flags);
+  var _tl = (typeof tierCurrentData !== 'undefined' && tierCurrentData && tierCurrentData.items) || [];
+  if (_tl.some(function(it) { return isFoleyProblem(it.diagnosis); })) flags.foley = false;
+  if (_tl.some(function(it) { return isO2DependenceProblem(it.diagnosis); })) flags.oxygen = false;
   const lines = [];
 
   // Bereavement and Full Code are now hardcoded into requiredPrimaryBlock — not passed to AI prompt
@@ -12527,6 +12533,10 @@ Respond ONLY with valid JSON, no markdown, no extra text:
     }
 
     renderAllCpCard(c.body, result, it.diagnosis, patientDetails);
+    if (isFoleyProblem(it.diagnosis)) {
+      var _fn = foleyReasonNoticeHtml((data.items || []).map(function(x) { return x.diagnosis; }).concat(['Z46.6 Foley catheter']));
+      if (_fn) c.body.insertAdjacentHTML('afterbegin', _fn);
+    }
   }));
 
   if (primaryIdx === -1 && !appendMode) {
@@ -12556,6 +12566,17 @@ Respond ONLY with valid JSON, no markdown, no extra text:
 
 function buildSituationalCards(flags, primaryDx, data) {
   var cards = [];
+  // Nov 2026: if the nurse checked a situational flag AND the problem is already on the
+  // diagnosis list, its care plan is built with the other Tier 1s — don't show a second box.
+  var _listItems = (data && data.items) || [];
+  function onList(test) { return _listItems.filter(function(it) { return test(it.diagnosis); })[0] || null; }
+  function onListTier1(test) { return _listItems.filter(function(it) { return it.tier === 1 && test(it.diagnosis); })[0] || null; }
+  flags = Object.assign({}, flags);
+  if (onList(isFoleyProblem)) flags.foley = false;                 // always Tier 1 → built above
+  if (onList(isO2DependenceProblem)) flags.oxygen = false;         // always Tier 1 → built above
+  if (onList(function(d) { return /\bK59\.03\b|opioid[- ]induced constipation|constipation due to opioid/i.test(d); })) flags.opioids = false;
+  if (onListTier1(function(d) { return /\bR26\.89\b|\bZ91\.81\b|fall risk|risk for falls|history of fall/i.test(d); })) flags.fallRisk = false;
+  if (onListTier1(function(d) { return /skin breakdown|pressure injury risk|risk for (skin|pressure)/i.test(d); })) flags.skinRisk = false;
 
   function makeCard(title, tag, color, sections) {
     var card = document.createElement('div');
@@ -12581,8 +12602,10 @@ function buildSituationalCards(flags, primaryDx, data) {
     sections.forEach(function(sec) {
       if (sec.type === 'flag') {
         var d = document.createElement('div');
-        d.style.cssText = 'padding:9px 12px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.84rem;color:#7a4200;margin-bottom:10px;line-height:1.55';
-        d.innerHTML = '<strong>⚠ ' + escapeHtml(sec.label) + '</strong><br>' + escapeHtml(sec.text);
+        var _ok = /^✓/.test(sec.label);
+        d.style.cssText = _ok ? 'padding:9px 12px;background:#f1f8f4;border:1px solid #bfe3cf;border-radius:6px;font-size:.84rem;color:#12502f;margin-bottom:10px;line-height:1.55'
+                              : 'padding:9px 12px;background:#fff3b0;border:1px solid #ffe082;border-radius:6px;font-size:.84rem;color:#7a4200;margin-bottom:10px;line-height:1.55';
+        d.innerHTML = '<strong>' + (_ok || /^⚠/.test(sec.label) ? '' : '⚠ ') + escapeHtml(sec.label) + '</strong><br>' + escapeHtml(sec.text);
         body.appendChild(d);
       } else if (sec.type === 'goal') {
         var goalSec = document.createElement('div');
