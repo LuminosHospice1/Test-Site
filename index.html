@@ -11248,15 +11248,8 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
       if (it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
       if (it.confidence === 'low' && !it.associatedSymptom) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ LOW CONFIDENCE — REVIEW</span>';
       if (it.confidence === 'low' && it.associatedSymptom && tierNum === 2) html += ' <span style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:700">⚠ REVIEW</span>';
-      // Hospice relatedness badge
-      if (it.hospiceRelatedness === 'related') {
-        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Contributes to terminal prognosis or symptom burden') + '" style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #a8d5b5;cursor:help">✓ Related</span>';
-      } else if (it.hospiceRelatedness === 'unrelated') {
-        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Does not contribute to terminal prognosis') + '" style="font-size:.7rem;background:#f1f3f5;color:#5a6472;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #d0d5dd;cursor:help">✗ Unrelated</span>';
-      } else if (it.hospiceRelatedness === 'uncertain') {
-        const leanLabel = it.relatednessLean === 'related' ? 'Likely Related — Verify' : it.relatednessLean === 'unrelated' ? 'Likely Unrelated — Verify' : '? Verify';
-        html += ' <span title="' + escapeHtml(it.relatednessReason || 'Relatedness depends on clinical context') + '" style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #ffe082;cursor:help">' + escapeHtml(leanLabel) + '</span>';
-      }
+      // Hospice relatedness badge (shared helper so moved rows keep it too)
+      html += tierRelBadgeHtml(it);
       html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">' + escapeHtml(it.reasoning || '') + '</div>';
       if (tierNum === 2 && it.parentProblem) {
         html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
@@ -11680,6 +11673,26 @@ function showAssocSymptomDropdown(dx, btn, container, primaryDx) {
   modal.classList.add('show');
 }
 
+// Related / Unrelated / Verify badge for a tier row. Takes the item or its diagnosis text.
+// Used by the main tier render AND every move (Tier 1→2/3, 2→3, 3→2, promote, undo) —
+// before Nov 2026 the move functions rebuilt the row without it, so the suggestion vanished.
+function tierRelBadgeHtml(itOrDx) {
+  var it = (typeof itOrDx === 'string')
+    ? ((tierCurrentData && tierCurrentData.items) || []).filter(function(x) { return x.diagnosis === itOrDx; })[0]
+    : itOrDx;
+  if (!it) return '';
+  var html = '';
+  if (it.hospiceRelatedness === 'related') {
+    html += ' <span title="' + escapeHtml(it.relatednessReason || 'Contributes to terminal prognosis or symptom burden') + '" style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #a8d5b5;cursor:help">✓ Related</span>';
+  } else if (it.hospiceRelatedness === 'unrelated') {
+    html += ' <span title="' + escapeHtml(it.relatednessReason || 'Does not contribute to terminal prognosis') + '" style="font-size:.7rem;background:#f1f3f5;color:#5a6472;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #d0d5dd;cursor:help">✗ Unrelated</span>';
+  } else if (it.hospiceRelatedness === 'uncertain') {
+    const leanLabel = it.relatednessLean === 'related' ? 'Likely Related — Verify' : it.relatednessLean === 'unrelated' ? 'Likely Unrelated — Verify' : '? Verify';
+    html += ' <span title="' + escapeHtml(it.relatednessReason || 'Relatedness depends on clinical context') + '" style="font-size:.7rem;background:#fff3b0;color:#7a4200;padding:1px 7px;border-radius:10px;font-weight:600;border:1px solid #ffe082;cursor:help">' + escapeHtml(leanLabel) + '</span>';
+  }
+  return html;
+}
+
 function demoteToAssocSymptom(dx, parentDx, container) {
   // Remove dropdown
   const dropdown = document.getElementById('assoc-dropdown-wrap');
@@ -11727,7 +11740,7 @@ function demoteToAssocSymptom(dx, parentDx, container) {
   newRow.setAttribute('data-dx-key', dx);
 
   let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
-  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>' + tierRelBadgeHtml(dx);
   html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
   html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved to Tier 2 by nurse</div>';
   html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
@@ -11857,7 +11870,7 @@ function moveItemToTier3(dx, container) {
   newRow.setAttribute('data-dx-key', dx);
 
   let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
-  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>' + tierRelBadgeHtml(dx);
   html += ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">→ Moved to Tier 3</span>';
   html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved by nurse — not currently requiring intervention</div>';
   html += '</div>';
@@ -11992,7 +12005,7 @@ function demoteTier3ToAssocSymptom(dx, parentDx, container) {
   newRow.setAttribute('data-dx-key', dx);
 
   let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
-  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>' + tierRelBadgeHtml(dx);
   html += ' <span style="font-size:.7rem;background:#e8f4fd;color:#1a6a9a;padding:1px 7px;border-radius:10px;font-weight:700;border:1px solid #b3d9f5">🔗 Associated Symptom</span>';
   html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Moved to Tier 2 by nurse</div>';
   html += '<div style="margin-top:6px;padding:7px 10px;background:#f0f4fa;border-left:3px solid var(--navy);border-radius:0 4px 4px 0;font-size:.82rem">'
@@ -12080,7 +12093,7 @@ function promoteTierItem(dx, container, primaryDx) {
   newRow.setAttribute('data-dx-key', dx);
 
   let html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">';
-  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>';
+  html += '<div style="flex:1;min-width:200px"><strong style="color:var(--navy)">' + escapeHtml(dx) + '</strong>' + tierRelBadgeHtml(dx);
   html += ' <span style="font-size:.7rem;background:#d4edda;color:#155724;padding:1px 7px;border-radius:10px;font-weight:600">⬆ Promoted to Tier 1</span>';
   html += '<div style="color:var(--text-mid);margin-top:3px;font-size:.85rem">Promoted by nurse — requires standalone care plan</div>';
   html += '</div>';
