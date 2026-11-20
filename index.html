@@ -2565,7 +2565,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
     <div class="grp-lbl" style="margin-top:8px">E — Conditional Items (complete only if applicable)</div>
     <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Oxygen:</strong> Z99.81 · O2 order with liter flow + delivery · Continuous O2 box checked if applicable · Supplies entered · Safety interventions in care plan</div><span class="tag care">CP</span></div>
     <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Wounds:</strong> Each coded separately (ICD-10 body site + stage) · Own goal · Own interventions · Wound care orders with supplies</div><span class="tag care">CP</span></div>
-    <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Foley Catheter:</strong> Y84.6 on problem list · Order with supplies · Interventions with goal (Z96.0 is for permanent urogenital implants only — not foley catheters)</div><span class="tag care">CP</span></div>
+    <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Foley Catheter:</strong> Z46.6 on problem list (not Y84.6, Z96.0 or Z97.8) · Reason for the catheter coded too (e.g. R33.9 retention, N31.9 neurogenic bladder, R32 incontinence) · Order with supplies · Interventions with goal</div><span class="tag care">CP</span></div>
     <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>CNA care plan</strong> completed if aide elected · No PRN · No ranges · Transfer method documented<span class="note">Aide may not visit until the care plan is completed and verified</span></div><span class="tag care">CP</span></div>
     <div class="standalone-chk chk-item" onclick="chkItem(this,'cs2')"><div class="chk-box"></div><div class="chk-text"><strong>Volunteer services:</strong> notify Volunteer Coordinator either way<span class="note">If declined → Y99.2 on problem list with goal reflecting ongoing availability</span></div></div>
   </div></div>
@@ -2729,7 +2729,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Elimination" data-search="urinary retention r33.9 document cause when known"><td>Urinary retention</td><td class="code-cell">R33.9</td><td>Document cause when known</td></tr>
 <tr class="icd-data-row" data-cat="Elimination" data-search="personal history of uti z87.440 include even without active infection"><td>Personal history of UTI</td><td class="code-cell">Z87.440</td><td>Include even without active infection</td></tr>
 <tr class="icd-data-row" data-cat="Elimination" data-search="urinary tract infection n39.0 requires physician documentation"><td>Urinary tract infection</td><td class="code-cell">N39.0</td><td>Requires physician documentation</td></tr>
-<tr class="icd-data-row" data-cat="Elimination" data-search="presence of urogenital implants z96.0 permanent implanted device artificial sphincter implanted prosthetic"><td>Presence of urogenital implants</td><td class="code-cell">Z96.0</td><td>For permanent implanted urogenital devices (e.g. artificial sphincter, implanted prosthetic) — NOT for foley/indwelling catheters. Use Y84.6 for foley catheters.</td></tr>
+<tr class="icd-data-row" data-cat="Elimination" data-search="presence of urogenital implants z96.0 permanent implanted device artificial sphincter implanted prosthetic"><td>Presence of urogenital implants</td><td class="code-cell">Z96.0</td><td>For permanent implanted urogenital devices (e.g. artificial sphincter, implanted prosthetic) — NOT for foley/indwelling catheters. Use Z46.6 for foley catheters.</td></tr>
 <tr class="icd-cat-row" data-cat="Cognitive &amp; Neurological"><td colspan="3">Cognitive &amp; Neurological — Dementia Etiology Codes (code FIRST before F-code companion)</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, unspecified g30.9 etiology first then f02.8x companion required never use f03"><td>Alzheimer's disease, unspecified</td><td class="code-cell">G30.9</td><td>Etiology first — requires F02.8x companion. Never use F03 once Alzheimer's is documented</td></tr>
 <tr class="icd-data-row" data-cat="Cognitive &amp; Neurological" data-search="alzheimer's disease, early onset g30.0 etiology first then f02.8x companion"><td>Alzheimer's disease, early onset</td><td class="code-cell">G30.0</td><td>Etiology first — requires F02.8x companion</td></tr>
@@ -2858,7 +2858,8 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="neurogenic bladder, unspecified n31.9 ms, parkinson&amp;#39;s, cva, als, spinal cord injury"><td>Neurogenic bladder, unspecified</td><td class="code-cell">N31.9</td><td>MS, Parkinson&amp;#39;s, CVA, ALS, spinal cord injury</td></tr>
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="urinary retention r33.9 document cause when known"><td>Urinary retention</td><td class="code-cell">R33.9</td><td>Document cause when known</td></tr>
 <tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="urinary tract infection n39.0 requires physician documentation"><td>Urinary tract infection</td><td class="code-cell">N39.0</td><td>Requires physician documentation</td></tr>
-<tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="foley catheter urinary catheterization y84.6 catheter care insertion ongoing care bladder drainage"><td>Urinary catheterization (Foley catheter)</td><td class="code-cell">Y84.6</td><td>Use for foley/indwelling urinary catheter; requires own care plan with goal and 3+ interventions</td></tr>
+<tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="foley catheter indwelling urinary catheter z46.6 fitting adjustment urinary device catheter care insertion ongoing care bladder drainage y84.6 z97.8"><td>Encounter for fitting and adjustment of urinary device (Foley catheter)</td><td class="code-cell">Z46.6</td><td>Luminos code for every foley/indwelling urinary catheter — never Y84.6, Z96.0 or Z97.8. Requires its own care plan with goal and 3+ interventions, AND a diagnosis for the reason for the catheter (e.g. R33.9 retention, N31.9 neurogenic bladder, R32 incontinence)</td></tr>
+<tr class="icd-data-row" data-cat="Renal &amp; GU" data-search="suprapubic catheter cystostomy z93.59"><td>Other cystostomy status (suprapubic catheter)</td><td class="code-cell">Z93.59</td><td>Suprapubic catheter — not Z46.6</td></tr>
 <tr class="icd-cat-row" data-cat="Hepatic &amp; GI"><td colspan="3">Hepatic &amp; GI</td></tr>
 <tr class="icd-data-row" data-cat="Hepatic &amp; GI" data-search="alcoholic cirrhosis without ascites k70.30 "><td>Alcoholic cirrhosis without ascites</td><td class="code-cell">K70.30</td><td></td></tr>
 <tr class="icd-data-row" data-cat="Hepatic &amp; GI" data-search="alcoholic cirrhosis with ascites k70.31 ascites captured in combination — do not also code r18.8"><td>Alcoholic cirrhosis with ascites</td><td class="code-cell">K70.31</td><td>Ascites captured in combination — do not also code R18.8</td></tr>
@@ -2932,7 +2933,7 @@ Keep the Monitor For intervention active unless the medication causing the inter
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="presence of cardiac pacemaker z95.0 required whenever pacemaker present"><td>Presence of cardiac pacemaker</td><td class="code-cell">Z95.0</td><td>Required whenever pacemaker present</td></tr>
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="presence of aicd z95.810 required whenever icd/defibrillator present"><td>Presence of AICD</td><td class="code-cell">Z95.810</td><td>Required whenever ICD/defibrillator present</td></tr>
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="presence of other cardiac implants z95.818 if unclear whether pacemaker or aicd"><td>Presence of other cardiac implants</td><td class="code-cell">Z95.818</td><td>If unclear whether pacemaker or AICD</td></tr>
-<tr class="icd-data-row" data-cat="Required Z Codes" data-search="presence of urogenital implants z96.0 permanent implanted urogenital device"><td>Presence of urogenital implants</td><td class="code-cell">Z96.0</td><td>For permanent implanted urogenital devices only — NOT for foley catheters. Use Y84.6 for foley/indwelling urinary catheters.</td></tr>
+<tr class="icd-data-row" data-cat="Required Z Codes" data-search="presence of urogenital implants z96.0 permanent implanted urogenital device"><td>Presence of urogenital implants</td><td class="code-cell">Z96.0</td><td>For permanent implanted urogenital devices only — NOT for foley catheters. Use Z46.6 for foley/indwelling urinary catheters.</td></tr>
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="personal history of uti z87.440 include even without active infection"><td>Personal history of UTI</td><td class="code-cell">Z87.440</td><td>Include even without active infection</td></tr>
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="do not resuscitate status z66 documents dnr order"><td>Do not resuscitate status</td><td class="code-cell">Z66</td><td>Documents DNR order</td></tr>
 <tr class="icd-data-row" data-cat="Required Z Codes" data-search="palliative care encounter z51.5 may be used as additional code on any hospice visit"><td>Palliative care encounter</td><td class="code-cell">Z51.5</td><td>May be used as additional code on any hospice visit</td></tr>
@@ -7065,8 +7066,7 @@ const DX_RELATED = [
   {terms:["overactive bladder", "oab", "urgency"],system:'Renal & GU',icd:'N32.81',q:'Q2',reason:'Overactive bladder can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Overactive bladder affects the hospice plan of care.',mdDoc:'Physician should document whether Overactive bladder contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["benign prostatic hyperplasia with luts", "bph with urinary symptoms"],system:'Renal & GU',icd:'N40.1',q:'Q2',reason:'Benign prostatic hyperplasia with LUTS can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Benign prostatic hyperplasia with LUTS affects the hospice plan of care.',mdDoc:'Physician should document whether Benign prostatic hyperplasia with LUTS contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["gross hematuria", "blood in urine"],system:'Renal & GU',icd:'R31.0',q:'Q2',reason:'Gross hematuria can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Gross hematuria affects the hospice plan of care.',mdDoc:'Physician should document whether Gross hematuria contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
-  {terms:["foley catheter status", "urinary catheter presence", "foley catheter", "indwelling urinary catheter", "catheter care"],system:'Renal & GU',icd:'Y84.6',q:'Q2',reason:'Foley catheter status can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Foley catheter status affects the hospice plan of care.',mdDoc:'Physician should document whether Foley catheter status contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
-  {terms:["encounter for attention to urinary catheter"],system:'Renal & GU',icd:'Z46.6',q:'Q2',reason:'Encounter for attention to urinary catheter can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Encounter for attention to urinary catheter affects the hospice plan of care.',mdDoc:'Physician should document whether Encounter for attention to urinary catheter contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
+  {terms:["foley catheter status", "urinary catheter presence", "foley catheter", "indwelling urinary catheter", "catheter care", "encounter for attention to urinary catheter", "fitting and adjustment of urinary device"],system:'Renal & GU',icd:'Z46.6',q:'Q2',reason:'An indwelling (Foley) catheter is usually placed for comfort or symptom management related to the terminal prognosis (retention, skin protection, end-of-life care burden).',nurseDoc:'Document the REASON for the catheter (retention, neurogenic bladder, incontinence with skin breakdown, comfort at end of life), catheter size/change frequency, output, and comfort benefit. The reason diagnosis must also be on the problem list.',mdDoc:'Physician should document the indication for the indwelling catheter and its relationship to the terminal prognosis, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["bladder spasm", "spastic bladder"],system:'Renal & GU',icd:'N32.89',q:'Q2',reason:'Bladder spasm can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Bladder spasm affects the hospice plan of care.',mdDoc:'Physician should document whether Bladder spasm contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["kidney stone", "renal calculus", "nephrolithiasis"],system:'Renal & GU',icd:'N20.0',q:'Q2',reason:'Kidney stone can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Kidney stone affects the hospice plan of care.',mdDoc:'Physician should document whether Kidney stone contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
   {terms:["chronic cystitis", "chronic bladder inflammation"],system:'Renal & GU',icd:'N30.20',q:'Q2',reason:'Chronic cystitis can contribute to overall comorbid burden, functional decline, symptom burden, treatment complexity, or 6-month prognosis in a hospice patient.',nurseDoc:'Document current symptoms, severity, onset/trend, functional impact, comfort interventions, treatment response, and how Chronic cystitis affects the hospice plan of care.',mdDoc:'Physician should document whether Chronic cystitis contributes to terminal prognosis, symptom burden, medication/treatment burden, or why it is specifically unrelated if excluding.',verdict:'LIKELY RELATED'},
@@ -8326,7 +8326,31 @@ function pickPrimaryIndex(items, primary) {
 // ── Foley / continuous-O2 problem detection (Nov 2026) ─────────────────
 // Used so a situational flag never asks for a SEPARATE care plan for the very
 // problem the nurse is already building or already has on her list.
-function isFoleyProblem(t) { return /\bY84\.6\b|foley|indwelling (urinary )?catheter|urinary catheter(i[sz]ation)?\b|\bcatheter care\b/i.test(String(t || '')); }
+// ── FOLEY CODING POLICY (Nov 2026, Josh): a Foley / indwelling urinary catheter is ALWAYS
+// Z46.6 (Encounter for fitting and adjustment of urinary device). Never Y84.6, Z96.0 or Z97.8.
+// A REASON-for-catheter code must also be on the problem list. Suprapubic = Z93.59 (cystostomy).
+var FOLEY_CODE = 'Z46.6';
+var FOLEY_DESC = 'Encounter for fitting and adjustment of urinary device';
+var FOLEY_REASON_EXAMPLES = 'urinary retention (R33.9), neurogenic bladder (N31.9), urinary incontinence (R32), or a stage 3–4 pressure injury that must stay dry (L89.-)';
+function isSuprapubic(t) { return /supra-?pubic|cystostomy/i.test(String(t || '')); }
+function isFoleyProblem(t) { t = String(t || ''); return !isSuprapubic(t) && /\b(Y84\.6|Z46\.6)\b|foley|indwelling (urinary )?catheter|urinary catheter(i[sz]ation)?\b|\bcatheter care\b/i.test(t) && !/\bT83\.|infection|CAUTI/i.test(t); }
+// Is a reason for the catheter on the list? (retention, neurogenic bladder, incontinence,
+// outlet obstruction / BPH with LUTS, obstructive uropathy, bladder/prostate cancer, pressure injury)
+function isFoleyReasonDx(t) { return /\b(R33\.|N31\.|R32\b|N39\.3|N39\.4|N40\.1|N32\.0|N13\.|C61\b|C67\.|L89\.)|urinary retention|neurogenic bladder|incontinen|bladder outlet|pressure (injury|ulcer)|obstructive uropathy/i.test(String(t || '')) && !/fecal|bowel/i.test(String(t || '')); }
+// Builds the reminder shown wherever a Foley appears. lines = the diagnosis lines currently on the list.
+function foleyReasonNoticeHtml(lines) {
+  lines = (lines || []).map(String);
+  var foleyLines = lines.filter(isFoleyProblem);
+  if (!foleyLines.length) return '';
+  var wrong = foleyLines.filter(function(l) { return /\b(Y84\.6|Z96\.0|Z97\.8)\b/i.test(l); });
+  var hasReason = lines.some(isFoleyReasonDx);
+  var parts = [];
+  if (wrong.length) parts.push('<div><strong>Foley code:</strong> use <b>Z46.6</b> (' + FOLEY_DESC + ') — not ' + wrong.map(function(l) { return escapeHtml((l.match(/\b(Y84\.6|Z96\.0|Z97\.8)\b/i) || [''])[0].toUpperCase()); }).join(', ') + '. Change it in Firenote.</div>');
+  parts.push(hasReason
+    ? '<div>✓ <strong>Reason for the catheter</strong> appears to be on the list — make sure it is the documented reason.</div>'
+    : '<div><strong>⚠ Reason for the catheter is required.</strong> Add a diagnosis for <em>why</em> the Foley is in place — e.g. ' + FOLEY_REASON_EXAMPLES + ' — and document it in the narrative.</div>');
+  return '<div class="foley-notice' + (hasReason && !wrong.length ? ' ok' : '') + '">💧 ' + parts.join('') + '</div>';
+}
 function isO2DependenceProblem(t) { return /\bZ99\.81\b|dependence on (supplemental )?oxygen|continuous (supplemental )?o(xygen|2)/i.test(String(t || '')); }
 
 function buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver, problemText) {
@@ -8383,10 +8407,10 @@ Interventions:
 
   // ── Foley Catheter ──────────────────────────────────────────────
   // Skipped when the care plan being built IS the Foley problem — otherwise the output
-  // repeats it as a "separate" Y84.6 care plan on top of itself.
+  // repeats it as a "separate" Foley care plan on top of itself.
   if (flags.foley && !isFoleyProblem(problemText)) {
     lines.push(`
-FLAG — FOLEY CATHETER (generate a SEPARATE care plan for Y84.6 Urinary Catheterization):
+FLAG — FOLEY CATHETER (generate a SEPARATE care plan for Z46.6 Encounter for fitting and adjustment of urinary device — the Foley code is ALWAYS Z46.6; never Y84.6, Z96.0 or Z97.8):
 Its goal must ALSO use the three-field format — output it prefixed exactly as shown:
 SECONDARY GOAL FOCUS: comfort with minimal catheter-related complications
 SECONDARY GOAL MEASUREMENT: maintained adequate urine flow and absence of catheter complications
@@ -8396,7 +8420,7 @@ Interventions:
 • EDUCATE: Nurse will educate patient/caregiver on proper foley bag positioning (below bladder level, never on the floor), emptying technique for drainage bag, importance of keeping tubing straight/untangled, and proper routine perineal care.
 • EDUCATE: Nurse will educate patient/caregiver on signs/symptoms of catheter-related infections to report: cloudy urine, foul smell, fever, agitation, or abdominal pain.
 • PERFORM: Nurse will perform routine perineal care using mild soap and water, cleansing away from the meatus.
-(Ensure foley catheter order is present with frequency of catheter changes. List foley supplies under this code.)`);
+(Ensure foley catheter order is present with frequency of catheter changes. List foley supplies under Z46.6. A diagnosis for the REASON for the catheter — e.g. ${FOLEY_REASON_EXAMPLES} — must also be on the problem list.)`);
   }
 
   // ── Fall Risk ───────────────────────────────────────────────────
@@ -8554,7 +8578,7 @@ var _cpActiveHardcodedProblemText = null;
 async function runCarePlanBuilder() {
   const problem = document.getElementById('cp-problem').value.trim();
   const problemName = dxNameForProse(problem); // diagnosis without its ICD-10 code, for prose
-  const problemCodeNote = icdCodeNoteForPrompt(problem) + (isFoleyProblem(problem) ? '\nFOLEY RULE: the ICD-10 code for this problem is Y84.6 (Urinary catheterization). Do NOT use or suggest Z96.0 (permanent urogenital implants only), Z46.6, or any other code, and do NOT tell the nurse to create another separate care plan — this IS the Foley care plan.' : '');
+  const problemCodeNote = icdCodeNoteForPrompt(problem) + (isFoleyProblem(problem) ? '\nFOLEY RULE: the ICD-10 code for this problem is Z46.6 (' + FOLEY_DESC + '). Do NOT use or suggest Y84.6, Z96.0, Z97.8 or any other code for the catheter, and do NOT tell the nurse to create another separate care plan — this IS the Foley care plan.' : '');
   const primaryDx = document.getElementById('cp-primary-dx').value.trim();
   const details = document.getElementById('cp-details').value.trim();
   const goals = document.getElementById('cp-goals').value;
@@ -8844,6 +8868,9 @@ GOAL DURATION: [exact duration value]
       : (data.error || 'No response received.');
     const cleanText = appendRequiredPrimarySections(stripIcdCodes(text, icdCodesInText(problem)), isPrimaryDxPlan, flags);
     outputEl.innerHTML = renderCarePlan(cleanText);
+    if (isFoleyProblem(problem) || (flags && flags.foley)) {
+      outputEl.insertAdjacentHTML('afterbegin', '<div class="foley-notice">💧 <div><strong>Foley code: Z46.6</strong> (' + FOLEY_DESC + ') — not Y84.6, Z96.0 or Z97.8.</div><div><strong>Also required:</strong> a diagnosis for the reason for the catheter on the problem list — e.g. ' + FOLEY_REASON_EXAMPLES + '.</div></div>');
+    }
     // "Show different intervention options" under the Interventions section
     (function() {
       var ivSecEl = Array.prototype.find.call(outputEl.querySelectorAll('[data-cp-sec]'), function(el) { return /INTERVENTION/.test(el.getAttribute('data-cp-sec')); });
@@ -8957,7 +8984,7 @@ function cpQuickFillSituational(key) {
     oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
     imminent: { problem: 'Imminence of death — comfort-focused end-of-life care', type: 'clinical', goals: 'comfort', hint: 'Add under the primary diagnosis problem. This care plan replaces or supplements the standard primary DX care plan — focus entirely on comfort, symptom management, and family support. Discontinue care plans that are no longer clinically relevant during the dying process (hypertension, etc.).' },
     oxygenprn: { problem: 'Intermittent / PRN oxygen use — safety and monitoring', type: 'clinical', goals: 'comfort', hint: 'Do NOT add Z99.81 — this patient does not rely on continuous oxygen. Add these interventions under the most clinically relevant respiratory problem (e.g. COPD, Dyspnea, Lung Cancer). No separate ICD-10 code needed.' },
-    foley: { problem: 'Y84.6 Urinary catheterization (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Y84.6 as a separate active problem. Ensure catheter order and supplies are entered.' },
+    foley: { problem: 'Z46.6 Encounter for fitting and adjustment of urinary device (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Z46.6 as a separate active problem (never Y84.6, Z96.0 or Z97.8). Also add a diagnosis for the REASON for the catheter — e.g. urinary retention (R33.9), neurogenic bladder (N31.9) or urinary incontinence (R32). Ensure catheter order and supplies are entered. Suprapubic catheter = Z93.59, not Z46.6.' },
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
     skinrisk: { problem: 'Risk for skin breakdown — prevention and monitoring', type: 'clinical', goals: 'safety', hint: 'Add under an applicable diagnosis or add Z91.89 (Other specified personal risk factors) as a new problem.' },
     // 'wound' preset removed — the Wounds button now opens the interactive multi-entry builder instead.
@@ -10974,6 +11001,13 @@ function fixInvalidTierParents(data) {
 
 function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, flags) {
   const isImminent = !!(flags && flags.imminent);
+  // Policy safety net: Foley (Z46.6) and continuous O2 (Z99.81) are always Tier 1, whatever the AI said
+  ((data && data.items) || []).forEach(function(it) {
+    if ((isFoleyProblem(it.diagnosis) || isO2DependenceProblem(it.diagnosis)) && it.tier !== 1) {
+      it.tier = 1; it.parentProblem = null; it.parentRationale = null; it.parentWhat = null;
+      it.reasoning = (isFoleyProblem(it.diagnosis) ? 'Foley catheter (Z46.6)' : 'Continuous oxygen (Z99.81)') + ' is always its own Tier 1 problem per Luminos policy.';
+    }
+  });
   // Keep any care plans already built (Build All) — re-drawing the tier list after an
   // addition used to wipe them, and the nurse lost that work.
   const keptCpWrap = document.getElementById('all-tier1-cp-wrap');
@@ -11310,6 +11344,10 @@ function renderTierResults(container, data, primaryDx, wasTruncated, debugInfo, 
     missWrap.appendChild(codeNote);
     container.appendChild(missWrap);
   }
+
+  // ── Foley: right code + reason-for-catheter check ──
+  var _tFoley = foleyReasonNoticeHtml((data.items || []).map(function(i) { return i.diagnosis; }));
+  if (_tFoley) { var _tf = document.createElement('div'); _tf.innerHTML = _tFoley; container.appendChild(_tf.firstChild); }
 
   // ── Add a diagnosis the nurse missed (Nov 2026) ──
   container.appendChild(buildTierAddPanel(data));
@@ -11996,7 +12034,7 @@ async function tierAddFindCode(btn) {
       var prompt = 'You are a hospice clinical coding expert. A hospice nurse needs the ICD-10-CM code for this diagnosis.'
         + '\n\nDiagnosis: "' + dx + '"'
         + '\n\nReturn the 2-6 most likely valid, billable ICD-10-CM codes, most likely first. Interpret nurse shorthand. Never fabricate codes.'
-        + '\nFoley / indwelling urinary catheter = Y84.6 only (never Z96.0 or Z46.6). For dementia, return the etiology code (G30.x, G31.x), not F-codes. Never use G89.3 unless the text ties pain to cancer.'
+        + '\nFoley / indwelling urinary catheter = Z46.6 only (never Y84.6, Z96.0 or Z97.8). Suprapubic catheter = Z93.59. For dementia, return the etiology code (G30.x, G31.x), not F-codes. Never use G89.3 unless the text ties pain to cancer.'
         + '\n\nRespond ONLY with JSON: {"options":[{"code":"E03.9","label":"Hypothyroidism, unspecified"}]}';
       var resp = await fetch('/.netlify/functions/claude', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ prompt: prompt, max_tokens: 600 }) });
       var d = await resp.json();
@@ -12032,6 +12070,7 @@ async function tierAddDiagnosis() {
   if (!name && !code) { tierAddMsg('Enter a diagnosis (and a code if you have one).', 'warn'); return; }
   if (code && !/^[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$/.test(code)) { tierAddMsg('That code doesn\'t look like an ICD-10 code (e.g. E03.9). Fix it or leave it blank.', 'warn'); return; }
   if (!tierCurrentData) return;
+  if (isFoleyProblem(name + ' ' + code) && code !== FOLEY_CODE) { code = FOLEY_CODE; document.getElementById('tadd-code').value = FOLEY_CODE; }
   var label = (code ? code + ' ' : '') + (name || dxEl.dataset.official || '');
   // Duplicate check (same code, or same name)
   var dupe = tierCurrentData.items.filter(function(it) {
@@ -12043,7 +12082,7 @@ async function tierAddDiagnosis() {
   var choice = (document.querySelector('input[name="tadd-tier"]:checked') || {}).value || 'ai';
   // Foley and continuous O2 are always their own problem
   if ((isFoleyProblem(label) || isO2DependenceProblem(label)) && choice !== '1') {
-    if (choice !== 'ai') alert('Per Luminos policy, ' + (isFoleyProblem(label) ? 'a Foley catheter (Y84.6)' : 'continuous oxygen (Z99.81)') + ' is always Tier 1 — its own problem. It will be added as Tier 1.');
+    if (choice !== 'ai') alert('Per Luminos policy, ' + (isFoleyProblem(label) ? 'a Foley catheter (Z46.6)' : 'continuous oxygen (Z99.81)') + ' is always Tier 1 — its own problem. It will be added as Tier 1.');
     choice = '1';
   }
   var go = document.getElementById('tadd-go'); go.disabled = true; var goText = go.textContent;
@@ -12085,8 +12124,10 @@ async function tierAddDiagnosis() {
   if (hadCarePlans && newTier1.length) {
     await buildAllTier1CarePlans(tierCurrentData, tierCurrentPrimaryDx, resultsEl, getCpFlags(), { onlyItems: newTier1 });
   }
+  var _addedFoley = newItems.some(function(it) { return isFoleyProblem(it.diagnosis); });
+  var _reasonOnList = tierCurrentData.items.some(function(i) { return isFoleyReasonDx(i.diagnosis); });
   var addedMsg = newItems.length
-    ? '✓ Added ' + newItems.map(function(it) { return '<b>' + escapeHtml(it.diagnosis) + '</b> as Tier ' + it.tier + (it.tier === 2 && it.parentProblem ? ' under ' + escapeHtml(it.parentProblem) : ''); }).join(', ')
+    ? (_addedFoley && !_reasonOnList ? '<strong>⚠ Now add the reason for the catheter</strong> — e.g. ' + FOLEY_REASON_EXAMPLES + '.<br>' : '') + '✓ Added ' + newItems.map(function(it) { return '<b>' + escapeHtml(it.diagnosis) + '</b> as Tier ' + it.tier + (it.tier === 2 && it.parentProblem ? ' under ' + escapeHtml(it.parentProblem) : ''); }).join(', ')
       + (hadCarePlans && newTier1.length ? ' — its care plan was added below your other care plans.' : (newTier1.length ? ' — Build All (or its Build Care Plan button) will include it.' : '.'))
     : '';
   if (newItems.length) {
@@ -12646,10 +12687,11 @@ function buildSituationalCards(flags, primaryDx, data) {
   if (flags.foley) {
     // If Foley is already on the nurse's list, don't tell her to add it again.
     var foleyOnList = ((data && data.items) || []).filter(function(it) { return isFoleyProblem(it.diagnosis); })[0];
-    cards.push(makeCard(foleyOnList ? '💧 Y84.6 — Foley Catheter (already on your list)' : '💧 Y84.6 — Foley Catheter Care Plan', foleyOnList ? 'Use your existing Foley problem' : 'Separate Problem Required', teal, [
+    cards.push(makeCard(foleyOnList ? '💧 Z46.6 — Foley Catheter (already on your list)' : '💧 Z46.6 — Foley Catheter Care Plan', foleyOnList ? 'Use your existing Foley problem' : 'Separate Problem Required', teal, [
       foleyOnList
-        ? { type: 'flag', label: 'Foley is already on your problem list as "' + foleyOnList.diagnosis + '"', text: 'Use this goal and these interventions for that problem — do not add a second Foley problem. Code it Y84.6 (not Z96.0), keep it Tier 1, and make sure the catheter order and supplies are entered under it.' }
-        : { type: 'flag', label: 'Add Y84.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan. Ensure catheter order and supplies are entered.' },
+        ? { type: 'flag', label: 'Foley is already on your problem list as "' + foleyOnList.diagnosis + '"', text: 'Use this goal and these interventions for that problem — do not add a second Foley problem. Code it Z46.6 (not Y84.6, Z96.0 or Z97.8), keep it Tier 1, and make sure the catheter order and supplies are entered under it.' }
+        : { type: 'flag', label: 'Add Z46.6 as a separate active problem in Firenote', text: 'Foley/indwelling urinary catheter requires its own care plan under Z46.6 (' + FOLEY_DESC + '). Ensure catheter order and supplies are entered.' },
+      { type: 'flag', label: (data && (data.items || []).some(function(i) { return isFoleyReasonDx(i.diagnosis); })) ? '✓ Reason for the catheter appears to be on the list' : '⚠ Add the reason for the catheter', text: 'A diagnosis for why the Foley is in place must be on the problem list — e.g. ' + FOLEY_REASON_EXAMPLES + '.' },
       { type: 'goal3', focus: "comfort with minimal catheter-related complications", measurement: "maintained adequate urine flow and absence of catheter complications", duration: "end of the current benefit period" },
       { type: 'interventions', items: [
         'ASSESS: Nurse will assess foley catheter every visit for patency, urine color, clarity, amount, presence of sediment, and signs/symptoms of UTI such as fever, suprapubic pain, or mental status changes.',
@@ -13114,7 +13156,7 @@ TIER 3: Diagnosis list only — present but not causing symptoms or requiring in
 Route symptoms to Tier 2 under their causing diagnosis (e.g. agitation → dementia, edema → CHF).
 Set associatedSymptom: true when routing a symptom under its causing diagnosis.
 The primary hospice diagnosis is ALWAYS Tier 1.
-A Foley / indwelling urinary catheter (Y84.6) is ALWAYS Tier 1 — its own problem, never Tier 2 or 3, never Z96.0.
+A Foley / indwelling urinary catheter (Z46.6) is ALWAYS Tier 1 — its own problem, never Tier 2 or 3. Its code is Z46.6 — never Y84.6, Z96.0 or Z97.8. The diagnosis that is the REASON for the catheter (e.g. urinary retention R33.9, neurogenic bladder N31.9, urinary incontinence R32) stays on the list.
 Continuous oxygen dependence (Z99.81) is ALWAYS Tier 1 — its own problem.`;
 }
 
@@ -13489,11 +13531,12 @@ var LOCAL_ICD_SYNONYMS = {
     { code: 'R15.9', label: 'Full incontinence of feces' },
     { code: 'R15.0', label: 'Incomplete defecation (fecal incontinence)' },
   ]},
-  'urinary catheterization': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
-  'foley catheter': { code: 'Y84.6', desc: 'Urinary catheterization (Foley catheter)', resolve: true },
-  'indwelling urinary catheter': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
-  'catheter care': { code: 'Y84.6', desc: 'Urinary catheterization', resolve: true },
-  'foley': { code: 'Y84.6', desc: 'Urinary catheterization (Foley catheter)', resolve: true },
+  'urinary catheterization': { code: 'Z46.6', desc: 'Encounter for fitting and adjustment of urinary device (Foley catheter)', resolve: true },
+  'foley catheter': { code: 'Z46.6', desc: 'Encounter for fitting and adjustment of urinary device (Foley catheter)', resolve: true },
+  'indwelling urinary catheter': { code: 'Z46.6', desc: 'Encounter for fitting and adjustment of urinary device (Foley catheter)', resolve: true },
+  'catheter care': { code: 'Z46.6', desc: 'Encounter for fitting and adjustment of urinary device (Foley catheter)', resolve: true },
+  'suprapubic catheter': { code: 'Z93.59', desc: 'Other cystostomy status (suprapubic catheter)', resolve: true },
+  'foley': { code: 'Z46.6', desc: 'Encounter for fitting and adjustment of urinary device (Foley catheter)', resolve: true },
   'fecal incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
   'bowel incontinence': { code: 'R15.9', desc: 'Full incontinence of feces', resolve: true },
   'contractures': { code: null, desc: null, resolve: false, clarify: true, options: [
@@ -14260,7 +14303,7 @@ async function runIcdLookup() {
   var apiBatchErrors = [];
   if (needsApi.length > 0) {
     btn.textContent = '\u23f3 Coding ' + needsApi.length + ' remaining via AI...';
-    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- ABBREVIATIONS / LAY TERMS: Nurses type shorthand (DM2, T2DM, CHF, COPD, CKD3, MCI, UTI, HTN, A-fib, BPH, OA, PVD). Interpret them clinically and code them; never treat shorthand as unknown.\n- NEVER return an empty result. If you cannot pick one code with confidence, return needsClarification:true with the 2-6 most likely codes as options. A diagnosis with code:null and no options is not allowed.\n- FOLEY / INDWELLING URINARY CATHETER: always Y84.6. Never Z96.0 (permanent urogenital implants only) or Z46.6 for a Foley.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
+    const ICD_API_KEY_RULES = '\n\nKEY RULES:\n- CHRONIC RESP FAILURE: J96.10/J96.11/J96.12 only. J96.2x = acute-on-chronic.\n- ATRIAL FIB: I48.91/I48.0/I48.11/I48.19/I48.20 only. Never invent sub-codes.\n- CONSTIPATION: K59.00/K59.01/K59.02/K59.09. K59.1x does NOT exist.\n- PRESSURE INJURIES (L89): Elbow=L89.0xx. Back(non-sacral)=L89.1xx. Sacrum=L89.15x specifically. Hip=L89.2xx. Buttock=L89.3xx. Ankle=L89.5xx. Heel=L89.6xx. Never confuse ankle(L89.5) with heel(L89.6), or hip(L89.2) with either.\n- LACERATIONS / SKIN TEARS / ABRASIONS ARE NOT PRESSURE INJURIES: these are acute traumatic wounds and must use Chapter 19 injury S-codes by body region (e.g. S51.8xx for forearm, S81.8xx for lower leg, S91.3xx for foot), NEVER L89 (pressure ulcer) or L97/L98.4 (chronic ulcer) codes, even when the site overlaps a common pressure-ulcer site like the heel or sacrum. A skin tear defaults to "laceration without foreign body" at the specific site with a 7th character of A (initial encounter) unless the diagnosis text says otherwise; if the site is not specific enough to code, return needsClarification:true rather than guessing a pressure ulcer code.\n- PATHOLOGICAL FRACTURE: M84.451x=neoplastic. M84.551x=other disease. M84.651x=osteoporosis. M84.751x=unspecified. Never swap labels.\n- PROTEIN CALORIE MALNUTRITION: E44.0=MODERATE. E44.1=MILD. E43=severe. E44.2 does NOT exist.\n- FALL RISK: Always needsClarification:true. R29.6=active risk. Z91.81=history only.\n- ASPIRATION RISK: Never Z91.81. Never duplicate dysphagia code. Clarify R13.10 vs J69.0.\n- SUNDOWNING: R41.83 only. Never F05.9.\n- GENERALIZED WEAKNESS: R53.1 only. Never R53.81 or M62.81.\n- NEUROCOGNITIVE: G31.1=senile degeneration only. For Alzheimers/Parkinsons/Lewy Body/FTD/vascular dementia -- return the etiology code (G30.x, G20, G31.83, etc.) only. Do NOT suggest F-codes -- these are handled by a separate tool. If you see a dementia diagnosis without an etiology code, return needsClarification:true.\n- PAIN: Never default generic/unspecified pain ("chronic pain", "persistent pain", "generalized pain") to G89.3. G89.3 (Neoplasm related pain) requires the diagnosis text to explicitly tie the pain to a malignancy (e.g. "cancer pain", "tumor pain", "neoplasm related pain"). Otherwise use G89.29 (other chronic pain) or G89.4 (chronic pain syndrome) as appropriate, or needsClarification:true if genuinely ambiguous.\n- MULTI-DIAGNOSIS LINE: If a single line is a run-on sentence describing more than one distinct clinical condition (e.g. "CHF with edema and dyspnea as well as malnutrition and chronic pain"), do NOT silently pick just one. Return needsClarification:true with options listing each distinct condition you identified as its own {code, label} pair (label should name the specific condition, e.g. "Congestive heart failure \u2014 should be its own line" / "Malnutrition \u2014 should be its own line"), so the nurse can split the line into separate diagnoses rather than losing the others.\n- ABBREVIATIONS / LAY TERMS: Nurses type shorthand (DM2, T2DM, CHF, COPD, CKD3, MCI, UTI, HTN, A-fib, BPH, OA, PVD). Interpret them clinically and code them; never treat shorthand as unknown.\n- NEVER return an empty result. If you cannot pick one code with confidence, return needsClarification:true with the 2-6 most likely codes as options. A diagnosis with code:null and no options is not allowed.\n- FOLEY / INDWELLING URINARY CATHETER: always Z46.6 (Encounter for fitting and adjustment of urinary device). Never Y84.6, Z96.0 (implants only) or Z97.8 for a Foley. Suprapubic catheter = Z93.59.\n- Never fabricate codes. If uncertain, flag needsClarification:true.\n\n';
     const ICD_API_JSON_SPEC = '\n\nIMPORTANT: When needsClarification is true, options MUST be an array of objects with exactly two fields: "code" and "label" (NOT "description", NOT "name"). Example: [{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"}]\n\nEach result MUST include "line": the number of the diagnosis as listed above, and "diagnosis": the text exactly as given.\n\nRespond ONLY with valid JSON:\n{"results":[{"line":1,"diagnosis":"congestive heart failure","code":null,"description":null,"needsClarification":true,"options":[{"code":"I50.22","label":"Chronic systolic CHF, unspecified"},{"code":"I50.32","label":"Chronic diastolic CHF, unspecified"},{"code":"I50.9","label":"CHF unspecified"}]},{"line":2,"diagnosis":"exact text","code":"I10","description":"Essential hypertension","needsClarification":false,"options":null}]}';
 
     const ICD_API_BATCH_SIZE = 5; // smaller batches = faster responses, well inside the function time limit
@@ -14406,6 +14449,15 @@ async function runIcdLookup() {
 }
 function renderIcdLookupResults(container) {
   container.innerHTML = '';
+  // Foley policy: whatever the AI or a pasted code said, a Foley line is always Z46.6
+  icdLookupResults.forEach(function(it) {
+    if (it && isFoleyProblem((it.diagnosis || '') + ' ' + (it.code || '') + ' ' + (it.description || '')) && it.code !== FOLEY_CODE) {
+      it.code = FOLEY_CODE; it.description = FOLEY_DESC + ' (Foley catheter)'; it.needsClarification = false;
+      it.diagnosis = String(it.diagnosis || '').replace(/\b(Y84\.6|Z96\.0|Z97\.8)\b\s*/gi, '').trim() || 'Foley catheter';
+    }
+  });
+  var _foleyNote = foleyReasonNoticeHtml(icdLookupResults.map(function(it) { return (it.code || '') + ' ' + (it.diagnosis || '') + ' ' + (it.description || ''); }));
+  if (_foleyNote) container.insertAdjacentHTML('beforeend', _foleyNote);
 
   const disclaimer = document.createElement('div');
   disclaimer.style.cssText = 'padding:10px 14px;background:var(--amber-bg);border:1px solid rgba(201,151,44,.3);border-radius:6px;font-size:.82rem;color:#7a4200;margin-bottom:14px';
@@ -15620,6 +15672,9 @@ html.in-split .hdr-text h1{font-size:.85rem}
 .tm-grid .tm-filled{background:#fffbea;border-color:#e8b84b}
 @media(max-width:520px){.tm-grid{grid-template-columns:1fr}}
 
+/* Foley code + reason notice */
+.foley-notice{display:flex;flex-direction:column;gap:4px;margin:0 0 12px;padding:10px 13px;background:#fff8e1;border:1px solid #ffe082;border-left:4px solid #e0a800;border-radius:6px;font-size:.82rem;line-height:1.5;color:#5a3c00}
+.foley-notice.ok{background:#f1f8f4;border-color:#bfe3cf;border-left-color:#2e8b57;color:#12502f}
 /* Add a missed diagnosis (Tiering) */
 .tadd{margin:16px 0;padding:14px;border:2px dashed var(--gold);border-radius:8px;background:#fffdf6}
 .tadd-hd{font-size:.92rem;font-weight:700;color:var(--navy);margin-bottom:10px}
