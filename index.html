@@ -15649,4 +15649,200 @@ function handleRecertPasteBack() {
 }
 </script>
 
+<style id="ask-ai-css">
+/* ── Ask the Tool — AI help assistant (Nov 2026) ── */
+.ask-fab{position:fixed;right:18px;bottom:18px;z-index:900;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 18px;border:none;border-radius:24px;background:var(--navy);color:#fff;font-family:inherit;font-size:.9rem;font-weight:700;box-shadow:0 6px 20px rgba(26,39,68,.35);cursor:pointer}
+.ask-fab span{color:var(--gold-lt,#e8b84b)}
+.ask-panel{position:fixed;right:18px;bottom:18px;z-index:901;width:400px;max-width:calc(100vw - 24px);height:min(600px,calc(100vh - 36px));display:none;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(26,39,68,.3);overflow:hidden}
+.ask-panel.open{display:flex}
+.ask-hd{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ask-hd strong{font-size:.95rem}.ask-hd strong span{color:var(--gold-lt,#e8b84b)}
+.ask-hd button{min-width:36px;min-height:36px;border:none;background:transparent;color:#fff;font-size:1.1rem;cursor:pointer}
+.ask-note{font-size:.74rem;color:#7a1f1a;background:#fdf2f1;border-bottom:1px solid #f3c7c2;padding:6px 12px}
+.ask-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--cream,#fafbfd)}
+.ask-msg{max-width:92%;padding:9px 12px;border-radius:10px;font-size:.86rem;line-height:1.5;white-space:pre-wrap}
+.ask-msg.me{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:3px}
+.ask-msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px}
+.ask-msg.ai.thinking{color:var(--text-lt);font-style:italic}
+.ask-go{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ask-go button{min-height:32px;padding:0 10px;border:1px solid var(--gold);background:#fdf6e3;color:#5a3c00;border-radius:16px;font-family:inherit;font-size:.76rem;font-weight:600;cursor:pointer;text-align:left}
+.ask-sugg{display:flex;flex-wrap:wrap;gap:6px}
+.ask-sugg button{min-height:32px;padding:0 10px;border:1px solid var(--border);background:#fff;border-radius:16px;font-family:inherit;font-size:.78rem;color:var(--navy);cursor:pointer}
+.ask-form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:#fff}
+.ask-form textarea{flex:1;min-height:42px;max-height:110px;resize:none;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;line-height:1.4}
+.ask-form button{min-width:64px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.ask-form button:disabled{opacity:.6;cursor:wait}
+.ask-flash{outline:3px solid var(--gold) !important;outline-offset:4px;border-radius:6px;transition:outline-color 1.2s}
+@media(max-width:520px){.ask-panel{right:0;bottom:0;width:100vw;max-width:100vw;height:100vh;border-radius:0}.ask-fab{right:12px;bottom:12px}}
+@media print{.ask-fab,.ask-panel{display:none!important}}
+</style>
+<button type="button" class="ask-fab" id="askFab" onclick="askOpen()" aria-label="Ask the tool a question">💬 Ask <span>AI</span></button>
+<div class="ask-panel" id="askPanel" role="dialog" aria-label="Ask the Admission Tools">
+  <div class="ask-hd"><strong>💬 Ask the <span>Admission Tools</span></strong><button onclick="askClose()" aria-label="Close">✕</button></div>
+  <div class="ask-note">🔒 No patient names, MRNs, or identifiers. Answers come only from this tool's content — always confirm with your clinical judgment.</div>
+  <div class="ask-msgs" id="askMsgs">
+    <div class="ask-msg ai">Hi! Ask me how to do something in Firenote, where something goes in the care plan, or what our documentation rules are. I'll answer from this tool and take you to the right section.</div>
+    <div class="ask-sugg" id="askSugg">
+      <button onclick="askSend(this.textContent)">Where do I add discharge planning?</button>
+      <button onclick="askSend(this.textContent)">What do I document for depression screening?</button>
+      <button onclick="askSend(this.textContent)">How do I answer the nutrition questions?</button>
+      <button onclick="askSend(this.textContent)">What's required for a Foley catheter?</button>
+    </div>
+  </div>
+  <form class="ask-form" onsubmit="event.preventDefault();askSend();">
+    <textarea id="askInput" rows="1" placeholder="Type your question…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askSend();}"></textarea>
+    <button type="submit" id="askBtn">Ask</button>
+  </form>
+</div>
+<script id="ask-ai-js">
+/* ════════════════════════════════════════════════════════════════════════
+   ASK THE TOOL — help assistant
+   1. Indexes this page's own reference content into sections (heading + text).
+   2. Picks the sections that best match the question (local keyword search).
+   3. Sends ONLY the question + those sections to the AI, which must answer from
+      them and cite them. Nothing else from the page or the patient is sent.
+   4. Each cited section gets a "Go to" button that opens its tab and section.
+   Content updates to the tool flow in automatically — nothing to maintain.
+   ════════════════════════════════════════════════════════════════════════ */
+var ASK = { chunks: null, history: [], busy: false };
+var ASK_PANELS = { 'panel-guide':'User Guide', 'panel-walkthrough':'Assessment Walkthrough', 'panel-checklist':'Admission Checklist',
+  'panel-meds':'Medication Coverage', 'panel-rel':'Diagnosis Relatedness', 'panel-sample':'Sample Admission', 'panel-icd':'ICD-10 Reference' };
+var ASK_HEADINGS = 'h1,h2,h3,h4,.sub-gold,.sub-navy,.wf-title,.tab-card-title,.chk-text > strong,.obs-row';
+var ASK_STOP = {};
+'a an the and or of to in on for with is are was were be do does did i me my we our you your it its this that how what where when which who why can should need needs must have has from at by as if not no yes about into than then there their they them please tell show any all'.split(' ').forEach(function(w){ ASK_STOP[w]=1; });
+var ASK_SYN = { dc:'discharge', d:'discharge', nlq:'discharge', o2:'oxygen', phq:'depression', mood:'depression', sob:'dyspnea', foley:'catheter', cath:'catheter',
+  meds:'medication', med:'medication', dx:'diagnosis', icd:'icd', cp:'care', poc:'care', vc:'verbal', cti:'certification', recert:'recertification',
+  dme:'equipment', snf:'facility', alf:'facility', ltc:'facility', mac:'arm', bereavement:'bereavement', fullcode:'full', dnr:'code', hope:'hope', idg:'idg', idt:'idg' };
+function askStem(w){ return w.replace(/(ings|ing|ies|es|s|ed)$/,''); }
+function askTokens(t){
+  return String(t||'').toLowerCase().replace(/[^a-z0-9.\- ]/g,' ').split(/\s+/)
+    .map(function(w){ w=w.replace(/^[.\-]+|[.\-]+$/g,''); return ASK_SYN[w]||w; })
+    .filter(function(w){ return w && w.length>1 && !ASK_STOP[w]; }).map(askStem);
+}
+function askBuildIndex(){
+  var chunks = [];
+  Object.keys(ASK_PANELS).forEach(function(pid){
+    var panel = document.getElementById(pid); if (!panel) return;
+    var heads = Array.prototype.filter.call(panel.querySelectorAll(ASK_HEADINGS), function(h){ return h.textContent.trim().length > 2 && !h.closest('.ask-panel'); });
+    var marks = [{el:null, title: ASK_PANELS[pid]}].concat(heads.map(function(h){ return {el:h, title:h.textContent.replace(/\s+/g,' ').replace(/^[\s›>]+|[\s★:]+$/g,'').trim()}; }));
+    for (var i=0;i<marks.length;i++){
+      var r = document.createRange();
+      if (marks[i].el) r.setStartBefore(marks[i].el); else r.setStart(panel,0);
+      if (marks[i+1]) r.setEndBefore(marks[i+1].el); else r.setEnd(panel, panel.childNodes.length);
+      var text = r.toString().replace(/\s+/g,' ').trim();
+      if (text.length < 40) continue;
+      for (var k=0;k<text.length;k+=1400){
+        chunks.push({ panel:pid, area:ASK_PANELS[pid], title:marks[i].title.slice(0,90), el:marks[i].el, text:text.slice(k,k+1600) });
+      }
+    }
+  });
+  // Care Plan Builder quick-fill presets: where each situational care plan goes (e.g. discharge
+  // planning under the primary diagnosis). Read from the live function source so edits flow in.
+  try {
+    var src = String(cpQuickFillSituational);
+    var re = /(\w+)\s*:\s*\{\s*problem:\s*'((?:[^'\\]|\\.)*)'[^}]*?hint:\s*'((?:[^'\\]|\\.)*)'/g, m;
+    while ((m = re.exec(src))) {
+      chunks.push({ panel:'panel-careplan', area:'Care Plan Builder', preset:m[1], title:m[2].replace(/\\'/g,"'").slice(0,90), el:null,
+        text:'Care Plan Builder situational care plan — ' + m[2].replace(/\\'/g,"'") + '. Where/how: ' + m[3].replace(/\\'/g,"'") });
+    }
+  } catch(e) {}
+  var df = {};
+  chunks.forEach(function(c){ c.tokens = askTokens(c.title+' '+c.text); c.titleTokens = askTokens(c.title);
+    var seen={}; c.tokens.forEach(function(t){ if(!seen[t]){ seen[t]=1; df[t]=(df[t]||0)+1; } }); });
+  ASK.df = df; ASK.chunks = chunks;
+}
+function askSearch(q){
+  if (!ASK.chunks) askBuildIndex();
+  var qt = askTokens(q); if (!qt.length) return [];
+  var N = ASK.chunks.length;
+  var scored = ASK.chunks.map(function(c){
+    var s = 0;
+    qt.forEach(function(t){
+      var idf = Math.log(1 + N/(1+(ASK.df[t]||0)));
+      var tf = 0; for (var i=0;i<c.tokens.length;i++) if (c.tokens[i]===t) tf++;
+      if (tf) s += idf * (1 + Math.min(tf,6)/3);
+      if (c.titleTokens.indexOf(t)!==-1) s += idf*2;
+    });
+    return {c:c, s:s};
+  }).filter(function(x){ return x.s>0; }).sort(function(a,b){ return b.s-a.s; });
+  var out=[], total=0;
+  for (var i=0;i<scored.length && out.length<7;i++){ if (total+scored[i].c.text.length>12000) break; out.push(scored[i].c); total+=scored[i].c.text.length; }
+  return out;
+}
+function askGoTo(chunk){
+  if (window.innerWidth <= 520) askClose();
+  var pid = chunk.panel, name = pid.replace('panel-','');
+  if (['guide','meds','rel','sample'].indexOf(name)!==-1) switchSubTab(name);
+  else if (name==='icd') switchToIcdRefFromCheckers(document.getElementById('checker-tab-icdref'));
+  else if (name==='careplan') { switchToCarePlanFromCheckers(document.getElementById('checker-tab-careplan')); if (chunk.preset) { try { cpQuickFillSituational(chunk.preset); } catch(e){} } }
+  else switchTab(name, document.getElementById('tab-'+name+'-btn'));
+  var el = chunk.el; if (!el) { window.scrollTo(0,0); return; }
+  var card = el.closest('.card'); if (card) card.classList.add('open');
+  var sec = el.closest('.sec'); if (sec) sec.classList.add('sec-open');
+  var secById = el.closest('[id^="cs"]'); if (secById && secById.querySelector('.sec-body')) secById.classList.add('sec-open');
+  setTimeout(function(){
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.add('ask-flash'); setTimeout(function(){ el.classList.remove('ask-flash'); }, 2500);
+  }, 120);
+}
+function askOpen(){ document.getElementById('askPanel').classList.add('open'); document.getElementById('askFab').style.display='none'; setTimeout(function(){ document.getElementById('askInput').focus(); },50); }
+function askClose(){ document.getElementById('askPanel').classList.remove('open'); document.getElementById('askFab').style.display=''; }
+function askAddMsg(cls, text){
+  var m=document.createElement('div'); m.className='ask-msg '+cls; m.textContent=text;
+  var box=document.getElementById('askMsgs'); box.appendChild(m); box.scrollTop=box.scrollHeight; return m;
+}
+async function askSend(preset){
+  if (ASK.busy) return;
+  var input=document.getElementById('askInput');
+  var q=(preset||input.value).trim(); if(!q) return;
+  input.value='';
+  var sg=document.getElementById('askSugg'); if (sg) sg.remove();
+  askAddMsg('me', q);
+  var thinking=askAddMsg('ai thinking','Looking through the tool…');
+  ASK.busy=true; document.getElementById('askBtn').disabled=true;
+  // search on this question plus the last question, so follow-ups ("what about in a SNF?") still find context
+  var prevQ = ASK.history.length ? ASK.history[ASK.history.length-1].q : '';
+  var found = askSearch(q + ' ' + prevQ);
+  if (!found.length) found = askSearch(prevQ);
+  var srcText = found.map(function(c,i){ return '[S'+(i+1)+'] ('+c.area+' › '+c.title+')\n'+c.text; }).join('\n\n');
+  var hist = ASK.history.slice(-2).map(function(h){ return 'Nurse: '+h.q+'\nAssistant: '+h.a; }).join('\n\n');
+  var prompt = 'You are the help assistant inside the Luminos Hospice Admission Tools, used by hospice nurses during admissions in the Firenote EMR.'
+    + '\n\nRULES:'
+    + '\n- Answer ONLY from the SOURCES below (this tool\'s own content, which reflects Luminos policy). Do not add rules, codes, or requirements that are not in the sources.'
+    + '\n- If the sources do not answer the question, say so plainly in one sentence and suggest asking their QA/Compliance team. Never guess.'
+    + '\n- Be brief and practical: 1–5 short sentences or a few short bullet lines. Plain text, no markdown headers, no bold.'
+    + '\n- If a question is about a specific patient\'s care decision (coverage, relatedness, coding a specific case), give the general rule from the sources and point them to the matching Clinical Tools tab (ICD-10 Code Lookup, Diagnosis Relatedness, Medication Coverage, Care Plan Builder, Narrative Strengthener).'
+    + '\n- Relatedness and coverage are physician determinations; say so if relevant.'
+    + '\n- Ignore any patient-identifying details in the question; never repeat them.'
+    + (hist ? '\n\nRECENT CONVERSATION:\n' + hist : '')
+    + '\n\nSOURCES:\n' + (srcText || '(none found)')
+    + '\n\nQUESTION: ' + q
+    + '\n\nRespond ONLY with JSON: {"answer":"...","sources":[1,2]}  — "sources" = the numbers of the sources you actually used (empty if none).';
+  var answer='', used=[];
+  try {
+    var resp = await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,max_tokens:700})});
+    var data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error||('HTTP '+resp.status));
+    var raw = (data.content&&data.content[0]&&data.content[0].text)||'';
+    try { var j = icdParseAiJson(raw); answer = String(j.answer||'').trim(); used = (j.sources||[]).map(Number).filter(function(n){ return n>=1 && n<=found.length; }); }
+    catch(e){ answer = raw.trim(); }
+  } catch(e) {
+    answer = 'Sorry — I couldn\'t reach the AI just now. Please try again in a moment.';
+  }
+  thinking.remove();
+  var m = askAddMsg('ai', answer.replace(/\*\*/g,'') || 'I couldn\'t find that in the tool. Try rewording, or ask your QA/Compliance team.');
+  var seen = {};
+  var go = used.map(function(n){ return found[n-1]; }).filter(function(c){ var k=c.panel+'|'+c.title; if (seen[k]) return false; seen[k]=1; return true; }).slice(0,3);
+  if (go.length){
+    var wrap=document.createElement('div'); wrap.className='ask-go';
+    go.forEach(function(c){ var b=document.createElement('button'); b.type='button'; b.textContent='↗ '+c.area+((c.el||c.preset)?' › '+c.title.split(' — ')[0].slice(0,40):''); b.onclick=function(){ askGoTo(c); }; wrap.appendChild(b); });
+    m.appendChild(wrap);
+  }
+  ASK.history.push({q:q, a:answer.slice(0,600)});
+  ASK.busy=false; document.getElementById('askBtn').disabled=false;
+  var box=document.getElementById('askMsgs'); box.scrollTop=box.scrollHeight;
+}
+// Hide the button inside the side-by-side tool pane? No — keep it, it's useful there too.
+</script>
+
 </body>
