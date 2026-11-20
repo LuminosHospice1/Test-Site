@@ -8572,6 +8572,53 @@ function toggleCaregiverField() {
 // approved QA language, no AI variability) — checked when Generate is actually clicked, not
 // applied automatically on preset selection, so this preset behaves consistently with every
 // other preset (nothing renders until the nurse clicks Generate).
+// ════════════════════════════════════════════════════════════════════════
+// IMMINENCE OF DEATH CARE PLAN — single source of truth (Nov 2026)
+// Used by Build All (Tiering), the Care Plan Builder's 🕊️ button, and the Care Plan Builder
+// whenever the Imminent flag is on. Fixed approved language — never AI-generated — so the
+// required imminence interventions can't be dropped or reworded.
+// ════════════════════════════════════════════════════════════════════════
+function getImminenceCarePlan(flags) {
+  flags = flags || getCpFlags();
+  var isFacility = flags.setting === 'facility' || flags.setting === 'snf';
+  return {
+    goalFocus: 'comfortable, peaceful death',
+    goalMeasurement: 'absence of distressing symptoms and family/caregiver report of comfort and satisfaction with care',
+    goalDuration: '3 days',
+    interventions: [
+      'ASSESS -- Nurse will assess patient physical condition and symptom burden at each visit, including pain, dyspnea, anxiety, restlessness, secretions, and changes in level of consciousness.',
+      'ASSESS -- Nurse will evaluate family/caregiver coping, emotional adjustment, and readiness at each visit.',
+      'EDUCATE -- Nurse will educate family/caregiver on recognition and management of end-of-life symptoms including pain, dyspnea, anxiety, and restlessness, and when to contact the hospice team.',
+      'EDUCATE -- Nurse will educate family/caregiver regarding the dying process, expected physical changes, and procedures that occur at the time of death.',
+      'PERFORM -- Nurse will implement comfort-focused interventions to manage pain and distressing symptoms, and communicate medication effectiveness and needs to the physician for timely adjustment.',
+      'PERFORM -- Nurse will monitor symptom control at each visit and adjust comfort measures as needed to maintain a peaceful, comfortable environment.'
+    ].concat(isFacility ? ['PERFORM -- Nurse will coordinate with facility staff to ensure routine comfort assessments are completed and communicated to the hospice team for appropriate palliative intervention.'] : []),
+    physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.'
+  };
+}
+// Same plan as Care Plan Builder text (## sections), with the required primary-DX
+// interventions (med administration, bereavement, Full Code if checked) added by the tool.
+function imminenceCarePlanText(flags, primaryDx) {
+  flags = flags || getCpFlags();
+  var r = getImminenceCarePlan(flags);
+  var where = primaryDx ? 'under the PRIMARY DIAGNOSIS problem (' + dxNameForProse(primaryDx) + ')' : 'under the PRIMARY DIAGNOSIS problem';
+  var txt = '## WHERE TO ADD THIS IN FIRENOTE\n'
+    + 'Patient is imminent. Add this ONE care plan ' + where + '. Do not build separate care plans for other diagnoses — review whether existing care plans that no longer fit the dying process (e.g. hypertension, hyperlipidemia) should be discontinued.\n\n'
+    + '## GOAL\nGOAL FOCUS: ' + r.goalFocus + '\nGOAL MEASUREMENT: ' + r.goalMeasurement + '\nGOAL DURATION: ' + r.goalDuration + '\n\n'
+    + '## INTERVENTIONS\n'
+    + r.interventions.map(function(i) { var m = i.match(/^(ASSESS|EDUCATE|PERFORM)\s*--\s*(.*)$/); return m ? '**' + m[1] + '** — ' + m[2] : i; }).join('\n')
+    + '\n\n## PHYSICIAN/IDT COORDINATION\n' + r.physicianCoordination;
+  return appendRequiredPrimarySections(txt, true, flags);
+}
+function renderImminenceIntoBuilder(flags, primaryDx, note) {
+  var wrap = document.getElementById('cp-output-wrap'), out = document.getElementById('cp-output'), err = document.getElementById('cp-error');
+  if (err) err.classList.remove('show');
+  out.innerHTML = (note || '') + renderCarePlan(imminenceCarePlanText(flags, primaryDx));
+  wrap.classList.add('show');
+  setTimeout(function() { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+}
+var _cpImminentOverride = false;
+
 var _cpActiveHardcodedKey = null;
 var _cpActiveHardcodedProblemText = null;
 
@@ -8613,6 +8660,27 @@ async function runCarePlanBuilder() {
 
 
   const isPrimaryDxPlan = cpIsPrimaryDx || (primaryDx && problem && dxPrimaryMatchScore(problem, primaryDx) > 0);
+
+  // IMMINENT (flag checked in Problem List Tiering): only ONE care plan — the fixed imminence
+  // plan under the primary diagnosis. Before Nov 2026 the builder ignored this flag, so the
+  // per-diagnosis "Build Care Plan" buttons produced standard AI plans with no imminence
+  // interventions, plus separate situational care plans.
+  if (flags.imminent && !_cpImminentOverride) {
+    if (isPrimaryDxPlan || /imminen|actively dying/i.test(problem)) {
+      renderImminenceIntoBuilder(flags, primaryDx || problem, '<div class="foley-notice">🕊️ <div><strong>Patient is marked Imminent</strong> (Problem List Tiering). This is the single imminence care plan for the primary diagnosis — fixed approved language.</div></div>');
+      return;
+    }
+    var _wrapI = document.getElementById('cp-output-wrap'), _outI = document.getElementById('cp-output');
+    _outI.innerHTML = '<div style="padding:12px 14px;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;font-size:.85rem;color:#7a4200;line-height:1.55">'
+      + '<strong>⚠ Care plan suppressed — patient is imminent</strong><br>'
+      + 'Only one care plan is built for an imminent patient: the imminence of death care plan under the primary diagnosis. Review whether <b>' + escapeHtml(problemName) + '</b> should be discontinued in Firenote.'
+      + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button type="button" onclick="renderImminenceIntoBuilder(getCpFlags(), document.getElementById(\'cp-primary-dx\').value)" style="padding:7px 14px;background:#c0392b;color:#fff;border:none;border-radius:5px;font-family:inherit;font-weight:700;cursor:pointer">🕊️ Show the imminence care plan instead</button>'
+      + '<button type="button" onclick="_cpImminentOverride=true;runCarePlanBuilder().finally(function(){_cpImminentOverride=false;})" style="padding:7px 14px;background:#fff;color:#7a4200;border:1px solid #e0b850;border-radius:5px;font-family:inherit;cursor:pointer">Build this one anyway</button>'
+      + '</div></div>';
+    _wrapI.classList.add('show');
+    return;
+  }
 
   const situationalContent = buildSituationalPrompt(flags, isPrimaryDxPlan, caregiver, problem);
 
@@ -8982,7 +9050,7 @@ function cpQuickFillSituational(key) {
     bereavement: { problem: 'Pre-bereavement assessment and support for family/caregiver', type: 'psychosocial', goals: 'grief', hint: 'Required on every admission — add under primary DX or as standalone problem.' },
     fullcode: { problem: 'Full Code status — patient/family education and documentation', type: 'coordination', goals: 'family', hint: 'Add these interventions under the primary diagnosis problem, not as a new problem. No separate goal needed.' },
     oxygen: { problem: 'Z99.81 Dependence on supplemental oxygen — safety and management', type: 'clinical', goals: 'comfort', hint: 'Add Z99.81 as a separate active problem in Firenote with oxygen order and DME supplies.' },
-    imminent: { problem: 'Imminence of death — comfort-focused end-of-life care', type: 'clinical', goals: 'comfort', hint: 'Add under the primary diagnosis problem. This care plan replaces or supplements the standard primary DX care plan — focus entirely on comfort, symptom management, and family support. Discontinue care plans that are no longer clinically relevant during the dying process (hypertension, etc.).' },
+    imminent: { problem: 'Imminence of death — comfort-focused end-of-life care', type: 'clinical', goals: 'comfort', hint: 'Builds the ONE required imminence care plan, added under the PRIMARY DIAGNOSIS problem — fixed approved language with the required primary-diagnosis interventions. Do not build separate care plans for other diagnoses; review whether care plans no longer relevant to the dying process (hypertension, etc.) should be discontinued.', hardcoded: true },
     oxygenprn: { problem: 'Intermittent / PRN oxygen use — safety and monitoring', type: 'clinical', goals: 'comfort', hint: 'Do NOT add Z99.81 — this patient does not rely on continuous oxygen. Add these interventions under the most clinically relevant respiratory problem (e.g. COPD, Dyspnea, Lung Cancer). No separate ICD-10 code needed.' },
     foley: { problem: 'Z46.6 Encounter for fitting and adjustment of urinary device (Foley catheter) — care and management', type: 'clinical', goals: 'comfort', hint: 'Add Z46.6 as a separate active problem (never Y84.6, Z96.0 or Z97.8). Also add a diagnosis for the REASON for the catheter — e.g. urinary retention (R33.9), neurogenic bladder (N31.9) or urinary incontinence (R32). Ensure catheter order and supplies are entered. Suprapubic catheter = Z93.59, not Z46.6.' },
     fallrisk: { problem: 'Fall risk — safety assessment and prevention', type: 'safety', goals: 'safety_general', hint: 'Add under an applicable diagnosis or add R26.89 (Abnormality of gait and mobility) as a new problem.' },
@@ -8991,7 +9059,6 @@ function cpQuickFillSituational(key) {
     discharge: { problem: 'Discharge Planning / Live Discharge — under the primary diagnosis problem', type: 'coordination', goals: 'transition', hint: 'Add this goal and these interventions under the PRIMARY DIAGNOSIS problem in Firenote. Do not add Z71.89 — social work uses that code and it cannot be added twice. Use when patient is anticipated to discharge from hospice services, or no longer qualifies (NLQ/voluntary withdrawal). Generates instantly using approved QA language.', hardcoded: true },
     respite: { problem: 'Respite admission — caregiver relief and patient safety during temporary placement', type: 'coordination', goals: 'respite', hint: 'Use when patient is being admitted for a short-term respite level of care.' },
     gip: { problem: 'GIP admission — acute symptom management in inpatient setting', type: 'coordination', goals: 'transition', hint: 'General Inpatient (GIP) level of care — for acute symptom management that cannot be managed in the home setting.' },
-    imminence: { problem: 'Imminence of death — comfort, dignity, and family support in final hours/days', type: 'psychosocial', goals: 'grief', hint: 'Add when patient shows signs of active dying. Focus on comfort, dignity, and family preparation.' },
     facility: { problem: 'Facility collaboration and coordination of care', type: 'coordination', goals: 'facility', hint: 'For patients residing in a SNF, LTC, or ALF. Ensure Facility Delineation Form is on file for SNF/LTC.' },
   };
 
@@ -9081,6 +9148,7 @@ GOAL DURATION: Nurse to select — shorter (3–7 days) for an active/urgent liv
 ## PHYSICIAN/IDT COORDINATION
 Coordinate with attending physician and IDG to confirm discharge eligibility determination, ensure all required discharge documentation (including NOMNC when applicable) is completed, and establish continuity of care with the receiving provider or next level of care prior to the patient's transition.`,
   };
+  if (key === 'imminent') return imminenceCarePlanText(getCpFlags(), (document.getElementById('cp-primary-dx') || {}).value || '');
   return plans[key] || null;
 }
 
@@ -12337,27 +12405,7 @@ async function buildAllTier1CarePlans(data, primaryDx, container, flags, opts) {
 
   // If patient is imminent, replace primary card with hardcoded imminence care plan
   if (isImminent) {
-    const isFacility = flags.setting === 'facility' || flags.setting === 'snf';
-    const immGoalFocus = 'comfortable, peaceful death';
-    const immGoalMeasurement = 'absence of distressing symptoms and family/caregiver report of comfort and satisfaction with care';
-    const immGoalDuration = '3 days';
-    const immInterventions = [
-      'ASSESS -- Nurse will assess patient physical condition and symptom burden at each visit, including pain, dyspnea, anxiety, restlessness, secretions, and changes in level of consciousness.',
-      'ASSESS -- Nurse will evaluate family/caregiver coping, emotional adjustment, and readiness at each visit.',
-      'EDUCATE -- Nurse will educate family/caregiver on recognition and management of end-of-life symptoms including pain, dyspnea, anxiety, and restlessness, and when to contact the hospice team.',
-      'EDUCATE -- Nurse will educate family/caregiver regarding the dying process, expected physical changes, and procedures that occur at the time of death.',
-      'PERFORM -- Nurse will implement comfort-focused interventions to manage pain and distressing symptoms, and communicate medication effectiveness and needs to the physician for timely adjustment.',
-      'PERFORM -- Nurse will monitor symptom control at each visit and adjust comfort measures as needed to maintain a peaceful, comfortable environment.',
-    ].concat(isFacility ? ['PERFORM -- Nurse will coordinate with facility staff to ensure routine comfort assessments are completed and communicated to the hospice team for appropriate palliative intervention.'] : []);
-
-    const immResult = {
-      goalFocus: immGoalFocus,
-      goalMeasurement: immGoalMeasurement,
-      goalDuration: immGoalDuration,
-      interventions: immInterventions,
-      physicianCoordination: 'Notify physician of patient imminence, current symptom burden, and any medication adjustments needed to maintain comfort during the final hours of life.',
-      _requiredGroups: getRequiredPrimaryGroups(flags)
-    };
+    const immResult = Object.assign(getImminenceCarePlan(flags), { _requiredGroups: getRequiredPrimaryGroups(flags) });
 
     // Render primary card with imminence care plan
     if (primaryIdx === -1) { cards.unshift(makeRequiredOnlyCard(wrap, primaryDx)); }
@@ -13386,7 +13434,35 @@ function clearTierChecker() {
   tierLockedItems = new Map();
   tierCurrentData = null;
   tierQueuedAdditions = new Map();
+  var _imb = document.getElementById('cp-imminent-banner'); if (_imb) _imb.style.display = 'none';
 }
+
+// Imminent flag lives in Problem List Tiering; show it in the Care Plan Builder too, and
+// refresh the tier results when it's toggled after Suggest Tiers was run.
+(function() {
+  function sync() {
+    var on = !!(document.getElementById('cpf-imminent') || {}).checked;
+    var b = document.getElementById('cp-imminent-banner');
+    var problemField = document.getElementById('cp-problem');
+    if (!b && problemField && problemField.parentElement && problemField.parentElement.parentElement) {
+      b = document.createElement('div'); b.id = 'cp-imminent-banner';
+      b.style.cssText = 'display:none;margin-bottom:10px;padding:9px 13px;background:#fff0f0;border:2px solid #c0392b;border-radius:7px;font-size:.82rem;color:#7a2020;line-height:1.5';
+      b.innerHTML = '<strong style="color:#c0392b">🕊️ Patient is marked Imminent.</strong> Generate builds only the imminence of death care plan under the primary diagnosis. Other diagnoses are suppressed. (Uncheck "Patient is Imminent" in Problem List Tiering to turn this off.)';
+      problemField.parentElement.parentElement.insertBefore(b, problemField.parentElement);
+    }
+    if (b) b.style.display = on ? 'block' : 'none';
+  }
+  function init() {
+    var cb = document.getElementById('cpf-imminent'); if (!cb) return;
+    cb.addEventListener('change', function() {
+      sync();
+      var res = document.getElementById('tier-results');
+      if (tierCurrentData && res && res.style.display !== 'none') renderTierResults(res, tierCurrentData, tierCurrentPrimaryDx, false, '', getCpFlags());
+    });
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
 
 function clearTierCheckerAndReturnToIcdLookup() {
   clearTierChecker();
@@ -15285,7 +15361,6 @@ function clearIcdLookup() {
         <button type="button" onclick="cpQuickFillSituational('discharge')"  style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">📋 Discharge / Live Discharge (NLQ)</button>
         <button type="button" onclick="cpQuickFillSituational('respite')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🔄 Respite Admission</button>
         <button type="button" onclick="cpQuickFillSituational('gip')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏥 GIP Admission</button>
-        <button type="button" onclick="cpQuickFillSituational('imminence')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🕊️ Imminence of Death</button>
         <button type="button" onclick="cpQuickFillSituational('facility')" style="padding:5px 11px;background:#fff8e1;border:1px solid #ffe082;border-radius:20px;font-family:inherit;font-size:.78rem;font-weight:600;color:#7a4200;cursor:pointer;transition:all .14s" onmouseover="this.style.background='#fff3b0'" onmouseout="this.style.background='#fff8e1'">🏢 Facility Collaboration</button>
       </div>
       <div style="font-size:.74rem;color:var(--text-lt);margin-top:6px;font-style:italic">Pre-fills the problem type, problem text, and goals direction — add your primary diagnosis and patient details then generate</div>
